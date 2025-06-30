@@ -1,0 +1,1081 @@
+# Query: assets
+# ContextLines: 1
+
+485 results - 110 files
+
+src\assets\theme\theme-rtl.js:
+  20  // Material Dashboard 2 React base styles
+  21: import colors from "assets/theme/base/colors";
+  22: import breakpoints from "assets/theme/base/breakpoints";
+  23: import typography from "assets/theme/base/typography";
+  24: import boxShadows from "assets/theme/base/boxShadows";
+  25: import borders from "assets/theme/base/borders";
+  26: import globals from "assets/theme/base/globals";
+  27  
+  28  // Material Dashboard 2 React helper functions
+  29: import boxShadow from "assets/theme/functions/boxShadow";
+  30: import hexToRgb from "assets/theme/functions/hexToRgb";
+  31: import linearGradient from "assets/theme/functions/linearGradient";
+  32: import pxToRem from "assets/theme/functions/pxToRem";
+  33: import rgba from "assets/theme/functions/rgba";
+  34  
+  35  // Material Dashboard 2 React components base styles for @mui material components
+  36: import sidenav from "assets/theme/components/sidenav";
+  37: import list from "assets/theme/components/list";
+  38: import listItem from "assets/theme/components/list/listItem";
+  39: import listItemText from "assets/theme/components/list/listItemText";
+  40: import card from "assets/theme/components/card";
+  41: import cardMedia from "assets/theme/components/card/cardMedia";
+  42: import cardContent from "assets/theme/components/card/cardContent";
+  43: import button from "assets/theme/components/button";
+  44: import iconButton from "assets/theme/components/iconButton";
+  45: import input from "assets/theme/components/form/input";
+  46: import inputLabel from "assets/theme/components/form/inputLabel";
+  47: import inputOutlined from "assets/theme/components/form/inputOutlined";
+  48: import textField from "assets/theme/components/form/textField";
+  49: import menu from "assets/theme/components/menu";
+  50: import menuItem from "assets/theme/components/menu/menuItem";
+  51: import switchButton from "assets/theme/components/form/switchButton";
+  52: import divider from "assets/theme/components/divider";
+  53: import tableContainer from "assets/theme/components/table/tableContainer";
+  54: import tableHead from "assets/theme/components/table/tableHead";
+  55: import tableCell from "assets/theme/components/table/tableCell";
+  56: import linearProgress from "assets/theme/components/linearProgress";
+  57: import breadcrumbs from "assets/theme/components/breadcrumbs";
+  58: import slider from "assets/theme/components/slider";
+  59: import avatar from "assets/theme/components/avatar";
+  60: import tooltip from "assets/theme/components/tooltip";
+  61: import appBar from "assets/theme/components/appBar";
+  62: import tabs from "assets/theme/components/tabs";
+  63: import tab from "assets/theme/components/tabs/tab";
+  64: import stepper from "assets/theme/components/stepper";
+  65: import step from "assets/theme/components/stepper/step";
+  66: import stepConnector from "assets/theme/components/stepper/stepConnector";
+  67: import stepLabel from "assets/theme/components/stepper/stepLabel";
+  68: import stepIcon from "assets/theme/components/stepper/stepIcon";
+  69: import select from "assets/theme/components/form/select";
+  70: import formControlLabel from "assets/theme/components/form/formControlLabel";
+  71: import formLabel from "assets/theme/components/form/formLabel";
+  72: import checkbox from "assets/theme/components/form/checkbox";
+  73: import radio from "assets/theme/components/form/radio";
+  74: import autocomplete from "assets/theme/components/form/autocomplete";
+  75: import container from "assets/theme/components/container";
+  76: import popover from "assets/theme/components/popover";
+  77: import buttonBase from "assets/theme/components/buttonBase";
+  78: import icon from "assets/theme/components/icon";
+  79: import svgIcon from "assets/theme/components/svgIcon";
+  80: import link from "assets/theme/components/link";
+  81: import dialog from "assets/theme/components/dialog";
+  82: import dialogTitle from "assets/theme/components/dialog/dialogTitle";
+  83: import dialogContent from "assets/theme/components/dialog/dialogContent";
+  84: import dialogContentText from "assets/theme/components/dialog/dialogContentText";
+  85: import dialogActions from "assets/theme/components/dialog/dialogActions";
+  86  
+
+src\assets\theme\base\globals.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme/base/colors";
+  18  
+
+src\assets\theme\base\typography.js:
+  22  // Material Dashboard 2 React Base Styles
+  23: import colors from "assets/theme/base/colors";
+  24  
+  25  // Material Dashboard 2 React Helper Functions
+  26: import pxToRem from "assets/theme/functions/pxToRem";
+  27  
+
+src\assets\theme\components\avatar.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme/base/borders";
+  18  
+
+src\assets\theme\components\breadcrumbs.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18: import typography from "assets/theme/base/typography";
+  19  
+
+src\assets\theme\components\container.js:
+  16  // Material Dashboard 2 React base styles
+  17: import breakpoints from "assets/theme/base/breakpoints";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import pxToRem from "assets/theme/functions/pxToRem";
+  21  
+
+src\assets\theme\components\divider.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import rgba from "assets/theme/functions/rgba";
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22  
+
+src\assets\theme\components\flatpickr.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import rgba from "assets/theme/functions/rgba";
+  21  
+
+src\assets\theme\components\icon.js:
+  16  // Material Dashboard 2 React helper functions
+  17: import pxToRem from "assets/theme/functions/pxToRem";
+  18  
+
+src\assets\theme\components\iconButton.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme/base/colors";
+  18  
+
+src\assets\theme\components\linearProgress.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme/base/borders";
+  18: import colors from "assets/theme/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22  
+
+src\assets\theme\components\popover.js:
+  16  // Material Dashboard 2 React helper functions
+  17: import pxToRem from "assets/theme/functions/pxToRem";
+  18  
+  19  // Material Dashboard 2 React base styles
+  20: import colors from "assets/theme/base/colors";
+  21: import boxShadows from "assets/theme/base/boxShadows";
+  22: import borders from "assets/theme/base/borders";
+  23  
+
+src\assets\theme\components\sidenav.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18: import borders from "assets/theme/base/borders";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22  
+
+src\assets\theme\components\slider.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18: import borders from "assets/theme/base/borders";
+  19: import boxShadows from "assets/theme/base/boxShadows";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme/functions/pxToRem";
+  23: import boxShadow from "assets/theme/functions/boxShadow";
+  24  
+
+src\assets\theme\components\svgIcon.js:
+  16  // Material Dashboard 2 React helper functions
+  17: import pxToRem from "assets/theme/functions/pxToRem";
+  18  
+
+src\assets\theme\components\tooltip.js:
+  19  // Material Dashboard 2 React base styles
+  20: import colors from "assets/theme/base/colors";
+  21: import typography from "assets/theme/base/typography";
+  22: import borders from "assets/theme/base/borders";
+  23  
+  24  // Material Dashboard 2 React helper functions
+  25: import pxToRem from "assets/theme/functions/pxToRem";
+  26  
+
+src\assets\theme\components\button\contained.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme/base/colors";
+  18: import typography from "assets/theme/base/typography";
+  19  
+  20  // Material Dashboard 2 React Helper Functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22  
+
+src\assets\theme\components\button\index.js:
+  16  // Material Dashboard 2 React Button Styles
+  17: import root from "assets/theme/components/button/root";
+  18: import contained from "assets/theme/components/button/contained";
+  19: import outlined from "assets/theme/components/button/outlined";
+  20: import buttonText from "assets/theme/components/button/text";
+  21  
+
+src\assets\theme\components\button\outlined.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme/base/colors";
+  18: import typography from "assets/theme/base/typography";
+  19  
+  20  // Material Dashboard 2 React Helper Functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22  
+
+src\assets\theme\components\button\root.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import typography from "assets/theme/base/typography";
+  18: import borders from "assets/theme/base/borders";
+  19  
+  20  // Material Dashboard 2 React Helper Functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22  
+
+src\assets\theme\components\button\text.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme/base/colors";
+  18: import typography from "assets/theme/base/typography";
+  19  
+  20  // Material Dashboard 2 React Helper Functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22  
+
+src\assets\theme\components\card\cardContent.js:
+  16  // Material Dashboard 2 React Helper Functions
+  17: import pxToRem from "assets/theme/functions/pxToRem";
+  18  
+
+src\assets\theme\components\card\cardMedia.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import borders from "assets/theme/base/borders";
+  18  
+  19  // Material Dashboard 2 React Helper Functions
+  20: import pxToRem from "assets/theme/functions/pxToRem";
+  21  
+
+src\assets\theme\components\card\index.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme/base/colors";
+  18: import borders from "assets/theme/base/borders";
+  19: import boxShadows from "assets/theme/base/boxShadows";
+  20  
+  21  // Material Dashboard 2 React Helper Function
+  22: import rgba from "assets/theme/functions/rgba";
+  23  
+
+src\assets\theme\components\dialog\dialogActions.js:
+  16  // Material Dashboard 2 React helper functions
+  17: import pxToRem from "assets/theme/functions/pxToRem";
+  18  
+
+src\assets\theme\components\dialog\dialogContent.js:
+  16  // Material Dashboard 2 React base styles
+  17: import typography from "assets/theme/base/typography";
+  18: import borders from "assets/theme/base/borders";
+  19: import colors from "assets/theme/base/colors";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme/functions/pxToRem";
+  23  
+
+src\assets\theme\components\dialog\dialogContentText.js:
+  16  // Material Dashboard 2 React base styles
+  17: import typography from "assets/theme/base/typography";
+  18: import colors from "assets/theme/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: // import pxToRem from "assets/theme/functions/pxToRem";
+  22  
+
+src\assets\theme\components\dialog\dialogTitle.js:
+  16  // Material Dashboard 2 React base styles
+  17: import typography from "assets/theme/base/typography";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import pxToRem from "assets/theme/functions/pxToRem";
+  21  
+
+src\assets\theme\components\dialog\index.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme/base/borders";
+  18: import boxShadows from "assets/theme/base/boxShadows";
+  19  
+
+src\assets\theme\components\form\autocomplete.js:
+  16  // Material Dashboard 2 React base styles
+  17: import boxShadows from "assets/theme/base/boxShadows";
+  18: import typography from "assets/theme/base/typography";
+  19: import colors from "assets/theme/base/colors";
+  20: import borders from "assets/theme/base/borders";
+  21  
+  22  // Material Dashboard 2 React helper functions
+  23: import pxToRem from "assets/theme/functions/pxToRem";
+  24  
+
+src\assets\theme\components\form\checkbox.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme/base/borders";
+  18: import colors from "assets/theme/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22: import linearGradient from "assets/theme/functions/linearGradient";
+  23  
+
+src\assets\theme\components\form\formControlLabel.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18: import typography from "assets/theme/base/typography";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22  
+
+src\assets\theme\components\form\formLabel.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18  
+
+src\assets\theme\components\form\input.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme/base/colors";
+  18: import typography from "assets/theme/base/typography";
+  19: import borders from "assets/theme/base/borders";
+  20  
+
+src\assets\theme\components\form\inputLabel.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme/base/colors";
+  18: import typography from "assets/theme/base/typography";
+  19  
+
+src\assets\theme\components\form\inputOutlined.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme/base/colors";
+  18: import borders from "assets/theme/base/borders";
+  19: import typography from "assets/theme/base/typography";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme/functions/pxToRem";
+  23  
+
+src\assets\theme\components\form\radio.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme/base/borders";
+  18: import colors from "assets/theme/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22: import linearGradient from "assets/theme/functions/linearGradient";
+  23  
+
+src\assets\theme\components\form\select.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import pxToRem from "assets/theme/functions/pxToRem";
+  21  
+
+src\assets\theme\components\form\switchButton.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18: import borders from "assets/theme/base/borders";
+  19: import boxShadows from "assets/theme/base/boxShadows";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: // import rgba from "assets/theme/functions/rgba";
+  23: import pxToRem from "assets/theme/functions/pxToRem";
+  24: import linearGradient from "assets/theme/functions/linearGradient";
+  25  
+
+src\assets\theme\components\form\textField.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme/base/colors";
+  18  
+
+src\assets\theme\components\menu\index.js:
+  16  // Material Dashboard 2 React base styles
+  17: import boxShadows from "assets/theme/base/boxShadows";
+  18: import typography from "assets/theme/base/typography";
+  19: import colors from "assets/theme/base/colors";
+  20: import borders from "assets/theme/base/borders";
+  21  
+  22  // Material Dashboard 2 React helper functions
+  23: import pxToRem from "assets/theme/functions/pxToRem";
+  24  
+
+src\assets\theme\components\menu\menuItem.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18: import borders from "assets/theme/base/borders";
+  19: import typography from "assets/theme/base/typography";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme/functions/pxToRem";
+  23  
+
+src\assets\theme\components\stepper\index.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18: import borders from "assets/theme/base/borders";
+  19: import boxShadows from "assets/theme/base/boxShadows";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme/functions/pxToRem";
+  23: import linearGradient from "assets/theme/functions/linearGradient";
+  24  
+
+src\assets\theme\components\stepper\step.js:
+  16  // Material Dashboard 2 React helper functions
+  17: import pxToRem from "assets/theme/functions/pxToRem";
+  18  
+
+src\assets\theme\components\stepper\stepConnector.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme/base/borders";
+  18: import colors from "assets/theme/base/colors";
+  19  
+
+src\assets\theme\components\stepper\stepIcon.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import pxToRem from "assets/theme/functions/pxToRem";
+  21: import boxShadow from "assets/theme/functions/boxShadow";
+  22  
+
+src\assets\theme\components\stepper\stepLabel.js:
+  16  // Material Dashboard 2 React base styles
+  17: import typography from "assets/theme/base/typography";
+  18: import colors from "assets/theme/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22: import rgba from "assets/theme/functions/rgba";
+  23  
+
+src\assets\theme\components\table\tableCell.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme/base/borders";
+  18: import colors from "assets/theme/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme/functions/pxToRem";
+  22  
+
+src\assets\theme\components\table\tableContainer.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18: import boxShadows from "assets/theme/base/boxShadows";
+  19: import borders from "assets/theme/base/borders";
+  20  
+
+src\assets\theme\components\table\tableHead.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme/base/borders";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import pxToRem from "assets/theme/functions/pxToRem";
+  21  
+
+src\assets\theme\components\tabs\index.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18: import borders from "assets/theme/base/borders";
+  19: import boxShadows from "assets/theme/base/boxShadows";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme/functions/pxToRem";
+  23  
+
+src\assets\theme\components\tabs\tab.js:
+  16  // Material Dashboard 2 React base styles
+  17: import typography from "assets/theme/base/typography";
+  18: import borders from "assets/theme/base/borders";
+  19: import colors from "assets/theme/base/colors";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme/functions/pxToRem";
+  23  
+
+src\assets\theme\functions\gradientChartLine.js:
+  20  // Material Dashboard 2 React helper functions
+  21: import rgba from "assets/theme/functions/rgba";
+  22  
+
+src\assets\theme-dark\index.js:
+  20  // Material Dashboard 2 React base styles
+  21: import colors from "assets/theme-dark/base/colors";
+  22: import breakpoints from "assets/theme-dark/base/breakpoints";
+  23: import typography from "assets/theme-dark/base/typography";
+  24: import boxShadows from "assets/theme-dark/base/boxShadows";
+  25: import borders from "assets/theme-dark/base/borders";
+  26: import globals from "assets/theme-dark/base/globals";
+  27  
+  28  // Material Dashboard 2 React helper functions
+  29: import boxShadow from "assets/theme-dark/functions/boxShadow";
+  30: import hexToRgb from "assets/theme-dark/functions/hexToRgb";
+  31: import linearGradient from "assets/theme-dark/functions/linearGradient";
+  32: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  33: import rgba from "assets/theme-dark/functions/rgba";
+  34  
+  35  // Material Dashboard 2 React components base styles for @mui material components
+  36: import sidenav from "assets/theme-dark/components/sidenav";
+  37: import list from "assets/theme-dark/components/list";
+  38: import listItem from "assets/theme-dark/components/list/listItem";
+  39: import listItemText from "assets/theme-dark/components/list/listItemText";
+  40: import card from "assets/theme-dark/components/card";
+  41: import cardMedia from "assets/theme-dark/components/card/cardMedia";
+  42: import cardContent from "assets/theme-dark/components/card/cardContent";
+  43: import button from "assets/theme-dark/components/button";
+  44: import iconButton from "assets/theme-dark/components/iconButton";
+  45: import input from "assets/theme-dark/components/form/input";
+  46: import inputLabel from "assets/theme-dark/components/form/inputLabel";
+  47: import inputOutlined from "assets/theme-dark/components/form/inputOutlined";
+  48: import textField from "assets/theme-dark/components/form/textField";
+  49: import menu from "assets/theme-dark/components/menu";
+  50: import menuItem from "assets/theme-dark/components/menu/menuItem";
+  51: import switchButton from "assets/theme-dark/components/form/switchButton";
+  52: import divider from "assets/theme-dark/components/divider";
+  53: import tableContainer from "assets/theme-dark/components/table/tableContainer";
+  54: import tableHead from "assets/theme-dark/components/table/tableHead";
+  55: import tableCell from "assets/theme-dark/components/table/tableCell";
+  56: import linearProgress from "assets/theme-dark/components/linearProgress";
+  57: import breadcrumbs from "assets/theme-dark/components/breadcrumbs";
+  58: import slider from "assets/theme-dark/components/slider";
+  59: import avatar from "assets/theme-dark/components/avatar";
+  60: import tooltip from "assets/theme-dark/components/tooltip";
+  61: import appBar from "assets/theme-dark/components/appBar";
+  62: import tabs from "assets/theme-dark/components/tabs";
+  63: import tab from "assets/theme-dark/components/tabs/tab";
+  64: import stepper from "assets/theme-dark/components/stepper";
+  65: import step from "assets/theme-dark/components/stepper/step";
+  66: import stepConnector from "assets/theme-dark/components/stepper/stepConnector";
+  67: import stepLabel from "assets/theme-dark/components/stepper/stepLabel";
+  68: import stepIcon from "assets/theme-dark/components/stepper/stepIcon";
+  69: import select from "assets/theme-dark/components/form/select";
+  70: import formControlLabel from "assets/theme-dark/components/form/formControlLabel";
+  71: import formLabel from "assets/theme-dark/components/form/formLabel";
+  72: import checkbox from "assets/theme-dark/components/form/checkbox";
+  73: import radio from "assets/theme-dark/components/form/radio";
+  74: import autocomplete from "assets/theme-dark/components/form/autocomplete";
+  75: import container from "assets/theme-dark/components/container";
+  76: import popover from "assets/theme-dark/components/popover";
+  77: import buttonBase from "assets/theme-dark/components/buttonBase";
+  78: import icon from "assets/theme-dark/components/icon";
+  79: import svgIcon from "assets/theme-dark/components/svgIcon";
+  80: import link from "assets/theme-dark/components/link";
+  81: import dialog from "assets/theme-dark/components/dialog";
+  82: import dialogTitle from "assets/theme-dark/components/dialog/dialogTitle";
+  83: import dialogContent from "assets/theme-dark/components/dialog/dialogContent";
+  84: import dialogContentText from "assets/theme-dark/components/dialog/dialogContentText";
+  85: import dialogActions from "assets/theme-dark/components/dialog/dialogActions";
+  86  
+
+src\assets\theme-dark\theme-rtl.js:
+  20  // Material Dashboard 2 React base styles
+  21: import colors from "assets/theme-dark/base/colors";
+  22: import breakpoints from "assets/theme-dark/base/breakpoints";
+  23: import typography from "assets/theme-dark/base/typography";
+  24: import boxShadows from "assets/theme-dark/base/boxShadows";
+  25: import borders from "assets/theme-dark/base/borders";
+  26: import globals from "assets/theme-dark/base/globals";
+  27  
+  28  // Material Dashboard 2 React helper functions
+  29: import boxShadow from "assets/theme-dark/functions/boxShadow";
+  30: import hexToRgb from "assets/theme-dark/functions/hexToRgb";
+  31: import linearGradient from "assets/theme-dark/functions/linearGradient";
+  32: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  33: import rgba from "assets/theme-dark/functions/rgba";
+  34  
+  35  // Material Dashboard 2 React components base styles for @mui material components
+  36: import sidenav from "assets/theme-dark/components/sidenav";
+  37: import list from "assets/theme-dark/components/list";
+  38: import listItem from "assets/theme-dark/components/list/listItem";
+  39: import listItemText from "assets/theme-dark/components/list/listItemText";
+  40: import card from "assets/theme-dark/components/card";
+  41: import cardMedia from "assets/theme-dark/components/card/cardMedia";
+  42: import cardContent from "assets/theme-dark/components/card/cardContent";
+  43: import button from "assets/theme-dark/components/button";
+  44: import iconButton from "assets/theme-dark/components/iconButton";
+  45: import input from "assets/theme-dark/components/form/input";
+  46: import inputLabel from "assets/theme-dark/components/form/inputLabel";
+  47: import inputOutlined from "assets/theme-dark/components/form/inputOutlined";
+  48: import textField from "assets/theme-dark/components/form/textField";
+  49: import menu from "assets/theme-dark/components/menu";
+  50: import menuItem from "assets/theme-dark/components/menu/menuItem";
+  51: import switchButton from "assets/theme-dark/components/form/switchButton";
+  52: import divider from "assets/theme-dark/components/divider";
+  53: import tableContainer from "assets/theme-dark/components/table/tableContainer";
+  54: import tableHead from "assets/theme-dark/components/table/tableHead";
+  55: import tableCell from "assets/theme-dark/components/table/tableCell";
+  56: import linearProgress from "assets/theme-dark/components/linearProgress";
+  57: import breadcrumbs from "assets/theme-dark/components/breadcrumbs";
+  58: import slider from "assets/theme-dark/components/slider";
+  59: import avatar from "assets/theme-dark/components/avatar";
+  60: import tooltip from "assets/theme-dark/components/tooltip";
+  61: import appBar from "assets/theme-dark/components/appBar";
+  62: import tabs from "assets/theme-dark/components/tabs";
+  63: import tab from "assets/theme-dark/components/tabs/tab";
+  64: import stepper from "assets/theme-dark/components/stepper";
+  65: import step from "assets/theme-dark/components/stepper/step";
+  66: import stepConnector from "assets/theme-dark/components/stepper/stepConnector";
+  67: import stepLabel from "assets/theme-dark/components/stepper/stepLabel";
+  68: import stepIcon from "assets/theme-dark/components/stepper/stepIcon";
+  69: import select from "assets/theme-dark/components/form/select";
+  70: import formControlLabel from "assets/theme-dark/components/form/formControlLabel";
+  71: import formLabel from "assets/theme-dark/components/form/formLabel";
+  72: import checkbox from "assets/theme-dark/components/form/checkbox";
+  73: import radio from "assets/theme-dark/components/form/radio";
+  74: import autocomplete from "assets/theme-dark/components/form/autocomplete";
+  75: import container from "assets/theme-dark/components/container";
+  76: import popover from "assets/theme-dark/components/popover";
+  77: import buttonBase from "assets/theme-dark/components/buttonBase";
+  78: import icon from "assets/theme-dark/components/icon";
+  79: import svgIcon from "assets/theme-dark/components/svgIcon";
+  80: import link from "assets/theme-dark/components/link";
+  81: import dialog from "assets/theme-dark/components/dialog";
+  82: import dialogTitle from "assets/theme-dark/components/dialog/dialogTitle";
+  83: import dialogContent from "assets/theme-dark/components/dialog/dialogContent";
+  84: import dialogContentText from "assets/theme-dark/components/dialog/dialogContentText";
+  85: import dialogActions from "assets/theme-dark/components/dialog/dialogActions";
+  86  
+
+src\assets\theme-dark\base\borders.js:
+  22  // Material Dashboard 2 React Base Styles
+  23: import colors from "assets/theme-dark/base/colors";
+  24  
+  25  // Material Dashboard 2 React Helper Functions
+  26: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  27: import rgba from "assets/theme-dark/functions/rgba";
+  28  
+
+src\assets\theme-dark\base\boxShadows.js:
+  22  // Material Dashboard 2 React Base Styles
+  23: import colors from "assets/theme-dark/base/colors";
+  24  
+  25  // Material Dashboard 2 React Helper Functions
+  26: import boxShadow from "assets/theme-dark/functions/boxShadow";
+  27  
+
+src\assets\theme-dark\base\globals.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18  
+
+src\assets\theme-dark\base\typography.js:
+  22  // Material Dashboard 2 React Base Styles
+  23: import colors from "assets/theme-dark/base/colors";
+  24  
+  25  // Material Dashboard 2 React Helper Functions
+  26: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  27  
+
+src\assets\theme-dark\components\avatar.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme-dark/base/borders";
+  18  
+
+src\assets\theme-dark\components\breadcrumbs.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import typography from "assets/theme-dark/base/typography";
+  19  
+
+src\assets\theme-dark\components\container.js:
+  16  // Material Dashboard 2 React base styles
+  17: import breakpoints from "assets/theme-dark/base/breakpoints";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  21  
+
+src\assets\theme-dark\components\divider.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import rgba from "assets/theme-dark/functions/rgba";
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22  
+
+src\assets\theme-dark\components\icon.js:
+  16  // Material Dashboard 2 React helper functions
+  17: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  18  
+
+src\assets\theme-dark\components\iconButton.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18  
+
+src\assets\theme-dark\components\linearProgress.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme-dark/base/borders";
+  18: import colors from "assets/theme-dark/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22  
+
+src\assets\theme-dark\components\popover.js:
+  16  // Material Dashboard 2 React helper functions
+  17: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  18  
+  19  // Material Dashboard 2 React base styles
+  20: import colors from "assets/theme-dark/base/colors";
+  21: import boxShadows from "assets/theme-dark/base/boxShadows";
+  22: import borders from "assets/theme-dark/base/borders";
+  23  
+
+src\assets\theme-dark\components\sidenav.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import borders from "assets/theme-dark/base/borders";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22  
+
+src\assets\theme-dark\components\slider.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme/base/colors";
+  18: import borders from "assets/theme/base/borders";
+  19: import boxShadows from "assets/theme/base/boxShadows";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme/functions/pxToRem";
+  23  
+
+src\assets\theme-dark\components\svgIcon.js:
+  16  // Material Dashboard 2 React helper functions
+  17: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  18  
+
+src\assets\theme-dark\components\tooltip.js:
+  19  // Material Dashboard 2 React base styles
+  20: import colors from "assets/theme-dark/base/colors";
+  21: import typography from "assets/theme-dark/base/typography";
+  22: import borders from "assets/theme-dark/base/borders";
+  23  
+  24  // Material Dashboard 2 React helper functions
+  25: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  26  
+
+src\assets\theme-dark\components\button\contained.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import typography from "assets/theme-dark/base/typography";
+  19  
+  20  // Material Dashboard 2 React Helper Functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22  
+
+src\assets\theme-dark\components\button\index.js:
+  16  // Material Dashboard 2 React Button Styles
+  17: import root from "assets/theme-dark/components/button/root";
+  18: import contained from "assets/theme-dark/components/button/contained";
+  19: import outlined from "assets/theme-dark/components/button/outlined";
+  20: import buttonText from "assets/theme-dark/components/button/text";
+  21  
+
+src\assets\theme-dark\components\button\outlined.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import typography from "assets/theme-dark/base/typography";
+  19  
+  20  // Material Dashboard 2 React Helper Functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22  
+
+src\assets\theme-dark\components\button\root.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import typography from "assets/theme-dark/base/typography";
+  18: import borders from "assets/theme-dark/base/borders";
+  19  
+  20  // Material Dashboard 2 React Helper Functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22  
+
+src\assets\theme-dark\components\button\text.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import typography from "assets/theme-dark/base/typography";
+  19  
+  20  // Material Dashboard 2 React Helper Functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22  
+
+src\assets\theme-dark\components\card\cardContent.js:
+  16  // Material Dashboard 2 React Helper Functions
+  17: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  18  
+
+src\assets\theme-dark\components\card\cardMedia.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import borders from "assets/theme-dark/base/borders";
+  18  
+  19  // Material Dashboard 2 React Helper Functions
+  20: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  21  
+
+src\assets\theme-dark\components\card\index.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import borders from "assets/theme-dark/base/borders";
+  19: import boxShadows from "assets/theme-dark/base/boxShadows";
+  20  
+  21  // Material Dashboard 2 React Helper Function
+  22: import rgba from "assets/theme-dark/functions/rgba";
+  23  
+
+src\assets\theme-dark\components\dialog\dialogActions.js:
+  16  // Material Dashboard 2 React helper functions
+  17: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  18  
+
+src\assets\theme-dark\components\dialog\dialogContent.js:
+  16  // Material Dashboard 2 React base styles
+  17: import typography from "assets/theme-dark/base/typography";
+  18: import borders from "assets/theme-dark/base/borders";
+  19: import colors from "assets/theme-dark/base/colors";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  23: import rgba from "assets/theme-dark/functions/rgba";
+  24  
+
+src\assets\theme-dark\components\dialog\dialogContentText.js:
+  16  // Material Dashboard 2 React base styles
+  17: import typography from "assets/theme-dark/base/typography";
+  18: import colors from "assets/theme-dark/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import rgba from "assets/theme-dark/functions/rgba";
+  22  
+
+src\assets\theme-dark\components\dialog\dialogTitle.js:
+  16  // Material Dashboard 2 React base styles
+  17: import typography from "assets/theme-dark/base/typography";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  21  
+
+src\assets\theme-dark\components\dialog\index.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme-dark/base/borders";
+  18: import boxShadows from "assets/theme-dark/base/boxShadows";
+  19  
+
+src\assets\theme-dark\components\form\autocomplete.js:
+  16  // Material Dashboard 2 React base styles
+  17: import boxShadows from "assets/theme-dark/base/boxShadows";
+  18: import typography from "assets/theme-dark/base/typography";
+  19: import colors from "assets/theme-dark/base/colors";
+  20: import borders from "assets/theme-dark/base/borders";
+  21  
+  22  // Material Dashboard 2 React helper functions
+  23: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  24: import rgba from "assets/theme-dark/functions/rgba";
+  25  
+
+src\assets\theme-dark\components\form\checkbox.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme-dark/base/borders";
+  18: import colors from "assets/theme-dark/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22: import linearGradient from "assets/theme-dark/functions/linearGradient";
+  23  
+
+src\assets\theme-dark\components\form\formControlLabel.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import typography from "assets/theme-dark/base/typography";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22  
+
+src\assets\theme-dark\components\form\formLabel.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18  
+
+src\assets\theme-dark\components\form\input.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import typography from "assets/theme-dark/base/typography";
+  19: import borders from "assets/theme-dark/base/borders";
+  20  
+  21  // Material Dashboard 2 React Helper Functions
+  22: import rgba from "assets/theme-dark/functions/rgba";
+  23  
+
+src\assets\theme-dark\components\form\inputLabel.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import typography from "assets/theme-dark/base/typography";
+  19  
+
+src\assets\theme-dark\components\form\inputOutlined.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import borders from "assets/theme-dark/base/borders";
+  19: import typography from "assets/theme-dark/base/typography";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  23: import rgba from "assets/theme-dark/functions/rgba";
+  24  
+
+src\assets\theme-dark\components\form\radio.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme-dark/base/borders";
+  18: import colors from "assets/theme-dark/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22: import linearGradient from "assets/theme-dark/functions/linearGradient";
+  23  
+
+src\assets\theme-dark\components\form\select.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  21  
+
+src\assets\theme-dark\components\form\switchButton.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import borders from "assets/theme-dark/base/borders";
+  19: import boxShadows from "assets/theme-dark/base/boxShadows";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: // import rgba from "assets/theme-dark/functions/rgba";
+  23: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  24: import linearGradient from "assets/theme-dark/functions/linearGradient";
+  25  
+
+src\assets\theme-dark\components\form\textField.js:
+  16  // Material Dashboard 2 React Base Styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18  
+
+src\assets\theme-dark\components\menu\index.js:
+  16  // Material Dashboard 2 React base styles
+  17: import boxShadows from "assets/theme-dark/base/boxShadows";
+  18: import typography from "assets/theme-dark/base/typography";
+  19: import colors from "assets/theme-dark/base/colors";
+  20: import borders from "assets/theme-dark/base/borders";
+  21  
+  22  // Material Dashboard 2 React helper functions
+  23: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  24  
+
+src\assets\theme-dark\components\menu\menuItem.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import borders from "assets/theme-dark/base/borders";
+  19: import typography from "assets/theme-dark/base/typography";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  23: import rgba from "assets/theme-dark/functions/rgba";
+  24  
+
+src\assets\theme-dark\components\stepper\index.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import borders from "assets/theme-dark/base/borders";
+  19: import boxShadows from "assets/theme-dark/base/boxShadows";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  23: import linearGradient from "assets/theme-dark/functions/linearGradient";
+  24  
+
+src\assets\theme-dark\components\stepper\step.js:
+  16  // Material Dashboard 2 React helper functions
+  17: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  18  
+
+src\assets\theme-dark\components\stepper\stepConnector.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme-dark/base/borders";
+  18: import colors from "assets/theme-dark/base/colors";
+  19  
+
+src\assets\theme-dark\components\stepper\stepIcon.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  21: import boxShadow from "assets/theme-dark/functions/boxShadow";
+  22  
+
+src\assets\theme-dark\components\stepper\stepLabel.js:
+  16  // Material Dashboard 2 React base styles
+  17: import typography from "assets/theme-dark/base/typography";
+  18: import colors from "assets/theme-dark/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22: import rgba from "assets/theme-dark/functions/rgba";
+  23  
+
+src\assets\theme-dark\components\table\tableCell.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme-dark/base/borders";
+  18: import colors from "assets/theme-dark/base/colors";
+  19  
+  20  // Material Dashboard 2 React helper functions
+  21: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  22  
+
+src\assets\theme-dark\components\table\tableContainer.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import boxShadows from "assets/theme-dark/base/boxShadows";
+  19: import borders from "assets/theme-dark/base/borders";
+  20  
+
+src\assets\theme-dark\components\table\tableHead.js:
+  16  // Material Dashboard 2 React base styles
+  17: import borders from "assets/theme-dark/base/borders";
+  18  
+  19  // Material Dashboard 2 React helper functions
+  20: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  21  
+
+src\assets\theme-dark\components\tabs\index.js:
+  16  // Material Dashboard 2 React base styles
+  17: import colors from "assets/theme-dark/base/colors";
+  18: import borders from "assets/theme-dark/base/borders";
+  19: import boxShadows from "assets/theme-dark/base/boxShadows";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  23  
+
+src\assets\theme-dark\components\tabs\tab.js:
+  16  // Material Dashboard 2 React base styles
+  17: import typography from "assets/theme-dark/base/typography";
+  18: import borders from "assets/theme-dark/base/borders";
+  19: import colors from "assets/theme-dark/base/colors";
+  20  
+  21  // Material Dashboard 2 React helper functions
+  22: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  23  
+
+src\assets\theme-dark\functions\boxShadow.js:
+  20  // Material Dashboard 2 React helper functions
+  21: import rgba from "assets/theme-dark/functions/rgba";
+  22: import pxToRem from "assets/theme-dark/functions/pxToRem";
+  23  
+
+src\assets\theme-dark\functions\gradientChartLine.js:
+  20  // Material Dashboard 2 React helper functions
+  21: import rgba from "assets/theme-dark/functions/rgba";
+  22  
+
+src\assets\theme-dark\functions\rgba.js:
+  21  // Material Dashboard 2 React helper functions
+  22: import hexToRgb from "assets/theme-dark/functions/hexToRgb";
+  23  
