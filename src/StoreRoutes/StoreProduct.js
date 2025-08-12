@@ -159,7 +159,6 @@ function StoreProduct() {
 
   useEffect(() => {
     const id = localStorage.getItem("storeId");
-    console.log("Store ID:", id);
     setStoreId(id);
   }, []);
 
@@ -168,11 +167,10 @@ function StoreProduct() {
       if (!storeId) return;
       setLoading(true);
       try {
-        const response = await fetch(`https://fivlia.onrender.com/getStore?id=${storeId}`);
+        const response = await fetch(`https://api.fivlia.in/getStore?id=${storeId}`);
         if (response.status === 200) {
           const result = await response.json();
           const { store, categories, products } = result;
-          console.log("API Response:", result);
 
           const transformedProducts = products.map((product) => ({
             ...product,
@@ -184,7 +182,6 @@ function StoreProduct() {
 
           setProducts(transformedProducts);
           setData(transformedProducts);
-          console.log("Transformed Products:", transformedProducts);
         } else {
           console.error("API Error: Status", response.status);
         }
@@ -490,7 +487,7 @@ function StoreProduct() {
                           <td style={{ ...bodyCell, textAlign: "center" }}>{startIndex + index + 1}</td>
                           <td style={{ ...bodyCell, display: "flex", alignItems: "center", gap: 10 }}>
                             <img
-                              src={item.productThumbnailUrl || "https://via.placeholder.com/60"}
+                              src={`${process.env.REACT_APP_IMAGE_LINK}${item.productThumbnailUrl || "https://via.placeholder.com/60"}`}
                               alt={item.productName}
                               style={{
                                 width: 60,
@@ -669,7 +666,7 @@ function StoreProduct() {
                   <div key={item._id} className="product-card">
                     <div className="product-card-header">
                       <img
-                        src={item.productThumbnailUrl || "https://via.placeholder.com/60"}
+                        src={`${process.env.REACT_APP_IMAGE_LINK}${item.productThumbnailUrl || "https://via.placeholder.com/60"}`}
                         alt={item.productName}
                         style={{
                           width: 50,

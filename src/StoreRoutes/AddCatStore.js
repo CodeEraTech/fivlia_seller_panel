@@ -10,15 +10,13 @@ const AddStoreCat = () => {
     const [mainCategories, setMainCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('');
     const [data, setData] = useState([])
-     const [storeId, setStoreId] = useState('');
-
+    const [storeId, setStoreId] = useState('');
     const [controller] = useMaterialUIController();
     const { miniSidenav } = controller;
 
 
     useEffect(() => {
         const id = localStorage.getItem('storeId')
-        console.log(id);
         setStoreId(id)
       }, [])
 
@@ -31,7 +29,6 @@ const AddStoreCat = () => {
                     setMainCategories(result.result);
                     //   const allSubCategories = result.result.flatMap(cat => cat.subcat || []);
                     //   setSubCategories(allSubCategories);
-                    console.log("Main ", result.result);
                     // console.log("Sub", allSubCategories);
                 } else {
                     console.log('Something Wrong');
@@ -64,7 +61,7 @@ const AddStoreCat = () => {
         const formdata=new FormData();
          const categoryIds = data.map(cat => cat._id);
         try{
-           const result=await fetch(`https://fivlia.onrender.com/addCategoryInStore/${storeId}`,{
+           const result=await fetch(`https://api.fivlia.in/addCategoryInStore/${storeId}`,{
             method:"PUT",
              body: JSON.stringify({ Category: categoryIds }),
              headers:{

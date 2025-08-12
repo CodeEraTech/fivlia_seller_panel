@@ -163,6 +163,30 @@ const styles = `
   .status-select .MuiOutlinedInput-notchedOutline {
     border: none;
   }
+  .status-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+  }
+  .status-image {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    border-radius: 2px;
+  }
+  .status-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+  }
+  .status-menu-item img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 3px;
+  }
   @media (max-width: 768px) {
     .controls-container {
       flex-direction: column;
@@ -182,11 +206,12 @@ const styles = `
   }
 `;
 
-function StoreOrder() {
+function StoreOrder({ isDashboard = false }) {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
   const [orders, setOrders] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [deliveryStatuses, setDeliveryStatuses] = useState([]);
   const [entriesToShow, setEntriesToShow] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -207,7 +232,7 @@ function StoreOrder() {
           return setError("Store ID missing");
         }
 
-        const res = await fetch(`https://fivlia.onrender.com/orders?storeId=${storeId}`);
+        const res = await fetch(`https://api.fivlia.in/orders?storeId=${storeId}`);
         const data = await res.json();
         if (data.orders && Array.isArray(data.orders)) {
           setOrders(data.orders);
@@ -226,7 +251,7 @@ function StoreOrder() {
 
     const fetchDrivers = async () => {
       try {
-        const res = await fetch("https://fivlia.onrender.com/getDriver");
+        const res = await fetch("https://api.fivlia.in/getDriver");
         const data = await res.json();
         if (data.Driver && Array.isArray(data.Driver)) {
           setDrivers(data.Driver);
@@ -240,8 +265,25 @@ function StoreOrder() {
       }
     };
 
+    const fetchDeliveryStatuses = async () => {
+      try {
+        const res = await fetch("https://api.fivlia.in/getdeliveryStatus");
+        const data = await res.json();
+        if (data.Status && Array.isArray(data.Status)) {
+          setDeliveryStatuses(data.Status);
+        } else {
+          console.error("Invalid delivery statuses data");
+          setDeliveryStatuses([]);
+        }
+      } catch (err) {
+        console.error("Error fetching delivery statuses:", err);
+        setDeliveryStatuses([]);
+      }
+    };
+
     fetchOrders();
     fetchDrivers();
+    fetchDeliveryStatuses();
   }, []);
 
   const filteredOrders = orders.filter((order) => {
@@ -254,22 +296,73 @@ function StoreOrder() {
     );
   });
 
+  // For dashboard, show only 10 most recent orders
+  const dashboardOrders = isDashboard ? filteredOrders.slice(0, 10) : filteredOrders;
+  
   const totalPages = Math.ceil(filteredOrders.length / entriesToShow);
   const startIndex = (currentPage - 1) * entriesToShow;
-  const currentOrders = filteredOrders.slice(startIndex, startIndex + entriesToShow);
+  const currentOrders = isDashboard ? dashboardOrders : filteredOrders.slice(startIndex, startIndex + entriesToShow);
 
   const statusColor = (status) => {
     if (!status) return "#999";
+    
+    // Map status codes to colors
+    const statusCodeMap = {
+      "100": "#ff9800", // Pending - Orange
+      "101": "#2196f3", // Accepted - Blue
+      "102": "#9c27b0", // Picked Up - Purple
+      "103": "#ff5722", // On The Way - Deep Orange
+      "104": "#f44336", // Cancelled - Red
+      "105": "#4caf50", // Going to Pickup - Green
+      "106": "#4caf50", // Delivered - Green
+    };
+
+    // Check if status is a code first
+    if (statusCodeMap[status]) {
+      return statusCodeMap[status];
+    }
+
+    // Fallback to string matching
     switch (status.toLowerCase()) {
       case "successful":
-        return "green";
+      case "delivered":
+        return "#4caf50";
       case "pending":
-        return "orange";
+        return "#ff9800";
+      case "accepted":
+        return "#2196f3";
+      case "picked up":
+      case "picked":
+        return "#9c27b0";
+      case "on the way":
+      case "on the way":
+        return "#ff5722";
+      case "cancelled":
       case "failed":
-        return "red";
+        return "#f44336";
+      case "going to pickup":
+        return "#4caf50";
       default:
         return "#666";
     }
+  };
+
+  const getStatusInfo = (status) => {
+    if (!status) return { title: "-", image: null };
+    
+    // Find status in delivery statuses array
+    const statusInfo = deliveryStatuses.find(s => s.statusCode === status || s.statusTitle === status);
+    
+    if (statusInfo) {
+      return {
+        title: statusInfo.statusTitle,
+        image: statusInfo.image,
+        code: statusInfo.statusCode
+      };
+    }
+    
+    // Fallback to status string
+    return { title: status, image: null };
   };
 
   const truncateText = (text, maxLength = 30) => {
@@ -289,7 +382,11 @@ function StoreOrder() {
 
   const openEditModal = (order) => {
     setSelectedOrder(order);
-    setNewStatus(order.orderStatus || "");
+    // Try to find the status code for the current order status
+    const currentStatusInfo = deliveryStatuses.find(s => 
+      s.statusCode === order.orderStatus || s.statusTitle === order.orderStatus
+    );
+    setNewStatus(currentStatusInfo ? currentStatusInfo.statusCode : order.orderStatus || "");
     setEditModalOpen(true);
   };
 
@@ -305,10 +402,14 @@ function StoreOrder() {
     if (!selectedOrder || !newStatus) return;
 
     try {
-      const res = await fetch(`https://fivlia.onrender.com/orderStatus/${selectedOrder._id}`, {
+      // Get the status title for the selected status code
+      const statusInfo = deliveryStatuses.find(s => s.statusCode === newStatus);
+      const statusTitle = statusInfo ? statusInfo.statusTitle : newStatus;
+
+      const res = await fetch(`https://api.fivlia.in/orderStatus/${selectedOrder._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: statusTitle }),
       });
 
       if (res.ok) {
@@ -336,42 +437,49 @@ function StoreOrder() {
       <style>{styles}</style>
       <MDBox
         p={2}
-        style={{ marginLeft: miniSidenav ? "80px" : "250px", transition: "margin-left 0.3s ease" }}
+        style={{ 
+          marginLeft: isDashboard ? "0px" : (miniSidenav ? "80px" : "250px"), 
+          transition: "margin-left 0.3s ease" 
+        }}
       >
         <div className="order-container">
           <div className="order-box">
-            <div className="header">
-              <div>
-                <span style={{ fontWeight: "bold", fontSize: 26 }}>Orders</span>
-                <br />
-                <span style={{ fontSize: 16 }}>View and manage orders</span>
+            {!isDashboard && (
+              <div className="header">
+                <div>
+                  <span style={{ fontWeight: "bold", fontSize: 26 }}>Orders</span>
+                  <br />
+                  <span style={{ fontSize: 16 }}>View and manage orders</span>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="controls-container">
-              <div className="control-item">
-                <label>Entries</label>
-                <select
-                  value={entriesToShow}
-                  onChange={(e) => setEntriesToShow(Number(e.target.value))}
-                >
-                  {[5, 10, 20].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
+            {!isDashboard && (
+              <div className="controls-container">
+                <div className="control-item">
+                  <label>Entries</label>
+                  <select
+                    value={entriesToShow}
+                    onChange={(e) => setEntriesToShow(Number(e.target.value))}
+                  >
+                    {[5, 10, 20].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="control-item">
+                  <label>Search</label>
+                  <input
+                    className="search-input"
+                    placeholder="Search orders..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="control-item">
-                <label>Search</label>
-                <input
-                  className="search-input"
-                  placeholder="Search orders..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
+            )}
 
             {error && <div className="error-message">{error}</div>}
 
@@ -395,7 +503,7 @@ function StoreOrder() {
                       return (
                         <tr key={order._id}>
                           <td className="body-cell">{startIndex + index + 1}</td>
-                          <td className="body-cell">{order._id || "-"}</td>
+                          <td className="body-cell">{order.orderId || "-"}</td>
                           <td
                             className="body-cell"
                             onClick={() => openDetailsModal(order)}
@@ -404,7 +512,7 @@ function StoreOrder() {
                             {item ? (
                               <>
                                 <img
-                                  src={item.image || ""}
+                                  src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
                                   alt={item.name || "Item"}
                                   style={{
                                     width: 40,
@@ -437,7 +545,21 @@ function StoreOrder() {
                             className="body-cell"
                             style={{ color: statusColor(order.orderStatus) }}
                           >
-                            {order.orderStatus || "-"}
+                            {(() => {
+                              const statusInfo = getStatusInfo(order.orderStatus);
+                              return (
+                                <div className="status-display">
+                                  {statusInfo.image && (
+                                    <img
+                                      src={`${process.env.REACT_APP_IMAGE_LINK}${statusInfo.image}`}
+                                      alt={statusInfo.title}
+                                      className="status-image"
+                                    />
+                                  )}
+                                  <span>{statusInfo.title}</span>
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td
                             className="body-cell"
@@ -468,27 +590,29 @@ function StoreOrder() {
               </table>
             </div>
 
-            <div className="pagination">
-              <span>
-                Showing {startIndex + 1} to{" "}
-                {Math.min(startIndex + entriesToShow, filteredOrders.length)} of{" "}
-                {filteredOrders.length} orders
-              </span>
-              <div>
-                <button
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </button>
+            {!isDashboard && (
+              <div className="pagination">
+                <span>
+                  Showing {startIndex + 1} to{" "}
+                  {Math.min(startIndex + entriesToShow, filteredOrders.length)} of{" "}
+                  {filteredOrders.length} orders
+                </span>
+                <div>
+                  <button
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </MDBox>
@@ -505,7 +629,7 @@ function StoreOrder() {
                 mb={1}
               >
                 <img
-                  src={item.image || ""}
+                  src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
                   alt={item.name || "Item"}
                   style={{
                     width: 50,
@@ -578,17 +702,35 @@ function StoreOrder() {
                 if (!selected) {
                   return <em style={{ color: '#999' }}>Select Status</em>;
                 }
-                return selected;
+                const statusInfo = getStatusInfo(selected);
+                return (
+                  <div className="status-display">
+                    {statusInfo.image && (
+                      <img
+                        src={`${process.env.REACT_APP_IMAGE_LINK}${statusInfo.image}`}
+                        alt={statusInfo.title}
+                        className="status-image"
+                      />
+                    )}
+                    <span>{statusInfo.title}</span>
+                  </div>
+                );
               }}
             >
               <MenuItem value="" disabled>
                 <em>Select Status</em>
               </MenuItem>
-              <MenuItem value="Accepted">Accepted</MenuItem>
-              <MenuItem value="Picked">Picked</MenuItem>
-              <MenuItem value="On the Way">On the Way</MenuItem>
-              <MenuItem value="Delivered">Delivered</MenuItem>
-              <MenuItem value="Cancelled">Cancelled</MenuItem>
+              {deliveryStatuses.map((status) => (
+                <MenuItem key={status._id} value={status.statusCode}>
+                  <div className="status-menu-item">
+                    <img
+                      src={`${process.env.REACT_APP_IMAGE_LINK}${status.image}`}
+                      alt={status.statusTitle}
+                    />
+                    <span>{status.statusTitle}</span>
+                  </div>
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 

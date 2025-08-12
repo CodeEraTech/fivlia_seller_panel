@@ -1,10 +1,9 @@
 import React from "react";
-import { useLocation, NavLink } from "react-router-dom";
+import { useLocation,useNavigate, NavLink } from "react-router-dom";
 import List from "@mui/material/List";
 import Divider from "@mui/material/Divider";
 import Icon from "@mui/material/Icon";
 import StoreIcon from "@mui/icons-material/Store";
-
 import SidenavRoot from "components/Sidenav/SidenavRoot";
 import SidenavCollapse from "components/Sidenav/SidenavCollapse";
 import MDBox from "components/MDBox";
@@ -21,7 +20,7 @@ function StoreSidenav() {
   const [controller, dispatch] = useMaterialUIController();
   const { miniSidenav, transparentSidenav, whiteSidenav, darkMode } = controller;
   const location = useLocation();
-
+  const navigate = useNavigate();
   const closeSidenav = () => setMiniSidenav(dispatch, true);
 
   const renderRoutes = StoreRoutes.map(({ type, name, key, icon, route }) => {
@@ -33,7 +32,9 @@ function StoreSidenav() {
           <MDBox key={key} sx={{ cursor: "pointer" }} onClick={() => {
             if (window.confirm("Log out?")) {
               localStorage.clear();
-              window.location.href = "/";
+            // Then in logout:
+            navigate("/storeLogin");
+
             }
           }}>
             <SidenavCollapse name={name} icon={icon} active={false} />

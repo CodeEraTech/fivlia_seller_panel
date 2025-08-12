@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import "./Store.css";
 import logo from "./fivlialogo.png";
+import auth from "./firebaseConfig"; // 🔥 Import initialized auth from your config file
 
 function StoreLogin() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState(""); // Changed from username to email
   const [password, setPassword] = useState("");
   const [id, setId] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -27,7 +29,7 @@ function StoreLogin() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        PhoneNumber: username,
+        email: email, // this is your input
         password: password,
       }),
     });
@@ -37,11 +39,9 @@ function StoreLogin() {
     if (res.status === 200 && data.storeId) {
       alert("Login successful");
 
-      // Save for future use
       localStorage.setItem("userType", "store");
-      localStorage.setItem("storeId", data.storeId); // ⬅️ Store this ID
+      localStorage.setItem("storeId", data.storeId);
 
-      // Redirect to dashboard
       window.location.href = "/dashboard1";
     } else {
       alert(data.message || "Invalid credentials");
@@ -69,14 +69,15 @@ function StoreLogin() {
           />
           <h2>Login</h2>
           <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
           <div className="password-wrapper">
             <input
+              style={{ width: "343px" }}
               type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}

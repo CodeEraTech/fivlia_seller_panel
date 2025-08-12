@@ -43,7 +43,7 @@ function StoreTabel() {
   useEffect(() => {
     const getAllStores = async () => {
       try {
-        const result = await fetch("https://fivlia.onrender.com/getStore");
+        const result = await fetch("https://api.fivlia.in/getStore");
         if (result.status === 200) {
           const res = await result.json();
           setStores(res.stores);

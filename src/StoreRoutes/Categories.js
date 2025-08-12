@@ -36,21 +36,18 @@ function StoreCategories() {
   // Fetch storeId and store details
   useEffect(() => {
     const id = localStorage.getItem("storeId");
-    console.log("Store ID:", id);
     setStoreId(id);
 
     const getStoreDetails = async () => {
       if (!id) return; // Skip if storeId is not available
       setLoading(true); // Set loading to true
       try {
-        const response = await fetch(`https://fivlia.onrender.com/getStore?id=${id}`);
+        const response = await fetch(`https://api.fivlia.in/getStore?id=${id}`);
         if (response.status === 200) {
           const result = await response.json();
           const { store, categories: apiCategories, products } = result;
-          console.log("API Response:", result);
           // Ensure categories is an array
           setMainCategories(Array.isArray(apiCategories) ? apiCategories : []);
-          console.log("Categories:", apiCategories);
         } else {
           console.error("API Error: Status", response.status);
           setMainCategories([]); // Reset to empty array on error
@@ -97,7 +94,7 @@ function StoreCategories() {
     try {
       const confirmDelete = window.confirm("Are you sure you want to Remove this category?");
       if (confirmDelete) {
-        const result = await fetch(`https://fivlia.onrender.com/removeCategoryInStore/${storeId}`, {
+        const result = await fetch(`https://api.fivlia.in/removeCategoryInStore/${storeId}`, {
           method: "DELETE",
           body: JSON.stringify({
             Category: id,
@@ -131,7 +128,7 @@ function StoreCategories() {
     setMainCategories(updated);
 
     try {
-      const res = await fetch(`https://fivlia.onrender.com/editCat/${id}`, {
+      const res = await fetch(`https://api.fivlia.in/editCat/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -142,7 +139,6 @@ function StoreCategories() {
       });
 
       if (res.status === 200) {
-        console.log("Status updated successfully");
       } else {
         console.error("Failed to update status:", res.status);
         // Optionally revert state if API fails
@@ -277,7 +273,7 @@ function StoreCategories() {
                       <td style={{ ...bodyCell, textAlign: "center" }}>
                         <div style={{ display: "flex", gap: "30px", alignItems: "center" }}>
                           <img
-                            src={item.image || "https://via.placeholder.com/50"}
+                            src={`${process.env.REACT_APP_IMAGE_LINK}${item.image || "https://via.placeholder.com/50"}`}
                             alt={item.name}
                             style={{
                               width: "50px",
