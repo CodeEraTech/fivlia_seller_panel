@@ -1,221 +1,75 @@
 import React, { useState, useEffect } from "react";
+import { Button, Typography, CircularProgress, Modal, Box, FormControl, Select, MenuItem} from "@mui/material";
+import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
-import {
-  Modal,
-  Box,
-  Typography,
-  Select,
-  MenuItem,
-  Button,
-  FormControl,
-} from "@mui/material";
 
-const styles = `
-  .order-container {
-    width: 100%;
-    font-family: 'Urbanist', sans-serif;
-  }
-  .order-box {
-    width: 100%;
-    border-radius: 15px;
-    padding: 20px;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-  .controls-container {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
-  }
-  .control-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .control-item label {
-    font-size: 16px;
-    color: #333;
-  }
-  .control-item select, .control-item input {
-    font-size: 16px;
-    padding: 8px 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    outline: none;
-  }
-  .search-input {
-    border-radius: 20px;
-    height: 45px;
-    width: 200px;
-    padding-left: 15px;
-  }
-  .table-container {
-    overflow-x: auto;
-    width: 100%;
-  }
-  .orders-table {
-    width: 100%;
-    border-collapse: collapse;
-    box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    border: 1px solid #007bff;
-  }
-  .header-cell {
-    padding: 14px 12px;
-    border: 1px solid #ddd;
-    font-size: 18px;
-    font-weight: bold;
-    background-color: #007bff;
-    color: white;
-    text-align: left;
-  }
-  .body-cell {
-    padding: 12px;
-    border: 1px solid #eee;
-    font-size: 17px;
-    background-color: #fff;
-    text-align: left;
-  }
-  .truncate-text {
-    max-width: 200px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: inline-block;
-  }
-  .pagination {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
-  }
-  .pagination button {
-    padding: 8px 16px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  .pagination button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-  .error-message {
-    color: #d32f2f;
-    font-size: 14px;
-    margin-top: 5px;
-  }
-  .edit-button {
-    background-color: #007bff;
-    color: white;
-    font-weight: bold;
-    text-transform: capitalize;
-  }
-  .modal-content {
-    background: white;
-    border-radius: 8px;
-    padding: 16px;
-    max-width: 400px;
-    margin: 5% auto;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    border: 1px solid #e0e0e0;
-  }
-  .modal-header {
-    font-size: 20px;
-    font-weight: 600;
-    color: #1a237e;
-    margin-bottom: 12px;
-  }
-  .modal-button {
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-  .modal-button:hover {
-    transform: translateY(-1px);
-  }
-  .status-select {
-    border-radius: 6px;
-    background: #f8f9fa;
-    border: 1px solid #007bff;
-  }
-  .status-select .MuiSelect-select {
-    padding: 10px 14px;
-    font-size: 16px;
-    color: #344767;
-  }
-  .status-select .MuiOutlinedInput-notchedOutline {
-    border: none;
-  }
-  .status-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 500;
-  }
-  .status-image {
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-    border-radius: 2px;
-  }
-  .status-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 16px;
-  }
-  .status-menu-item img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    border-radius: 3px;
-  }
-  @media (max-width: 768px) {
-    .controls-container {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    .control-item {
-      width: 100%;
-    }
-    .control-item select, .control-item input {
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .modal-content {
-      width: 90%;
-      margin: 10% auto;
-    }
-  }
-`;
+const headerContainerStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 20,
+  padding: "15px",
+  background: "#f4f6f8",
+  borderRadius: "10px",
+};
+
+const inputSearchStyle = {
+  padding: "10px 14px",
+  borderRadius: 6,
+  border: "1px solid #ccc",
+  fontSize: 14,
+  width: 220,
+};
+
+const updateBtnStyle = {
+  backgroundColor: "#007bff",
+  color: "#fff",
+  textTransform: "capitalize",
+};
+
+const modalBoxStyle = {
+  background: "white",
+  borderRadius: 8,
+  p: 2,
+  maxWidth: 400,
+  mx: "auto",
+  mt: "5%",
+  boxShadow: 3,
+};
+
+const customTableStyles = {
+  headCells: {
+    style: {
+      fontSize: "16px",
+      fontWeight: "bold",
+      backgroundColor: "#3c95ef",
+      color: "white",
+      padding: "12px",
+    },
+  },
+  cells: {
+    style: {
+      fontSize: "14px",
+      paddingTop: "16px",
+      paddingBottom: "16px",
+    },
+  },
+};
 
 function StoreOrder({ isDashboard = false }) {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
+
   const [orders, setOrders] = useState([]);
-  const [drivers, setDrivers] = useState([]);
   const [deliveryStatuses, setDeliveryStatuses] = useState([]);
-  const [entriesToShow, setEntriesToShow] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
 
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
@@ -223,173 +77,74 @@ function StoreOrder({ isDashboard = false }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [newStatus, setNewStatus] = useState("");
 
+  // Fetch orders and statuses
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
         const storeId = localStorage.getItem("storeId");
-        if (!storeId) {
-          alert("Store ID missing");
-          return setError("Store ID missing");
-        }
+        if (!storeId) throw new Error("Store ID missing");
 
-        const res = await fetch(`https://api.fivlia.in/orders?storeId=${storeId}`);
-        const data = await res.json();
-        if (data.orders && Array.isArray(data.orders)) {
-          setOrders(data.orders);
-          setError("");
-        } else {
-          alert("Invalid orders data");
-          setError("Invalid orders data");
-        }
-        setCurrentPage(1);
+        const params = `?storeId=${storeId}&page=${page}&limit=${perPage}&search=${searchTerm}`;
+        const [ordersRes, statusesRes] = await Promise.all([
+          fetch(`https://api.fivlia.in/orders${params}`),
+          fetch("https://api.fivlia.in/getdeliveryStatus")
+        ]);
+
+        const ordersData = await ordersRes.json();
+        const statusesData = await statusesRes.json();
+
+        if (!Array.isArray(ordersData.orders)) throw new Error("Invalid orders data");
+        if (!Array.isArray(statusesData.Status)) throw new Error("Invalid statuses data");
+
+        setOrders(ordersData.orders);
+        setTotalRows(ordersData.count || ordersData.orders.length);
+        setDeliveryStatuses(statusesData.Status);
+        setError("");
       } catch (err) {
-        console.error("Error loading orders:", err);
-        alert("Failed to load orders");
-        setError("Failed to load orders");
+        console.error(err);
+        setError(err.message || "Error loading data");
+      } finally {
+        setLoading(false);
       }
     };
-
-    const fetchDrivers = async () => {
-      try {
-        const res = await fetch("https://api.fivlia.in/getDriver");
-        const data = await res.json();
-        if (data.Driver && Array.isArray(data.Driver)) {
-          setDrivers(data.Driver);
-        } else {
-          alert("Invalid drivers data");
-          setDrivers([]);
-        }
-      } catch (err) {
-        console.error("Error fetching drivers:", err);
-        alert("Failed to fetch drivers");
-      }
-    };
-
-    const fetchDeliveryStatuses = async () => {
-      try {
-        const res = await fetch("https://api.fivlia.in/getdeliveryStatus");
-        const data = await res.json();
-        if (data.Status && Array.isArray(data.Status)) {
-          setDeliveryStatuses(data.Status);
-        } else {
-          console.error("Invalid delivery statuses data");
-          setDeliveryStatuses([]);
-        }
-      } catch (err) {
-        console.error("Error fetching delivery statuses:", err);
-        setDeliveryStatuses([]);
-      }
-    };
-
-    fetchOrders();
-    fetchDrivers();
-    fetchDeliveryStatuses();
-  }, []);
-
-  const filteredOrders = orders.filter((order) => {
-    const search = searchTerm.toLowerCase();
-    return (
-      order._id?.toLowerCase().includes(search) ||
-      (order.addressId?.fullAddress?.toLowerCase().includes(search) || "") ||
-      (order.orderStatus?.toLowerCase().includes(search) || "") ||
-      (order.paymentStatus?.toLowerCase().includes(search) || "")
-    );
-  });
-
-  // For dashboard, show only 10 most recent orders
-  const dashboardOrders = isDashboard ? filteredOrders.slice(0, 10) : filteredOrders;
-  
-  const totalPages = Math.ceil(filteredOrders.length / entriesToShow);
-  const startIndex = (currentPage - 1) * entriesToShow;
-  const currentOrders = isDashboard ? dashboardOrders : filteredOrders.slice(startIndex, startIndex + entriesToShow);
+    fetchData();
+  }, [page, perPage, searchTerm]);
 
   const statusColor = (status) => {
-    if (!status) return "#999";
-    
-    // Map status codes to colors
-    const statusCodeMap = {
-      "100": "#ff9800", // Pending - Orange
-      "101": "#2196f3", // Accepted - Blue
-      "102": "#9c27b0", // Picked Up - Purple
-      "103": "#ff5722", // On The Way - Deep Orange
-      "104": "#f44336", // Cancelled - Red
-      "105": "#4caf50", // Going to Pickup - Green
-      "106": "#4caf50", // Delivered - Green
+    const map = {
+      "100": "#ff9800", "101": "#2196f3", "102": "#9c27b0",
+      "103": "#ff5722", "104": "#f44336", "105": "#4caf50", "106": "#4caf50"
     };
-
-    // Check if status is a code first
-    if (statusCodeMap[status]) {
-      return statusCodeMap[status];
-    }
-
-    // Fallback to string matching
-    switch (status.toLowerCase()) {
-      case "successful":
-      case "delivered":
-        return "#4caf50";
-      case "pending":
-        return "#ff9800";
-      case "accepted":
-        return "#2196f3";
-      case "picked up":
-      case "picked":
-        return "#9c27b0";
-      case "on the way":
-      case "on the way":
-        return "#ff5722";
-      case "cancelled":
-      case "failed":
-        return "#f44336";
-      case "going to pickup":
-        return "#4caf50";
-      default:
-        return "#666";
-    }
+    return map[status] || "#666";
   };
 
   const getStatusInfo = (status) => {
-    if (!status) return { title: "-", image: null };
-    
-    // Find status in delivery statuses array
-    const statusInfo = deliveryStatuses.find(s => s.statusCode === status || s.statusTitle === status);
-    
-    if (statusInfo) {
-      return {
-        title: statusInfo.statusTitle,
-        image: statusInfo.image,
-        code: statusInfo.statusCode
-      };
-    }
-    
-    // Fallback to status string
-    return { title: status, image: null };
+    const info = deliveryStatuses.find(
+      (s) => s.statusCode === status || s.statusTitle === status
+    );
+    return info ? { title: info.statusTitle, image: info.image } : { title: status || "-", image: null };
   };
 
-  const truncateText = (text, maxLength = 30) => {
-    if (!text) return "-";
-    return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
-  };
+  const truncateText = (text, max = 30) =>
+    !text ? "-" : text.length > max ? `${text.slice(0, max)}...` : text;
 
-  const openDetailsModal = (order) => {
-    setSelectedOrder(order);
+  const openDetailsModal = (o) => {
+    setSelectedOrder(o);
     setDetailsModalOpen(true);
   };
-
-  const openAddressModal = (order) => {
-    setSelectedOrder(order);
+  const openAddressModal = (o) => {
+    setSelectedOrder(o);
     setAddressModalOpen(true);
   };
-
-  const openEditModal = (order) => {
-    setSelectedOrder(order);
-    // Try to find the status code for the current order status
-    const currentStatusInfo = deliveryStatuses.find(s => 
-      s.statusCode === order.orderStatus || s.statusTitle === order.orderStatus
+  const openEditModal = (o) => {
+    setSelectedOrder(o);
+    const info = deliveryStatuses.find(
+      (s) => s.statusCode === o.orderStatus || s.statusTitle === o.orderStatus
     );
-    setNewStatus(currentStatusInfo ? currentStatusInfo.statusCode : order.orderStatus || "");
+    setNewStatus(info ? info.statusCode : o.orderStatus || "");
     setEditModalOpen(true);
   };
-
   const closeModal = () => {
     setDetailsModalOpen(false);
     setAddressModalOpen(false);
@@ -400,265 +155,191 @@ function StoreOrder({ isDashboard = false }) {
 
   const handleSave = async () => {
     if (!selectedOrder || !newStatus) return;
-
     try {
-      // Get the status title for the selected status code
-      const statusInfo = deliveryStatuses.find(s => s.statusCode === newStatus);
-      const statusTitle = statusInfo ? statusInfo.statusTitle : newStatus;
-
+      const statusInfo = deliveryStatuses.find((s) => s.statusCode === newStatus);
+      const statusTitle = statusInfo?.statusTitle || newStatus;
       const res = await fetch(`https://api.fivlia.in/orderStatus/${selectedOrder._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: statusTitle }),
+        body: JSON.stringify({ status: statusTitle })
       });
+      if (!res.ok) throw new Error("Failed to update status");
+      const { update } = await res.json();
 
-      if (res.ok) {
-        const data = await res.json();
-        const updatedOrders = orders.map((order) =>
-          order._id === selectedOrder._id
-            ? { ...order, orderStatus: data.update.orderStatus }
-            : order
-        );
-        setOrders(updatedOrders);
-        closeModal();
-      } else {
-        alert("Failed to update status");
-        setError("Failed to update order status");
-      }
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === selectedOrder._id ? { ...o, orderStatus: update.orderStatus } : o
+        )
+      );
+      closeModal();
     } catch (err) {
-      console.error("Error updating order status:", err);
-      alert("Error updating status");
-      setError("Error updating order status");
+      console.error(err);
+      setError(err.message || "Error updating status");
     }
   };
 
+  const columns = [
+    {
+      name: "No.",
+      selector: (row, index) => (page - 1) * perPage + index + 1,
+      width: "70px",
+      center: "true",
+    },
+    { name: "Order ID", selector: (row) => row.orderId || "-", sortable: true },
+    {
+      name: "Details",
+      cell: (row) => {
+        const item = row.items?.[0];
+        return item ? (
+          <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => openDetailsModal(row)}>
+            <img
+              src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
+              alt={item.name}
+              style={{ width: 40, height: 40, marginRight: 6, objectFit: "cover", borderRadius: 4 }}
+            />
+            {truncateText(item.name)}
+          </div>
+        ) : "-";
+      },
+    },
+    {
+      name: "Address",
+      cell: (row) => (
+        <span style={{ cursor: "pointer" }} onClick={() => openAddressModal(row)}>
+          {truncateText(row.addressId?.fullAddress)}
+        </span>
+      ),
+    },
+    {
+      name: "Payment",
+      selector: (row) => row.paymentStatus || "-",
+      cell: (row) => (
+        <span style={{ color: statusColor(row.paymentStatus) }}>
+          {row.paymentStatus || "-"}
+        </span>
+      ),
+    },
+    {
+      name: "Status",
+      cell: (row) => {
+        const info = getStatusInfo(row.orderStatus);
+        return (
+          <div style={{ display: "flex", alignItems: "center", color: statusColor(row.orderStatus) }}>
+            {info.image && (
+              <img
+                src={`${process.env.REACT_APP_IMAGE_LINK}${info.image}`}
+                alt={info.title}
+                style={{ width: 20, height: 20, marginRight: 6, objectFit: "contain", borderRadius: 2 }}
+              />
+            )}
+            {info.title}
+          </div>
+        );
+      },
+    },
+    {
+      name: "Action",
+      cell: (row) => (
+        <Button variant="contained" style={updateBtnStyle} onClick={() => openEditModal(row)}>
+          Edit
+        </Button>
+      ),
+      ignoreRowClick: true,
+      allowoverflow: true,
+      button: "true",
+    },
+  ];
+
   return (
     <>
-      <style>{styles}</style>
       <MDBox
         p={2}
-        style={{ 
-          marginLeft: isDashboard ? "0px" : (miniSidenav ? "80px" : "250px"), 
-          transition: "margin-left 0.3s ease" 
+        style={{
+          marginLeft: isDashboard ? "0px" : miniSidenav ? "100px" : "270px",
+          transition: "margin-left 0.3s ease",
+          position: "relative",
         }}
       >
-        <div className="order-container">
-          <div className="order-box">
-            {!isDashboard && (
-              <div className="header">
-                <div>
-                  <span style={{ fontWeight: "bold", fontSize: 26 }}>Orders</span>
-                  <br />
-                  <span style={{ fontSize: 16 }}>View and manage orders</span>
-                </div>
-              </div>
-            )}
-
-            {!isDashboard && (
-              <div className="controls-container">
-                <div className="control-item">
-                  <label>Entries</label>
-                  <select
-                    value={entriesToShow}
-                    onChange={(e) => setEntriesToShow(Number(e.target.value))}
-                  >
-                    {[5, 10, 20].map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="control-item">
-                  <label>Search</label>
-                  <input
-                    className="search-input"
-                    placeholder="Search orders..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="table-container">
-              <table className="orders-table">
-                <thead>
-                  <tr>
-                    <th className="header-cell">No.</th>
-                    <th className="header-cell">Order ID</th>
-                    <th className="header-cell">Details</th>
-                    <th className="header-cell">Address</th>
-                    <th className="header-cell">Payment</th>
-                    <th className="header-cell">Status</th>
-                    <th className="header-cell">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentOrders.length > 0 ? (
-                    currentOrders.map((order, index) => {
-                      const item = order.items?.[0];
-                      return (
-                        <tr key={order._id}>
-                          <td className="body-cell">{startIndex + index + 1}</td>
-                          <td className="body-cell">{order.orderId || "-"}</td>
-                          <td
-                            className="body-cell"
-                            onClick={() => openDetailsModal(order)}
-                            style={{ cursor: "pointer" }}
-                          >
-                            {item ? (
-                              <>
-                                <img
-                                  src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
-                                  alt={item.name || "Item"}
-                                  style={{
-                                    width: 40,
-                                    height: 40,
-                                    marginRight: 6,
-                                    verticalAlign: "middle",
-                                    objectFit: "cover",
-                                  }}
-                                />
-                                <span className="truncate-text">{truncateText(item.name)}</span>
-                              </>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-                          <td
-                            className="body-cell"
-                            onClick={() => openAddressModal(order)}
-                            style={{ cursor: "pointer" }}
-                          >
-                            <span className="truncate-text">{truncateText(order.addressId?.fullAddress)}</span>
-                          </td>
-                          <td
-                            className="body-cell"
-                            style={{ color: statusColor(order.paymentStatus) }}
-                          >
-                            {order.paymentStatus || "-"}
-                          </td>
-                          <td
-                            className="body-cell"
-                            style={{ color: statusColor(order.orderStatus) }}
-                          >
-                            {(() => {
-                              const statusInfo = getStatusInfo(order.orderStatus);
-                              return (
-                                <div className="status-display">
-                                  {statusInfo.image && (
-                                    <img
-                                      src={`${process.env.REACT_APP_IMAGE_LINK}${statusInfo.image}`}
-                                      alt={statusInfo.title}
-                                      className="status-image"
-                                    />
-                                  )}
-                                  <span>{statusInfo.title}</span>
-                                </div>
-                              );
-                            })()}
-                          </td>
-                          <td
-                            className="body-cell"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Button
-                              className="edit-button"
-                              onClick={() => openEditModal(order)}
-                            >
-                              Edit
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan="7"
-                        className="body-cell"
-                        style={{ textAlign: "center" }}
-                      >
-                        No orders found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {!isDashboard && (
-              <div className="pagination">
-                <span>
-                  Showing {startIndex + 1} to{" "}
-                  {Math.min(startIndex + entriesToShow, filteredOrders.length)} of{" "}
-                  {filteredOrders.length} orders
-                </span>
-                <div>
-                  <button
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+        <div style={headerContainerStyle}>
+          <div>
+            <Typography variant="h5" fontWeight="bold">Orders</Typography>
+            <Typography variant="subtitle1" color="textSecondary">
+              View and manage orders
+            </Typography>
           </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <input
+              type="text"
+              placeholder="Search orders…"
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+              style={inputSearchStyle}
+            />
+          </div>
+        </div>
+
+        {error && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
+
+        {loading && (
+          <Box
+            sx={{
+              position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+              backgroundColor: "rgba(255,255,255,0.7)", zIndex: 2,
+              display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 1,
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        )}
+        <div style={{ background: "white", borderRadius: "10px", padding: "10px" }}>
+          <DataTable
+            columns={columns}
+            data={orders}
+            customStyles={customTableStyles}
+            pagination={true}
+            paginationServer={true}
+            paginationTotalRows={totalRows}
+            paginationPerPage={perPage}
+            onChangePage={(page) => setPage(page)}
+            onChangeRowsPerPage={(newPerPage, page) => { setPerPage(newPerPage); setPage(page); }}
+            noDataComponent={
+              <div style={{ padding: 20, textAlign: "center", fontSize: 16 }}>
+                No orders found
+              </div>
+            }
+            highlightOnHover
+            striped
+            responsive
+          />
         </div>
       </MDBox>
 
+      {/* Modals */}
       <Modal open={detailsModalOpen} onClose={closeModal}>
-        <Box className="modal-content">
-          <Typography className="modal-header">Order Details</Typography>
-          {selectedOrder?.items?.length > 0 ? (
-            selectedOrder.items.map((item, i) => (
-              <Box
-                key={i}
-                display="flex"
-                alignItems="center"
-                mb={1}
-              >
+        <Box sx={modalBoxStyle}>
+          <Typography variant="h6" gutterBottom>
+            Order Details
+          </Typography>
+          {selectedOrder?.items?.length ? (
+            selectedOrder.items.map((item, idx) => (
+              <Box key={idx} display="flex" alignItems="center" mb={1}>
                 <img
                   src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
-                  alt={item.name || "Item"}
-                  style={{
-                    width: 50,
-                    height: 50,
-                    marginRight: 12,
-                    objectFit: "cover",
-                    borderRadius: 4,
-                  }}
+                  alt={item.name}
+                  style={{ width: 50, height: 50, marginRight: 12, objectFit: "cover", borderRadius: 4 }}
                 />
-                <Typography sx={{ fontSize: '14px', color: '#344767' }}>
-                  {item.name}
-                </Typography>
+                <Typography fontSize={14}>{item.name}</Typography>
               </Box>
             ))
           ) : (
-            <Typography sx={{ color: '#666' }}>No items available</Typography>
+            <Typography color="textSecondary">No items available</Typography>
           )}
           <Box mt={2}>
-            <Button
-              className="modal-button"
-              variant="contained"
-              onClick={closeModal}
-              sx={{
-                background: '#007bff',
-                color: 'white',
-                width: '100%',
-                '&:hover': { background: '#0056b3' }
-              }}
-            >
+            <Button variant="contained" style={{color:"white"}} fullWidth onClick={closeModal}>
               Close
             </Button>
           </Box>
@@ -666,23 +347,15 @@ function StoreOrder({ isDashboard = false }) {
       </Modal>
 
       <Modal open={addressModalOpen} onClose={closeModal}>
-        <Box className="modal-content">
-          <Typography className="modal-header">Delivery Address</Typography>
-          <Typography sx={{ fontSize: '14px', color: '#344767' }}>
+        <Box sx={modalBoxStyle}>
+          <Typography variant="h6" gutterBottom>
+            Delivery Address
+          </Typography>
+          <Typography fontSize={14} color="textSecondary">
             {selectedOrder?.addressId?.fullAddress || "No address available"}
           </Typography>
           <Box mt={2}>
-            <Button
-              className="modal-button"
-              variant="contained"
-              onClick={closeModal}
-              sx={{
-                background: '#007bff',
-                color: 'white',
-                width: '100%',
-                '&:hover': { background: '#0056b3' }
-              }}
-            >
+            <Button variant="contained" style={{ color: "white" }} fullWidth onClick={closeModal}>
               Close
             </Button>
           </Box>
@@ -690,8 +363,10 @@ function StoreOrder({ isDashboard = false }) {
       </Modal>
 
       <Modal open={editModalOpen} onClose={closeModal}>
-        <Box className="modal-content">
-          <Typography className="modal-header">Edit Order Status</Typography>
+        <Box sx={modalBoxStyle}>
+          <Typography variant="h6" gutterBottom>
+            Edit Order Status
+          </Typography>
           <FormControl fullWidth sx={{ mb: 2 }}>
             <Select
               className="status-select"
@@ -704,12 +379,13 @@ function StoreOrder({ isDashboard = false }) {
                 }
                 const statusInfo = getStatusInfo(selected);
                 return (
-                  <div className="status-display">
+                  <div className="status-display" style={{ padding: "10px 0"}}>
                     {statusInfo.image && (
                       <img
                         src={`${process.env.REACT_APP_IMAGE_LINK}${statusInfo.image}`}
                         alt={statusInfo.title}
                         className="status-image"
+                        style={{ width: 20, height: 20, marginRight: 6, objectFit: "contain", borderRadius: 2 }}
                       />
                     )}
                     <span>{statusInfo.title}</span>
@@ -726,6 +402,7 @@ function StoreOrder({ isDashboard = false }) {
                     <img
                       src={`${process.env.REACT_APP_IMAGE_LINK}${status.image}`}
                       alt={status.statusTitle}
+                      style={{ width: 20, height: 20, marginRight: 6, objectFit: "contain", borderRadius: 2 }}
                     />
                     <span>{status.statusTitle}</span>
                   </div>
@@ -733,28 +410,11 @@ function StoreOrder({ isDashboard = false }) {
               ))}
             </Select>
           </FormControl>
-
-          <Box display="flex" justifyContent="space-between" gap={2}>
-            <Button
-              className="modal-button"
-              variant="outlined"
-              onClick={closeModal}
-              sx={{ borderColor: '#007bff', color: '#007bff', '&:hover': { background: '#e6f0ff' } }}
-            >
+          <Box display="flex" gap={2}>
+            <Button variant="outlined" style={{ color: "black" }} fullWidth onClick={closeModal}>
               Cancel
             </Button>
-            <Button
-              className="modal-button"
-              variant="contained"
-              onClick={handleSave}
-              disabled={!newStatus}
-              sx={{
-                background: '#007bff',
-                color: 'white',
-                '&:hover': { background: '#0056b3' },
-                '&:disabled': { background: '#ccc', color: '#666' }
-              }}
-            >
+            <Button variant="contained" style={{ color: "white" }} fullWidth disabled={!newStatus} onClick={handleSave}>
               Update
             </Button>
           </Box>

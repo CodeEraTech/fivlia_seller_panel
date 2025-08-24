@@ -1,24 +1,37 @@
 import React, { useState, useEffect } from "react";
+import { Button, CircularProgress, Box } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
-import { useNavigate } from "react-router-dom";
-import { Button, Switch, Typography } from "@mui/material";
 
-const headerCell = {
-  padding: "14px 12px",
-  border: "1px solid #ddd",
-  fontSize: 18,
-  fontWeight: "bold",
-  backgroundColor: "#007bff",
+// ✅ Button style
+const btnStyle = {
+  backgroundColor: "#dc3545",
   color: "white",
+  border: "none",
+  padding: "8px 16px",
+  borderRadius: "6px",
+  cursor: "pointer",
 };
 
-const bodyCell = {
-  padding: "12px",
-  border: "1px solid #eee",
-  fontSize: 17,
-  backgroundColor: "#fff",
-  paddingLeft: "30px",
+// ✅ Custom table styles with more vertical padding
+const customStyles = {
+  headCells: {
+    style: {
+      fontSize: "14px",
+      fontWeight: "bold",
+      backgroundColor: "#3c95ef",
+      color: "white",
+    },
+  },
+  cells: {
+    style: {
+      fontSize: "14px",
+      paddingTop: "16px",
+      paddingBottom: "16px", 
+    },
+  },
 };
 
 function StoreCategories() {
@@ -26,90 +39,61 @@ function StoreCategories() {
   const { miniSidenav } = controller;
   const navigate = useNavigate();
 
-  const [entriesToShow, setEntriesToShow] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categories, setMainCategories] = useState([]); // Initialize as empty array
+  const [categories, setCategories] = useState([]);
   const [storeId, setStoreId] = useState("");
-  const [loading, setLoading] = useState(false); // Added loading state
+  const [loading, setLoading] = useState(false);
+  const [totalRows, setTotalRows] = useState(0);
+  const [perPage, setPerPage] = useState(10);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch storeId and store details
   useEffect(() => {
-    const id = localStorage.getItem("storeId");
-    setStoreId(id);
+    setStoreId(localStorage.getItem("storeId"));
+  }, []);
 
-    const getStoreDetails = async () => {
-      if (!id) return; // Skip if storeId is not available
-      setLoading(true); // Set loading to true
-      try {
-        const response = await fetch(`https://api.fivlia.in/getStore?id=${id}`);
-        if (response.status === 200) {
-          const result = await response.json();
-          const { store, categories: apiCategories, products } = result;
-          // Ensure categories is an array
-          setMainCategories(Array.isArray(apiCategories) ? apiCategories : []);
-        } else {
-          console.error("API Error: Status", response.status);
-          setMainCategories([]); // Reset to empty array on error
-        }
-      } catch (err) {
-        console.error("Fetch Error:", err);
-        setMainCategories([]); // Reset to empty array on error
-      } finally {
-        setLoading(false); // Reset loading state
+  const fetchCategories = async (page = 1, limit = perPage, searchText = search) => {
+    if (!storeId) return;
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `https://api.fivlia.in/getStoreCategory?storeId=${storeId}&page=${page}&limit=${limit}&search=${searchText}`
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        setCategories(result.category || []);
+        setTotalRows(result.count || 0);
+      } else {
+        setCategories([]);
       }
-    };
-
-    getStoreDetails();
-  }, []); // Run once on mount, but check storeId inside
-
-  const filteredCategories = categories.filter((item) => {
-    const search = searchTerm.toLowerCase();
-    return (
-      item.name.toLowerCase().includes(search) ||
-      String(item.items || "100").toLowerCase().includes(search) ||
-      "yes".includes(search) ||
-      "no".includes(search)
-    );
-  });
-
-  const totalPages = Math.ceil(filteredCategories.length / entriesToShow);
-  const startIndex = (currentPage - 1) * entriesToShow;
-  const currentCategories = filteredCategories.slice(startIndex, startIndex + entriesToShow);
-
-  const handleEntriesChange = (e) => {
-    setEntriesToShow(Number(e.target.value));
-    setCurrentPage(1);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      setCategories([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const goToPreviousPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
-  const goToNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
+  useEffect(() => {
+    fetchCategories(1);
+  }, [storeId, search, perPage]);
 
   const handleCate = async (id) => {
     try {
-      const confirmDelete = window.confirm("Are you sure you want to Remove this category?");
-      if (confirmDelete) {
-        const result = await fetch(`https://api.fivlia.in/removeCategoryInStore/${storeId}`, {
-          method: "DELETE",
-          body: JSON.stringify({
-            Category: id,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (result.status === 200) {
-          alert("Removed Successfully");
-          setMainCategories((prev) => prev.filter((cat) => cat._id !== id));
-        } else {
-          console.error("Failed to remove category:", result.status);
-          alert("Failed to remove category");
-        }
+      const confirmDelete = window.confirm("Are you sure you want to remove this category?");
+      if (!confirmDelete) return;
+
+      const result = await fetch(`https://api.fivlia.in/removeCategoryInStore/${storeId}`, {
+        method: "DELETE",
+        body: JSON.stringify({ Category: id }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (result.ok) {
+        alert("Removed Successfully");
+        setCategories((prev) => prev.filter((cat) => cat._id !== id));
+      } else {
+        alert("Failed to remove category");
       }
     } catch (err) {
       console.error("Error removing category:", err);
@@ -117,278 +101,160 @@ function StoreCategories() {
     }
   };
 
-  const handleToggle = async (id) => {
-    const category = categories.find((cat) => cat._id === id);
-    if (!category) return; // Guard against undefined category
-    const updatedStatus = !category.status;
-
-    const updated = categories.map((cat) =>
-      cat._id === id ? { ...cat, status: updatedStatus } : cat
-    );
-    setMainCategories(updated);
-
-    try {
-      const res = await fetch(`https://api.fivlia.in/editCat/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: updatedStatus,
-        }),
-      });
-
-      if (res.status === 200) {
-      } else {
-        console.error("Failed to update status:", res.status);
-        // Optionally revert state if API fails
-        setMainCategories(categories);
-      }
-    } catch (error) {
-      console.error("Error updating status:", error);
-      // Revert state on error
-      setMainCategories(categories);
-    }
-  };
+  const columns = [
+    {
+      name: "Sr. No",
+      selector: (row, index) => (currentPage - 1) * perPage + index + 1,
+      width: "90px",
+      center: true,
+    },
+    {
+      name: "Category Name",
+      selector: (row) => row.name,
+      sortable: true,
+      cell: (row) => (
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <img
+            src={`${process.env.REACT_APP_IMAGE_LINK}${row.image || "https://via.placeholder.com/50"}`}
+            alt={row.name}
+            style={{ width: "50px", height: "50px", borderRadius: "50%", objectFit: "cover" }}
+          />
+          <span>{row.name}</span>
+        </div>
+      ),
+    },
+    {
+      name: "Sub Categories",
+      selector: (row) => (row.subcat ? row.subcat.length : 0),
+      center: true,
+    },
+    {
+      name: "Items",
+      selector: (row) => {
+        const subCatCount = row.subcat ? row.subcat.length : 0;
+        const subSubCatCount = row.subcat
+          ? row.subcat.reduce((total, subcat) => total + (subcat.subsubcat ? subcat.subsubcat.length : 0), 0)
+          : 0;
+        return subCatCount + subSubCatCount;
+      },
+      center: true,
+    },
+    {
+      name: "Action",
+      cell: (row) => (
+        <button style={btnStyle} onClick={() => handleCate(row._id)}>
+          Remove
+        </button>
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+      center: true,
+    },
+  ];
 
   return (
     <MDBox
       p={2}
       style={{
-        marginLeft: miniSidenav ? "80px" : "250px",
+        marginLeft: miniSidenav ? "100px" : "270px",
         transition: "margin-left 0.3s ease",
+        position: "relative",
       }}
     >
-      <div className="city-container">
-        <div
-          className="add-city-box"
-          style={{
-            width: "100%",
-            borderRadius: 15,
-            padding: 20,
-            overflowX: "auto",
-          }}
-        >
-          {/* Header */}
-          <div
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+          padding: "15px",
+          background: "#f4f6f8",
+          borderRadius: "10px",
+        }}
+      >
+        <div>
+          <span style={{ fontWeight: "bold", fontSize: 26 }}>Categories Lists</span>
+          <br />
+          <span style={{ fontSize: 17 }}>View and manage all Categories</span>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+          <input
+            type="text"
+            placeholder="Search categories..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 20,
-              flexWrap: "wrap",
+              padding: "10px",
+              borderRadius: "8px",
+              width: "220px",
+              border: "1px solid #ccc",
+              fontSize: 14,
+            }}
+          />
+
+          <Button
+            style={{
+              backgroundColor: "#00c853",
+              height: 45,
+              width: 160,
+              fontSize: 12,
+              color: "white",
+              letterSpacing: "1px",
+              borderRadius: "8px",
+            }}
+            onClick={() => navigate("/addstorecat")}
+          >
+            + ADD CATEGORY
+          </Button>
+        </div>
+      </div>
+
+      {/* Table Container */}
+      <div style={{ position: "relative" }}>
+        {/* Overlay Loader */}
+        {loading && (
+          <Box
+            sx={{
+              position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+              backgroundColor: "rgba(255,255,255,0.7)", zIndex: 2,
+              display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 1,
             }}
           >
-            <div>
-              <span style={{ fontWeight: "bold", fontSize: 26 }}>Categories Lists</span>
-              <br />
-              <span style={{ fontSize: 17 }}>View and manage all Categories</span>
-            </div>
-            <Button
-              style={{
-                backgroundColor: "#00c853",
-                height: 45,
-                width: 160,
-                fontSize: 12,
-                color: "white",
-                letterSpacing: "1px",
-              }}
-              onClick={() => navigate("/addstorecat")}
-            >
-              + ADD CATEGORY
-            </Button>
-          </div>
+            <CircularProgress />
+          </Box>
+        )}
 
-          {/* Controls */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 10,
-              flexWrap: "wrap",
-            }}
-          >
-            <div style={{ marginBottom: 10 }}>
-              <span style={{ fontSize: 16 }}>Show Entries</span> 
-              <select value={entriesToShow} onChange={handleEntriesChange}>
-                <option value={20}>20</option>
-                <option value={30}>30</option>
-                <option value={50}>50</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: 8, display: "flex", flexDirection: "column" }}>
-              <label style={{ fontSize: 16, marginBottom: 5 }}>Search</label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                placeholder="Search by name, items, public..."
-                style={{
-                  padding: "5px",
-                  borderRadius: "20px",
-                  height: "45px",
-                  width: "200px",
-                  border: "1px solid #ccc",
-                  fontSize: 17,
-                  paddingLeft: "15px",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Table */}
-          <div style={{ overflowX: "auto" }}>
-            {loading ? (
-              <Typography style={{ textAlign: "center", padding: "20px" }}>
-                Loading categories...
-              </Typography>
-            ) : categories.length === 0 ? (
-              <Typography style={{ textAlign: "center", padding: "20px" }}>
-                No categories found
-              </Typography>
-            ) : (
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "separate",
-                  borderSpacing: 0,
-                  overflow: "hidden",
-                  boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-                }}
-              >
-                <thead>
-                  <tr>
-                    <th style={{ ...headerCell, width: "10%" }}>Sr. No</th>
-                    <th style={headerCell}>Category Name</th>
-                    <th style={{ ...headerCell, width: "15%" }}>Sub Categories</th>
-                    <th style={headerCell}>Items</th>
-                    {/* <th style={headerCell}>Public</th> */}
-                    <th style={{ ...headerCell, width: "20%", textAlign: "center" }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentCategories.map((item, index) => (
-                    <tr key={item._id}>
-                      <td style={{ ...bodyCell, textAlign: "center" }}>{startIndex + index + 1}</td>
-                      <td style={{ ...bodyCell, textAlign: "center" }}>
-                        <div style={{ display: "flex", gap: "30px", alignItems: "center" }}>
-                          <img
-                            src={`${process.env.REACT_APP_IMAGE_LINK}${item.image || "https://via.placeholder.com/50"}`}
-                            alt={item.name}
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              borderRadius: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                          <span>{item.name}</span>
-                        </div>
-                      </td>
-                      <td
-                        style={{ ...bodyCell, textAlign: "center", cursor: "pointer" }}
-                        // onClick={() => navigate("/getsubcate", { state: { category: item } })}
-                      >
-                        {item.subcat ? item.subcat.length : 0}
-                      </td>
-                      <td style={{ ...bodyCell, textAlign: "center" }}>
-                        {(() => {
-                          const subCatCount = item.subcat ? item.subcat.length : 0;
-                          const subSubCatCount = item.subcat
-                            ? item.subcat.reduce((total, subcat) => {
-                                return total + (subcat.subsubcat ? subcat.subsubcat.length : 0);
-                              }, 0)
-                            : 0;
-                          return subCatCount + subSubCatCount;
-                        })()}
-                      </td>
-                      {/* <td style={{ ...bodyCell, textAlign: "center" }}>
-                        <Switch
-                          checked={item.status}
-                          onChange={() => handleToggle(item._id)}
-                          color="success"
-                          inputProps={{ "aria-label": "status toggle" }}
-                          sx={{
-                            "& .MuiSwitch-switchBase.Mui-checked": {
-                              color: "green",
-                            },
-                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                              backgroundColor: "green !important",
-                            },
-                            "& .MuiSwitch-track": {
-                              backgroundColor: "red",
-                              opacity: 1,
-                            },
-                          }}
-                        />
-                      </td> */}
-                      <td style={{ ...bodyCell, textAlign: "center" }}>
-                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                          <button
-                            style={{
-                              backgroundColor: "#dc3545",
-                              color: "white",
-                              border: "none",
-                              padding: "8px 16px",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                            }}
-                            onClick={() => handleCate(item._id)}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* Pagination */}
-          {!loading && filteredCategories.length > 0 && (
-            <div
-              style={{
-                marginTop: 20,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-              }}
-            >
-              <span>
-                Showing {startIndex + 1}-
-                {Math.min(startIndex + entriesToShow, filteredCategories.length)} of{" "}
-                {filteredCategories.length} categories
-              </span>
-              <div>
-                <button
-                  onClick={goToPreviousPage}
-                  disabled={currentPage === 1}
-                  style={{
-                    padding: "8px 16px",
-                    marginRight: 10,
-                    borderRadius: 10,
-                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                  }}
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={goToNextPage}
-                  disabled={currentPage === totalPages}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: 10,
-                    cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                  }}
-                >
-                  Next
-                </button>
+        {/* Table */}
+        <div style={{ background: "white", borderRadius: "10px", padding: "10px" }}>
+          <DataTable
+            columns={columns}
+            data={categories}
+            progressPending={false} // we handle loader ourselves
+            noDataComponent={
+              <div style={{ padding: "20px", textAlign: "center", fontSize: "16px" }}>
+                No Data Found
               </div>
-            </div>
-          )}
+            }
+            pagination
+            paginationServer
+            paginationTotalRows={totalRows}
+            onChangePage={(page) => {
+              setCurrentPage(page);
+              fetchCategories(page);
+            }}
+            onChangeRowsPerPage={(newPerPage, page) => {
+              setPerPage(newPerPage);
+              setCurrentPage(page);
+              fetchCategories(page, newPerPage);
+            }}
+            highlightOnHover
+            striped
+            responsive
+            customStyles={customStyles}
+          />
         </div>
       </div>
     </MDBox>
