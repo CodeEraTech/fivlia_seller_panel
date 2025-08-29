@@ -222,7 +222,7 @@ function StockManagement() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const id = localStorage.getItem("storeId");
+    const id = localStorage.getItem("sellerId");
     setStoreId(id);
   }, []);
 

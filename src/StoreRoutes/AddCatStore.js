@@ -16,7 +16,7 @@ const AddStoreCat = () => {
 
 
     useEffect(() => {
-        const id = localStorage.getItem('storeId')
+        const id = localStorage.getItem('sellerId')
         setStoreId(id)
       }, [])
 

@@ -82,7 +82,7 @@ function StoreOrder({ isDashboard = false }) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const storeId = localStorage.getItem("storeId");
+        const storeId = localStorage.getItem("sellerId");
         if (!storeId) throw new Error("Store ID missing");
 
         const params = `?storeId=${storeId}&page=${page}&limit=${perPage}&search=${searchTerm}`;

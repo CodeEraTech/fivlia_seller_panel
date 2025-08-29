@@ -48,7 +48,7 @@ function StoreCategories() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    setStoreId(localStorage.getItem("storeId"));
+    setStoreId(localStorage.getItem("sellerId"));
   }, []);
 
   const fetchCategories = async (page = 1, limit = perPage, searchText = search) => {

@@ -158,7 +158,7 @@ function SellerProduct() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const id = localStorage.getItem("storeId");
+    const id = localStorage.getItem("sellerId");
     setStoreId(id);
   }, []);
 

@@ -7,8 +7,8 @@ export const API_BASE_URL = "https://api.fivlia.in";
 
 // Define all endpoints here
 export const ENDPOINTS = {
-  LOGIN: "/sellerLogin",
+  LOGIN: "/storeLogin",
   SEND_OTP: "/sendOtp",
-  VERIFY_OTP: "/verifyOtp",
+  VERIFY_OTP: "/seller/verifyOtp",
   ADD_PRODUCT: "/addSellerProduct",
 }; 

@@ -38,7 +38,7 @@ export default function DashBoard() {
 useEffect(()=>{
   const dashboardStats = async () => {
     try {
-      const storeId = localStorage.getItem("storeId")
+      const storeId = localStorage.getItem("sellerId")
       const data =await axios.get(`https://api.fivlia.in/getStoreDashboardStats/${storeId}`)
       setStats(data.data)
     } catch (error) {

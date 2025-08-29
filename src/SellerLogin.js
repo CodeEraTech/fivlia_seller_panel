@@ -1,80 +1,58 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-import "./Store.css";
 import logo from "./fivlialogo.png";
 import { ENDPOINTS } from "apis/endpoints";
 import { post } from "apis/apiClient";
+import "./Store.css";
 
 function SellerLogin() {
   const [loginMode, setLoginMode] = useState("email"); // "email" | "phone"
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // ✅ Auto-redirect if already logged in
   useEffect(() => {
-    const authtoken = localStorage.getItem("token");
-    if (authtoken) {
+    const sellerId = localStorage.getItem("sellerId");
+    if (sellerId) {
       navigate("/dashboard1");
     }
   }, [navigate]);
 
   // =========================
-  // 🔹 Email + Password Login
-  // =========================
-  const handleEmailLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const res = await post(ENDPOINTS.LOGIN, {
-        email,
-        password,
-      });
-
-      if (res.status === 200 && res.data?.storeId) {
-        alert("Login successful");
-        localStorage.setItem("userType", "store");
-        localStorage.setItem("storeId", res.data.storeId);
-        navigate("/dashboard1");
-      } else {
-        alert(res.data?.message || "Invalid email/password");
-      }
-    } catch (err) {
-      console.error("Email Login Error:", err);
-      alert("Server error. Try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // =========================
-  // 🔹 Send OTP (Phone Login)
+  // 🔹 Send OTP
   // =========================
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (!mobileNumber) {
-      alert("Please enter mobile number");
+    if (loginMode === "email" && !email) {
+      alert("Please enter your email");
       return;
     }
-    setLoading(true);
+    if (loginMode === "phone" && !mobileNumber) {
+      alert("Please enter your mobile number");
+      return;
+    }
 
+    setLoading(true);
     try {
-      const res = await post(ENDPOINTS.SEND_OTP, { mobileNumber });
+      const res = await post(ENDPOINTS.LOGIN, {
+        email: loginMode === "email" ? email : undefined,
+        mobileNumber: loginMode === "phone" ? mobileNumber : undefined,
+        type: "seller",
+      });
+
       if (res.status === 200) {
         setOtpSent(true);
-        alert("OTP sent successfully");
+        alert("OTP sent successfully!");
       } else {
         alert(res.data?.message || "Failed to send OTP");
       }
     } catch (err) {
-      console.error("OTP Send Error:", err);
-      alert("Server error. Try again later.");
+      console.error("Send OTP Error:", err);
+      alert(err?.response?.data?.message || "Server error. Try again later.");
     } finally {
       setLoading(false);
     }
@@ -89,25 +67,27 @@ function SellerLogin() {
       alert("Please enter OTP");
       return;
     }
-    setLoading(true);
 
+    setLoading(true);
     try {
       const res = await post(ENDPOINTS.VERIFY_OTP, {
-        mobileNumber,
+        email: loginMode === "email" ? email : undefined,
+        mobileNumber: loginMode === "phone" ? mobileNumber : undefined,
         otp,
+        type: "login",
       });
 
-      if (res.status === 200 && res.data?.token) {
-        alert("Login successful");
+      if (res.status === 200 && res.data?.sellerId) {
+        alert("Login successful!");
         localStorage.setItem("userType", "seller");
-        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("sellerId", res.data.sellerId);
         navigate("/dashboard1");
       } else {
         alert(res.data?.message || "Invalid OTP");
       }
     } catch (err) {
-      console.error("OTP Verify Error:", err);
-      alert("Server error. Try again later.");
+      console.error("Verify OTP Error:", err);
+      alert(err?.response?.data?.message || "Server error. Try again later.");
     } finally {
       setLoading(false);
     }
@@ -116,7 +96,7 @@ function SellerLogin() {
   return (
     <div className="login-background">
       <style>{`
-         .login-toggle {
+        .login-toggle {
           display: flex;
           justify-content: space-evenly;
           margin: 20px 0;
@@ -132,16 +112,17 @@ function SellerLogin() {
           background: transparent;
           cursor: pointer;
           color: #007bff;
-          } 
+        }
         .login-toggle button.active {
           border-color: #007bff;
           color: #007bff;
         }
       `}</style>
+
       <div className="login-container">
         <form
           className="login-form"
-          onSubmit={loginMode === "email" ? handleEmailLogin : handleSendOtp}
+          onSubmit={otpSent ? handleVerifyOtp : handleSendOtp}
         >
           <img
             src={logo}
@@ -163,6 +144,7 @@ function SellerLogin() {
               onClick={() => {
                 setLoginMode("email");
                 setOtpSent(false);
+                setOtp("");
               }}
             >
               Login with Email
@@ -173,80 +155,60 @@ function SellerLogin() {
               onClick={() => {
                 setLoginMode("phone");
                 setOtpSent(false);
+                setOtp("");
               }}
             >
               Login with Phone
             </button>
           </div>
 
-          {/* 🔹 Email + Password Form */}
-          {loginMode === "email" && (
+          {/* 🔹 Email or Phone Input */}
+          {!otpSent ? (
             <>
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <div className="password-wrapper">
+              {loginMode === "email" ? (
                 <input
-                  style={{ width: "343px" }}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  type="email"
+                  placeholder="Enter Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-                <span onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </span>
-              </div>
+              ) : (
+                <input
+                  type="tel"
+                  placeholder="Enter Mobile Number"
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value)}
+                  required
+                />
+              )}
+
               <button type="submit" disabled={loading}>
-                {loading ? "Logging in..." : "Login"}
+                {loading ? "Sending OTP..." : "Send OTP"}
               </button>
             </>
-          )}
-
-          {/* 🔹 Phone + OTP Form */}
-          {loginMode === "phone" && (
+          ) : (
             <>
-              {!otpSent ? (
-                <>
-                  <input
-                    type="tel"
-                    placeholder="Mobile Number"
-                    value={mobileNumber}
-                    onChange={(e) => setMobileNumber(e.target.value)}
-                    required
-                  />
-                  <button type="submit" disabled={loading}>
-                    {loading ? "Sending OTP..." : "Send OTP"}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <input
-                    type="text"
-                    placeholder="Enter OTP"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    required
-                  />
-                  <button onClick={handleVerifyOtp} disabled={loading}>
-                    {loading ? "Verifying..." : "Verify OTP"}
-                  </button>
-                  {/* <p
-                    className="resend-otp"
-                    onClick={() => {
-                      setOtpSent(false);
-                      setOtp("");
-                    }}
-                  >
-                    Resend OTP
-                  </p> */}
-                </>
-              )}
+              <input
+                type="text"
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+              />
+              <button type="submit" disabled={loading}>
+                {loading ? "Verifying..." : "Verify OTP"}
+              </button>
+              <p
+                className="resend-otp"
+                style={{ cursor: "pointer", marginTop: "10px", color: "#007bff" }}
+                onClick={() => {
+                  setOtpSent(false);
+                  setOtp("");
+                }}
+              >
+                Resend OTP
+              </p>
             </>
           )}
         </form>
