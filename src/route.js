@@ -7,7 +7,7 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 
 import DashBoard from './StoreRoutes/DashBoard';
 import StoreCategories from './StoreRoutes/Categories';
-import StoreProduct from './StoreRoutes/StoreProduct';
+import StoreProduct from './StoreRoutes/SellerProduct';
 import Stock from './StoreRoutes/Stock';
 import StoreOrder from './StoreRoutes/StoreOrder';
 

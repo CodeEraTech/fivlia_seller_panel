@@ -136,7 +136,7 @@ const styles = `
   }
 `;
 
-function StoreProduct() {
+function SellerProduct() {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
   const navigate = useNavigate();
@@ -888,4 +888,4 @@ function StoreProduct() {
   );
 }
 
-export default StoreProduct;
+export default SellerProduct;
