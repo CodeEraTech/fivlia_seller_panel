@@ -9,6 +9,8 @@ import Stock from "./StoreRoutes/Stock";
 import AddStoreCat from "./StoreRoutes/AddCatStore";
 import StoreOrder from "./StoreRoutes/StoreOrder";
 import StoreSidenav from "./components/Sidenav/Sidenav";
+import AddSellerProduct from "./StoreRoutes/addProduct";
+
 
 function ProtectedRoute({ children }) {
   const authtoken = localStorage.getItem("token");
@@ -26,7 +28,8 @@ function App() {
         <Route path="/seller-login" element={<SellerLogin />} />
         <Route path="/dashboard1" element={   <ProtectedRoute> <DashBoard /> </ProtectedRoute>} />
         <Route path="/storecat" element={<StoreCategories />} />
-        <Route path="/products" element={<SellerProduct />} />
+        <Route path="/sellerProduct" element={<SellerProduct />} />
+        <Route path="/add-seller-product" element={<AddSellerProduct />} />
         <Route path="/stock" element={<Stock />} />
         <Route path="/addstorecat" element={<AddStoreCat />} />
         <Route path="/store-orders" element={<StoreOrder />} />

@@ -167,21 +167,37 @@ function SellerProduct() {
       if (!storeId) return;
       setLoading(true);
       try {
-        const response = await fetch(`https://api.fivlia.in/getStore?id=${storeId}`);
+        const response = await fetch(`https://api.fivlia.in/getSeller?id=${storeId}`);
         if (response.status === 200) {
           const result = await response.json();
-          const { store, categories, products } = result;
+         const { store, sellerAddedProducts, products } = result;
 
-          const transformedProducts = products.map((product) => ({
-            ...product,
-            location: product.location || [],
-            variants: product.variants || [],
-            category: product.category || [],
-            productThumbnailUrl: product.productImageUrl?.[0] || "",
-          }));
+// Transform seller-added products
+const sellerProducts = (sellerAddedProducts || []).map((product) => ({
+  ...product,
+  isSellerProduct: true, // Flag to identify seller products
+  location: product.location || [],
+  variants: product.variants || [],
+  category: product.category || [],
+  productThumbnailUrl: product.productImageUrl?.[0] || "",
+}));
 
-          setProducts(transformedProducts);
-          setData(transformedProducts);
+// Transform global products
+const globalProducts = (products || []).map((product) => ({
+  ...product,
+  isSellerProduct: false,
+  location: product.location || [],
+  variants: product.variants || [],
+  category: product.category || [],
+  productThumbnailUrl: product.productImageUrl?.[0] || "",
+}));
+
+// Merge with seller products first
+const combinedProducts = [...sellerProducts, ...globalProducts];
+
+setProducts(combinedProducts);
+setData(combinedProducts);
+
         } else {
           console.error("API Error: Status", response.status);
         }
@@ -374,6 +390,13 @@ function SellerProduct() {
               <br />
               <span style={{ fontSize: "1rem" }}>View and manage all products</span>
             </div>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate("/add-seller-product")}
+            >
+              + Add Product
+            </Button>
           </div>
 
           <div className="filter-container">
@@ -485,19 +508,34 @@ function SellerProduct() {
                       return (
                         <tr key={item._id}>
                           <td style={{ ...bodyCell, textAlign: "center" }}>{startIndex + index + 1}</td>
-                          <td style={{ ...bodyCell, display: "flex", alignItems: "center", gap: 10 }}>
-                            <img
-                              src={`${process.env.REACT_APP_IMAGE_LINK}${item.productThumbnailUrl || "https://via.placeholder.com/60"}`}
-                              alt={item.productName}
-                              style={{
-                                width: 60,
-                                height: 70,
-                                borderRadius: 6,
-                                objectFit: "cover",
-                              }}
-                            />
+                         <td style={{ ...bodyCell, display: "flex", alignItems: "center", gap: 10 }}>
+                        <img
+                          src={`${process.env.REACT_APP_IMAGE_LINK}${item.productThumbnailUrl || "https://via.placeholder.com/60"}`}
+                          alt={item.productName}
+                          style={{
+                            width: 60,
+                            height: 70,
+                            borderRadius: 6,
+                            objectFit: "cover",
+                          }}
+                        />
+                          <div style={{ display: "flex", flexDirection: "column" }}>
                             <span style={{ fontWeight: "500" }}>{item.productName}</span>
-                          </td>
+                            {item.isSellerProduct && (
+                              <Chip
+                                label="Seller Added"
+                                size="small"
+                                style={{
+                                  backgroundColor: "#ffecb3",
+                                  color: "#f57c00",
+                                  fontSize: "0.7rem",
+                                  marginTop: 4,
+                                  alignSelf: "flex-start",
+                                }}
+                              />
+                            )}
+                          </div>
+                        </td>
                           <td style={{ ...bodyCell, textAlign: "center" }}>{item.sku || "N/A"}</td>
                           <td style={{ ...bodyCell }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 5, flexDirection: "row" }}>

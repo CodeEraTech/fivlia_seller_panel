@@ -7,7 +7,7 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 
 import DashBoard from './StoreRoutes/DashBoard';
 import StoreCategories from './StoreRoutes/Categories';
-import StoreProduct from './StoreRoutes/SellerProduct';
+import SellerProduct from './StoreRoutes/SellerProduct';
 import Stock from './StoreRoutes/Stock';
 import StoreOrder from './StoreRoutes/StoreOrder';
 
@@ -33,8 +33,8 @@ const StoreRoutes = [
     name: "Products",
     key: "products",
     icon: <InventoryIcon />,
-    route: "/storeproduct",
-    component: <StoreProduct />,
+    route: "/sellerProduct",
+    component: <SellerProduct />,
   },
   {
     type: "collapse",

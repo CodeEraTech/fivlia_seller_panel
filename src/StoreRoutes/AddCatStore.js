@@ -23,7 +23,7 @@ const AddStoreCat = () => {
     useEffect(() => {
         const getMainCategory = async () => {
             try {
-                const data = await fetch('https://node-m8jb.onrender.com/getMainCategory');
+                const data = await fetch('https://api.fivlia.in/getMainCategory');
                 if (data.status === 200) {
                     const result = await data.json();
                     setMainCategories(result.result);
@@ -61,7 +61,7 @@ const AddStoreCat = () => {
         const formdata=new FormData();
          const categoryIds = data.map(cat => cat._id);
         try{
-           const result=await fetch(`https://api.fivlia.in/addCategoryInStore/${storeId}`,{
+           const result=await fetch(`https://api.fivlia.in/addCategoryInSeller/${storeId}`,{
             method:"PUT",
              body: JSON.stringify({ Category: categoryIds }),
              headers:{

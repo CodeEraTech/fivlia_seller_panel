@@ -56,7 +56,7 @@ function StoreCategories() {
     setLoading(true);
     try {
       const response = await fetch(
-        `https://api.fivlia.in/getStoreCategory?storeId=${storeId}&page=${page}&limit=${limit}&search=${searchText}`
+        `https://api.fivlia.in/getStoreCategory?storeId=${storeId}&page=${page}&type=seller&limit=${limit}&search=${searchText}`
       );
 
       if (response.ok) {
