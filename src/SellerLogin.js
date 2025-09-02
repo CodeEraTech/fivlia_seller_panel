@@ -40,7 +40,7 @@ function SellerLogin() {
     try {
       const res = await post(ENDPOINTS.LOGIN, {
         email: loginMode === "email" ? email : undefined,
-        mobileNumber: loginMode === "phone" ? mobileNumber : undefined,
+        phoneNumber: loginMode === "phone" ? mobileNumber : undefined,
         type: "seller",
       });
 

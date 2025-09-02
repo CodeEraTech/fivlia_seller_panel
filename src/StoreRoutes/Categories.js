@@ -207,7 +207,7 @@ function StoreCategories() {
             }}
             onClick={() => navigate("/addstorecat")}
           >
-            + ADD CATEGORY
+            + Manage Categories
           </Button>
         </div>
       </div>
