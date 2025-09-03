@@ -12,4 +12,6 @@ export const ENDPOINTS = {
   GET_PRODUCTS: "/getCategoryProduct",
   UPDATE_PRODUCT: "/addCategoryInSeller",
   GET_SELLER_MAPPING: "/getSellerCategoryMapping",
+  GET_CATEGORY: "/getSellerCategories",
+  GET_SELLER_PRODUCTS: "/getSellerProducts",
 }; 

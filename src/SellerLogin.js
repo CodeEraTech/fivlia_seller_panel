@@ -18,9 +18,9 @@ function SellerLogin() {
   useEffect(() => {
     const sellerId = localStorage.getItem("sellerId");
     if (sellerId) {
-      navigate("/dashboard1");
+      navigate("/dashboard1", { replace: true });
     }
-  }, [navigate]);
+  }, []);
 
   // =========================
   // 🔹 Send OTP

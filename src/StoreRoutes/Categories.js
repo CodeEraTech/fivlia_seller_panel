@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
+import { ENDPOINTS } from "apis/endpoints";
+import { get } from "apis/apiClient";
 
 // ✅ Button style
 const btnStyle = {
@@ -29,7 +31,7 @@ const customStyles = {
     style: {
       fontSize: "14px",
       paddingTop: "16px",
-      paddingBottom: "16px", 
+      paddingBottom: "16px",
     },
   },
 };
@@ -55,14 +57,13 @@ function StoreCategories() {
     if (!storeId) return;
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://api.fivlia.in/getStoreCategory?storeId=${storeId}&page=${page}&type=seller&limit=${limit}&search=${searchText}`
+      const response = await get(ENDPOINTS.GET_CATEGORY +
+        `/${storeId}?page=${page}&type=seller&limit=${limit}&search=${searchText}`
       );
-
-      if (response.ok) {
-        const result = await response.json();
-        setCategories(result.category || []);
-        setTotalRows(result.count || 0);
+      if (response.status === 200) {
+        const result = await response.data;
+        setCategories(result.categories || []);
+        setTotalRows(result.length || 0);
       } else {
         setCategories([]);
       }
@@ -125,18 +126,12 @@ function StoreCategories() {
     },
     {
       name: "Sub Categories",
-      selector: (row) => (row.subcat ? row.subcat.length : 0),
+      selector: (row) => (row.subCategoryCount || 0),
       center: true,
     },
     {
-      name: "Items",
-      selector: (row) => {
-        const subCatCount = row.subcat ? row.subcat.length : 0;
-        const subSubCatCount = row.subcat
-          ? row.subcat.reduce((total, subcat) => total + (subcat.subsubcat ? subcat.subsubcat.length : 0), 0)
-          : 0;
-        return subCatCount + subSubCatCount;
-      },
+      name: "Sub Sub Categories",
+      selector: (row) => (row.subSubCategoryCount || 0),
       center: true,
     },
     {
