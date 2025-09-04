@@ -78,7 +78,7 @@ function SellerLogin() {
     try {
       const res = await post(ENDPOINTS.VERIFY_OTP, {
         email: loginMode === "email" ? email : undefined,
-        mobileNumber: loginMode === "phone" ? mobileNumber : undefined,
+        PhoneNumber: loginMode === "phone" ? mobileNumber : undefined,
         otp,
         type: "login",
       });
