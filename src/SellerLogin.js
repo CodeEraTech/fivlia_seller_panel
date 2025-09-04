@@ -4,6 +4,7 @@ import logo from "./fivlialogo.png";
 import { ENDPOINTS } from "apis/endpoints";
 import { post } from "apis/apiClient";
 import "./Store.css";
+import { startsWith } from "lodash";
 
 function SellerLogin() {
   const [loginMode, setLoginMode] = useState("email"); // "email" | "phone"
@@ -35,12 +36,17 @@ function SellerLogin() {
       alert("Please enter your mobile number");
       return;
     }
+    let formattedPhone = mobileNumber;
+    if (loginMode === "phone" && !formattedPhone.startsWith("+")) {
+    formattedPhone = `+91${formattedPhone}`;
+    setMobileNumber(formattedPhone); // optional: update state for UI
+  }
 
     setLoading(true);
     try {
       const res = await post(ENDPOINTS.LOGIN, {
         email: loginMode === "email" ? email : undefined,
-        phoneNumber: loginMode === "phone" ? mobileNumber : undefined,
+        PhoneNumber: loginMode === "phone" ? formattedPhone : undefined,
         type: "seller",
       });
 
@@ -72,7 +78,7 @@ function SellerLogin() {
     try {
       const res = await post(ENDPOINTS.VERIFY_OTP, {
         email: loginMode === "email" ? email : undefined,
-        mobileNumber: loginMode === "phone" ? mobileNumber : undefined,
+        PhoneNumber: loginMode === "phone" ? mobileNumber : undefined,
         otp,
         type: "login",
       });
