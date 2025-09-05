@@ -61,21 +61,6 @@ const orderStatus = stats ? [
   { label: "Order Pending", value: stats.pendingMonthlyOrders, color: "gray", icon: <FaClipboardList /> },
 ]:[];
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setMiniSidenav(dispatch, false); // Always keep it expanded
-      } else {
-        setMiniSidenav(dispatch, false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    handleResize(); // Initial run
-
-    return () => window.removeEventListener("resize", handleResize);
-  }, [dispatch]);
-
   function handleEdit() {
     alert("This is not editable at this moment");
   }

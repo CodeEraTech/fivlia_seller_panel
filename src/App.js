@@ -7,15 +7,10 @@ import StoreCategories from "./StoreRoutes/Categories";
 import SellerProduct from "./StoreRoutes/SellerProduct";
 import Stock from "./StoreRoutes/Stock";
 import AddStoreCat from "./StoreRoutes/AddCatStore";
+import Wallet from "./StoreRoutes/SellerWallet"
 import StoreOrder from "./StoreRoutes/StoreOrder";
 import StoreSidenav from "./components/Sidenav/Sidenav";
 import AddSellerProduct from "./StoreRoutes/addProduct";
-
-
-function ProtectedRoute({ children }) {
-  const authtoken = localStorage.getItem("token");
-  return authtoken ? children : <Navigate to="/seller-login" />;
-}
 
 function App() {
   const { pathname } = useLocation();
@@ -26,7 +21,8 @@ function App() {
       {showSidebar && <StoreSidenav />}
       <Routes>
         <Route path="/seller-login" element={<SellerLogin />} />
-        <Route path="/dashboard1" element={   <ProtectedRoute> <DashBoard /> </ProtectedRoute>} />
+        <Route path="/dashboard1" element={ <DashBoard />} />
+        <Route path="/Wallet" element={ <Wallet />} />
         <Route path="/storecat" element={<StoreCategories />} />
         <Route path="/sellerProduct" element={<SellerProduct />} />
         <Route path="/add-seller-product" element={<AddSellerProduct />} />

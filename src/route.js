@@ -1,10 +1,11 @@
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import WalletIcon from "@mui/icons-material/Wallet";
 import CategoryIcon from "@mui/icons-material/Category";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AssignmentIcon from "@mui/icons-material/Assignment";
-
+import Wallet from "./StoreRoutes/SellerWallet"
 import DashBoard from './StoreRoutes/DashBoard';
 import StoreCategories from './StoreRoutes/Categories';
 import SellerProduct from './StoreRoutes/SellerProduct';
@@ -19,6 +20,14 @@ const StoreRoutes = [
     icon: <DashboardIcon />,
     route: "/dashboard1",
     component: <DashBoard />,
+  },
+    {
+    type: "collapse",
+    name: "Wallet",
+    key: "Wallet",
+    icon: <WalletIcon />,
+    route: "/Wallet",
+    component: <Wallet />,
   },
   {
     type: "collapse",
