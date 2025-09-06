@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
-import { get , put} from "apis/apiClient";
+import { get, put } from "apis/apiClient";
 import { ENDPOINTS } from "apis/endpoints";
 
 const customStyles = {
@@ -44,6 +44,7 @@ function StockManagement() {
   const [perPage, setPerPage] = useState(10);
   const [searchText, setSearchText] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [editCommission, setEditCommission] = useState(0);
 
   const [openEdit, setOpenEdit] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
@@ -85,6 +86,7 @@ function StockManagement() {
 
   const handleEditClick = (row) => {
     setEditProduct(row);
+    setEditCommission(row.commission || 0);
     setEditValues({
       stock: row.stock || "",
       sell_price: row.sell_price || "",
@@ -92,6 +94,19 @@ function StockManagement() {
       productId: row.productId,
     });
     setOpenEdit(true);
+  };
+
+  const handleEditChange = (field, value) => {
+    setEditValues((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const calculateEarning = () => {
+    const price = parseFloat(editValues.sell_price || 0);
+    const commissionAmount = (price * editCommission) / 100;
+    return (price - commissionAmount).toFixed(2);
   };
 
   const handleEditSave = async () => {
@@ -135,7 +150,8 @@ function StockManagement() {
     { name: "Product Name", selector: (row) => row.productName, sortable: true },
     { name: "MRP", selector: (row) => row.mrp ?? "N/A" },
     { name: "Selling Price", selector: (row) => row.sell_price ?? "N/A" },
-     { name: "Stock", selector: (row) => row.stock ?? "N/A" },
+    { name: "Commission", selector: (row) => `${row.commission}%` ?? "N/A" },
+    { name: "Stock", selector: (row) => row.stock ?? "N/A" },
     {
       name: "Actions",
       cell: (row) => (
@@ -286,19 +302,7 @@ function StockManagement() {
             fullWidth
             margin="dense"
             value={editValues.stock}
-            onChange={(e) =>
-              setEditValues({ ...editValues, stock: e.target.value })
-            }
-          />
-          <TextField
-            label="Selling Price"
-            type="number"
-            fullWidth
-            margin="dense"
-            value={editValues.sell_price}
-            onChange={(e) =>
-              setEditValues({ ...editValues, sell_price: e.target.value })
-            }
+            onChange={(e) => handleEditChange("stock", e.target.value)}
           />
           <TextField
             label="MRP"
@@ -306,9 +310,27 @@ function StockManagement() {
             fullWidth
             margin="dense"
             value={editValues.mrp}
-            onChange={(e) =>
-              setEditValues({ ...editValues, mrp: e.target.value })
+            onChange={(e) => handleEditChange("mrp", e.target.value)}
+          />
+          <TextField
+            label="Selling Price"
+            type="number"
+            fullWidth
+            margin="dense"
+            value={editValues.sell_price}
+            onChange={(e) => handleEditChange("sell_price", e.target.value)}
+            helperText={
+              editValues.sell_price
+                ? `You will get ₹${calculateEarning()} after ${editCommission}% commission`
+                : ""
             }
+            sx={{
+              "& .MuiFormHelperText-root": {
+                fontWeight: "bold",
+                color: "#2e7d32",
+                fontSize: "14px",
+              },
+            }}
           />
         </DialogContent>
         <DialogActions>
