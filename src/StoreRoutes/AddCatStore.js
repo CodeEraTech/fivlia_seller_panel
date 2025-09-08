@@ -137,11 +137,13 @@ const AddStoreCat = () => {
         backgroundColor: "#1A73E8",
         color: "white",
         fontWeight: "bold",
+        fontSize: "16px", 
       },
     },
     rows: {
       style: {
-        minHeight: "50px", // reduce row height
+        minHeight: "60px", // reduce row height
+        fontSize: "15px", 
       },
     },
   };
@@ -150,10 +152,10 @@ const AddStoreCat = () => {
     switch (step) {
       case 0: {
         const columns = [
-          { name: "Sr No", cell: (row, index) => index + 1, width: "60px" },
-          { name: "Image", cell: row => renderImage(row, "image"), width: "70px" },
+          { name: "Sr No.", cell: (row, index) => index + 1, width: "13%" },
+          { name: "Image", cell: row => renderImage(row, "image"), width: "10%" },
           { name: "Name", selector: row => row.name },
-          { name: "Sub Categories", selector: row => (row.subCategories || []).length, width: "120px" },
+          { name: "Sub Categories", selector: row => (row.subCategories || []).length, width: "20%" },
           { name: "Products", selector: row => row.productCount || 0, width: "100px" },
           {
             name: "Select",
@@ -173,11 +175,11 @@ const AddStoreCat = () => {
           (cat.subCategories || []).map(sc => ({ ...sc, parentCategoryId: cat.id }))
         );
         const columns = [
-          { name: "Sr No", cell: (row, index) => index + 1, width: "60px" },
-          { name: "Image", cell: row => renderImage(row, "image"), width: "70px" },
+          { name: "Sr No.", cell: (row, index) => index + 1, width: "13%" },
+          { name: "Image", cell: row => renderImage(row, "image"), width: "10%" },
           { name: "Name", selector: row => row.name },
-          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0, width: "120px" },
-          { name: "Sub Sub Categories", selector: row => (row.subSubCategories || []).length, width: "150px" },
+          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0, width: "14%" },
+          { name: "Sub Sub Categories", selector: row => (row.subSubCategories || []).length, width: "22%" },
           { name: "Products", selector: row => row.productCount || 0, width: "100px" },
           {
             name: "Select",
@@ -197,11 +199,11 @@ const AddStoreCat = () => {
           (sub.subSubCategories || []).map(ss => ({ ...ss, parentSubCategoryId: sub.id }))
         );
         const columns = [
-          { name: "Sr No", cell: (row, index) => index + 1, width: "60px" },
-          { name: "Image", cell: row => renderImage(row, "image"), width: "70px" },
+          { name: "Sr No.", cell: (row, index) => index + 1, width: "13%" },
+          { name: "Image", cell: row => renderImage(row, "image"), width: "10%" },
           { name: "Name", selector: row => row.name },
-          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0, width: "120px" },
-          { name: "Products", selector: row => row.productCount || 0, width: "100px" },
+          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0, width: "22%" },
+          { name: "Products", selector: row => row.productCount || 0, width: "19%" },
           {
             name: "Select",
             cell: row => (
@@ -217,8 +219,8 @@ const AddStoreCat = () => {
       }
       case 3: {
         const columns = [
-          { name: "Sr No", cell: (row, index) => index + 1, width: "60px" },
-          { name: "Image", cell: row => renderImage(row, "productThumbnailUrl"), width: "70px" },
+          { name: "Sr No.", cell: (row, index) => index + 1, width: "10%" },
+          { name: "Image", cell: row => renderImage(row, "productThumbnailUrl"), width: "10%" },
           { name: "Name", selector: row => row.productName },
           {
             name: "Select",
@@ -250,7 +252,7 @@ const AddStoreCat = () => {
         <h2 style={{ textAlign: "center", marginBottom: "20px", color: "green" }}>{getHeader()}</h2>
         {getStepData()}
         <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between" }}>
-          <Button disabled={step === 0} onClick={handlePrev} variant="contained" color="secondary">Previous</Button>
+          <Button disabled={step === 0} onClick={handlePrev} variant="contained"   style={{ backgroundColor: "#989898ff", color: "white" }}>Previous</Button>
           {step < 3 ? (
             <Button
               onClick={handleNext}
