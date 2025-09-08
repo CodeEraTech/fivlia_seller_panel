@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
 import { useNavigate } from "react-router-dom";
-import { Button, Switch, Modal } from "@mui/material";
+import { Button, Checkbox, Modal } from "@mui/material";
 import DataTable from "react-data-table-component";
 import { ENDPOINTS } from "../apis/endpoints";
 import { get, put } from "../apis/apiClient";
@@ -44,9 +44,9 @@ const AddStoreCat = () => {
 
   const fetchProducts = async () => {
     const query = new URLSearchParams();
-    if (selectedCategories.length) query.append("categories", selectedCategories.map(c => c.id).join(","));
-    if (selectedSubCategories.length) query.append("subCategories", selectedSubCategories.map(s => s.id).join(","));
-    if (selectedSubSubCategories.length) query.append("subSubCategories", selectedSubSubCategories.map(ss => ss.id).join(","));
+    if (selectedCategories.length) query.append("categories", selectedCategories.map(c => c.id).join("%"));
+    if (selectedSubCategories.length) query.append("subCategories", selectedSubCategories.map(s => s.id).join("%"));
+    if (selectedSubSubCategories.length) query.append("subSubCategories", selectedSubSubCategories.map(ss => ss.id).join("%"));
     try {
       setLoadingProducts(true);
       const res = await get(`${ENDPOINTS.GET_PRODUCTS}?${query.toString()}`);
@@ -157,16 +157,35 @@ const AddStoreCat = () => {
           { name: "Name", selector: row => row.name },
           { name: "Sub Categories", selector: row => (row.subCategories || []).length, width: "20%" },
           { name: "Products", selector: row => row.productCount || 0, width: "100px" },
-          {
-            name: "Select",
-            cell: row => (
-              <Switch
-                checked={selectedCategories.some(c => c.id === row.id)}
-                onChange={() => toggleSelection(row, selectedCategories, setSelectedCategories)}
-              />
-            ),
-            width: "100px"
-          }
+         {
+  name: (
+    <Checkbox
+      indeterminate={
+        selectedCategories.length > 0 &&
+        selectedCategories.length < categories.length
+      }
+      checked={
+        categories.length > 0 &&
+        selectedCategories.length === categories.length
+      }
+      onChange={(e) => {
+        if (e.target.checked) {
+          setSelectedCategories(categories); // select all
+        } else {
+          setSelectedCategories([]); // unselect all
+        }
+      }}
+    />
+  ),
+  cell: row => (
+    <Checkbox
+      checked={selectedCategories.some(c => c.id === row.id)}
+      onChange={() => toggleSelection(row, selectedCategories, setSelectedCategories)}
+    />
+  ),
+  width: "100px"
+}
+
         ];
         return <DataTable columns={columns} data={categories} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
       }
@@ -178,19 +197,38 @@ const AddStoreCat = () => {
           { name: "Sr No.", cell: (row, index) => index + 1, width: "13%" },
           { name: "Image", cell: row => renderImage(row, "image"), width: "10%" },
           { name: "Name", selector: row => row.name },
-          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0, width: "14%" },
+          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0,cell: row => `${row.commission ?? row.commison ?? 0}%`, width: "14%" },
           { name: "Sub Sub Categories", selector: row => (row.subSubCategories || []).length, width: "22%" },
           { name: "Products", selector: row => row.productCount || 0, width: "100px" },
-          {
-            name: "Select",
-            cell: row => (
-              <Switch
-                checked={selectedSubCategories.some(sc => sc.id === row.id)}
-                onChange={() => toggleSelection(row, selectedSubCategories, setSelectedSubCategories)}
-              />
-            ),
-            width: "100px"
-          }
+        {
+  name: (
+    <Checkbox
+      indeterminate={
+        selectedSubCategories.length > 0 &&
+        selectedSubCategories.length < subCats.length
+      }
+      checked={
+        subCats.length > 0 &&
+        selectedSubCategories.length === subCats.length
+      }
+      onChange={(e) => {
+        if (e.target.checked) {
+          setSelectedSubCategories(subCats);
+        } else {
+          setSelectedSubCategories([]);
+        }
+      }}
+    />
+  ),
+  cell: row => (
+    <Checkbox
+      checked={selectedSubCategories.some(sc => sc.id === row.id)}
+      onChange={() => toggleSelection(row, selectedSubCategories, setSelectedSubCategories)}
+    />
+  ),
+  width: "100px"
+}
+
         ];
         return <DataTable columns={columns} data={subCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
       }
@@ -202,12 +240,30 @@ const AddStoreCat = () => {
           { name: "Sr No.", cell: (row, index) => index + 1, width: "13%" },
           { name: "Image", cell: row => renderImage(row, "image"), width: "10%" },
           { name: "Name", selector: row => row.name },
-          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0, width: "22%" },
+          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0,cell: row => `${row.commission ?? row.commison ?? 0}%`, width: "22%" },
           { name: "Products", selector: row => row.productCount || 0, width: "19%" },
-          {
-            name: "Select",
+         {
+  name: (
+    <Checkbox
+      indeterminate={
+        selectedSubSubCategories.length > 0 &&
+        selectedSubSubCategories.length < subSubCats.length
+      }
+      checked={
+        subSubCats.length > 0 &&
+        selectedSubSubCategories.length === subSubCats.length
+      }
+      onChange={(e) => {
+        if (e.target.checked) {
+          setSelectedSubSubCategories(subSubCats);
+        } else {
+          setSelectedSubSubCategories([]);
+        }
+      }}
+    />
+  ),
             cell: row => (
-              <Switch
+              <Checkbox
                 checked={selectedSubSubCategories.some(ss => ss.id === row.id)}
                 onChange={() => toggleSelection(row, selectedSubSubCategories, setSelectedSubSubCategories)}
               />
@@ -222,10 +278,28 @@ const AddStoreCat = () => {
           { name: "Sr No.", cell: (row, index) => index + 1, width: "10%" },
           { name: "Image", cell: row => renderImage(row, "productThumbnailUrl"), width: "10%" },
           { name: "Name", selector: row => row.productName },
-          {
-            name: "Select",
+                   {
+  name: (
+    <Checkbox
+      indeterminate={
+        selectedProducts.length > 0 &&
+        selectedProducts.length < products.length
+      }
+      checked={
+        products.length > 0 &&
+        selectedProducts.length === products.length
+      }
+      onChange={(e) => {
+        if (e.target.checked) {
+          setSelectedProducts(products);
+        } else {
+          setSelectedProducts([]);
+        }
+      }}
+    />
+  ),
             cell: row => (
-              <Switch
+              <Checkbox
                 checked={selectedProducts.some(p => p._id === row._id)}
                 onChange={() => {
                   if (selectedProducts.some(p => p._id === row._id))
