@@ -16,4 +16,5 @@ export const ENDPOINTS = {
   UPDATE_SELLER_PRODUCT_STATUS: "/updateSellerProducStatus",
   UPDATE_SELLER_PRODUCT_STOCK: "/updateSellerStock",
   GET_CATEGORY_LIST: "/getSellerCategoryList",
+  GET_EXISTING_PRODUCT_LIST: "/getExistingProductList",
 }; 

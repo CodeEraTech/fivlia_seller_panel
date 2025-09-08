@@ -211,7 +211,7 @@ function SellerProduct() {
           <Button
             variant="contained"
             style={{ ...btnStyle, fontSize: 14, height: 40 }}
-            onClick={() => navigate("/add-seller-product")}
+            onClick={() => navigate("/search-products")}
           >
             + Add Product
           </Button>
