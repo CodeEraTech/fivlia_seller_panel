@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
 import { useNavigate } from "react-router-dom";
-import { Button, TextField, Autocomplete } from "@mui/material";
+import { Button, Switch, Modal } from "@mui/material";
+import DataTable from "react-data-table-component";
 import { ENDPOINTS } from "../apis/endpoints";
 import { get, put } from "../apis/apiClient";
-import debounce from "lodash/debounce";
 
 const AddStoreCat = () => {
   const navigate = useNavigate();
@@ -15,183 +15,75 @@ const AddStoreCat = () => {
   const [storeId, setStoreId] = useState("");
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedSubCategories, setSelectedSubCategories] = useState([]);
   const [selectedSubSubCategories, setSelectedSubSubCategories] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
-
+  const [step, setStep] = useState(0);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
-  // Keep track of initially selected product IDs on mapping load
-  const prevSelectedProductIds = useRef([]);
+  const [openModal, setOpenModal] = useState(false);
+  const [modalImage, setModalImage] = useState("");
 
-  // 1. Get sellerId
   useEffect(() => {
     const id = localStorage.getItem("sellerId");
     if (id) setStoreId(id);
   }, []);
 
-  // 2. Fetch categories
   useEffect(() => {
-    const getCategories = async () => {
+    const fetchCategories = async () => {
       try {
         const res = await get(ENDPOINTS.CATEGORIES);
-        if (res.status === 200) {
-          setCategories(res.data.categories || []);
-        }
+        if (res.status === 200) setCategories(res.data.categories || []);
       } catch (err) {
         console.error("Error fetching categories", err);
       }
     };
-    getCategories();
+    fetchCategories();
   }, []);
 
-  // 3. Fetch existing mapping & preselect
-  useEffect(() => {
-    if (!storeId || categories.length === 0) return;
-
-    const fetchExistingMapping = async () => {
-      try {
-        const res = await get(`${ENDPOINTS.GET_SELLER_MAPPING}/${storeId}`);
-        if (res.status === 200 && res.data) {
-          const { sellerCategories = [], sellerProducts = [] } = res.data;
-
-          const selectedCats = categories.filter(cat =>
-            sellerCategories.some(sel => sel.categoryId === cat.id)
-          );
-
-          const selectedSubs = [];
-          const selectedSubSubs = [];
-
-          sellerCategories.forEach(selCat => {
-            const cat = categories.find(c => c.id === selCat.categoryId);
-            if (!cat?.subCategories) return;
-
-            selCat.subCategories.forEach(selSub => {
-              const sub = cat.subCategories.find(s => s.id === selSub.subCategoryId);
-              if (sub) {
-                selectedSubs.push({ ...sub, parentCategoryId: cat.id });
-
-                selSub.subSubCategories.forEach(ss => {
-                  const subSub = sub.subSubCategories?.find(sss => sss.id === ss.subSubCategoryId);
-                  if (subSub) selectedSubSubs.push({ ...subSub, parentSubCategoryId: sub.id });
-                });
-              }
-            });
-          });
-
-          setSelectedCategories(selectedCats);
-          setSelectedSubCategories(selectedSubs);
-          setSelectedSubSubCategories(selectedSubSubs);
-
-          prevSelectedProductIds.current = sellerProducts; // Save initially selected products for restore after product fetch
-        }
-      } catch (err) {
-        console.error("Failed to fetch existing mapping", err);
-      }
-    };
-
-    fetchExistingMapping();
-  }, [storeId, categories]);
-
-  // 4. Build selections for API
-  const buildSelectionsForApi = () => {
-    const cats = new Set();
-    const subs = new Set();
-    const subSubs = new Set();
-
-    selectedSubSubCategories.forEach(subSub => {
-      subSubs.add(subSub.id);
-      const sub = selectedSubCategories.find(s => s.subSubCategories?.some(ss => ss.id === subSub.id));
-      if (sub) subs.add(sub.id);
-      const cat = selectedCategories.find(c => c.subCategories?.some(sc => sc.id === sub?.id));
-      if (cat) cats.add(cat.id);
-    });
-
-    selectedSubCategories.forEach(sub => {
-      subs.add(sub.id);
-      const cat = selectedCategories.find(c => c.subCategories?.some(sc => sc.id === sub.id));
-      if (cat) cats.add(cat.id);
-    });
-
-    selectedCategories.forEach(cat => cats.add(cat.id));
-
-    return {
-      categories: [...cats],
-      subCategories: [...subs],
-      subSubCategories: [...subSubs],
-    };
+  const fetchProducts = async () => {
+    const query = new URLSearchParams();
+    if (selectedCategories.length) query.append("categories", selectedCategories.map(c => c.id).join(","));
+    if (selectedSubCategories.length) query.append("subCategories", selectedSubCategories.map(s => s.id).join(","));
+    if (selectedSubSubCategories.length) query.append("subSubCategories", selectedSubSubCategories.map(ss => ss.id).join(","));
+    try {
+      setLoadingProducts(true);
+      const res = await get(`${ENDPOINTS.GET_PRODUCTS}?${query.toString()}`);
+      if (res.status === 200) setProducts(res.data.products || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingProducts(false);
+    }
   };
 
-  // 5. Debounced product fetch
-  const fetchProducts = useCallback(
-    debounce(async () => {
-      const { categories, subCategories, subSubCategories } = buildSelectionsForApi();
-      if (!categories.length && !subCategories.length && !subSubCategories.length) {
-        setProducts([]);
+  const toggleSelection = (item, selectedList, setSelectedList) => {
+    const id = item.id || item._id;
+    const exists = selectedList.some(i => (i.id || i._id) === id);
+    if (exists) setSelectedList(selectedList.filter(i => (i.id || i._id) !== id));
+    else setSelectedList([...selectedList, item]);
+  };
+
+  const handleNext = async () => {
+    if (step === 1) {
+      const hasSubSub = selectedSubCategories.some(sc => sc.subSubCategories?.length > 0);
+      if (!hasSubSub) {
+        await fetchProducts();
+        setStep(3);
         return;
       }
-      const query = new URLSearchParams();
-      if (categories.length) query.append("categories", categories.join(","));
-      if (subCategories.length) query.append("subCategories", subCategories.join(","));
-      if (subSubCategories.length) query.append("subSubCategories", subSubCategories.join(","));
-
-      try {
-        setLoadingProducts(true);
-        const res = await get(`${ENDPOINTS.GET_PRODUCTS}?${query.toString()}`);
-        if (res.status === 200) {
-          const fetched = res.data.products || [];
-          setProducts(fetched);
-
-          // Restore selected products only on initial load (when prevSelectedProductIds has values)
-          if (prevSelectedProductIds.current.length > 0) {
-            const restored = fetched.filter(p => prevSelectedProductIds.current.includes(p._id));
-            setSelectedProducts(restored);
-            prevSelectedProductIds.current = []; // Clear after restore
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching products:", err);
-      } finally {
-        setLoadingProducts(false);
-      }
-    }, 500),
-    [selectedCategories, selectedSubCategories, selectedSubSubCategories]
-  );
-
-  useEffect(() => {
-    fetchProducts();
-  }, [selectedCategories, selectedSubCategories, selectedSubSubCategories, fetchProducts]);
-
-  // 6. Filter stale selectedProducts when categories/subcategories change
-  useEffect(() => {
-    const validSelectedProducts = selectedProducts.filter(product => {
-      const isValidCategory = product.category.some(cat =>
-        selectedCategories.some(selCat => selCat._id === cat._id)
-      );
-
-      const isValidSubCategory =
-        product.subCategory.length === 0 ||
-        product.subCategory.some(sub =>
-          selectedSubCategories.some(selSub => selSub._id === sub._id)
-        );
-
-      const isValidSubSubCategory =
-        product.subSubCategory.length === 0 ||
-        product.subSubCategory.some(ss =>
-          selectedSubSubCategories.some(selSS => selSS._id === ss._id)
-        );
-
-      return isValidCategory && isValidSubCategory && isValidSubSubCategory;
-    });
-
-    if (validSelectedProducts.length !== selectedProducts.length) {
-      setSelectedProducts(validSelectedProducts);
     }
-  }, [selectedCategories, selectedSubCategories, selectedSubSubCategories]);
+    if (step === 2) await fetchProducts();
+    setStep(prev => prev + 1);
+  };
 
-  // 7. Submit handler
+  const handlePrev = () => {
+    if (step === 3 && !selectedSubCategories.some(sc => sc.subSubCategories?.length > 0)) {
+      setStep(1);
+    } else setStep(prev => Math.max(prev - 1, 0));
+  };
+
   const handleSubmit = async () => {
     const payload = {
       sellerCategories: selectedCategories.map(cat => ({
@@ -207,7 +99,6 @@ const AddStoreCat = () => {
       })),
       sellerProducts: selectedProducts.map(p => p._id),
     };
-
     try {
       const res = await put(`${ENDPOINTS.UPDATE_PRODUCT}/${storeId}`, payload, { authRequired: true });
       if (res.status === 200) {
@@ -215,116 +106,188 @@ const AddStoreCat = () => {
         navigate(-1);
       } else alert("Save failed");
     } catch (err) {
-      console.error("Error saving:", err);
+      console.error(err);
       alert("Save failed");
     }
   };
 
+  const renderImage = (item, key = "image") => {
+    const src = item[key]
+      ? item[key].startsWith("http")
+        ? item[key]
+        : `${process.env.REACT_APP_IMAGE_LINK}${item[key]}`
+      : "/placeholder.png";
+
+    return (
+      <div style={{ width: 50, height: 50, overflow: "hidden", borderRadius: 4, cursor: "pointer" }}
+        onClick={() => { setModalImage(src); setOpenModal(true); }}
+      >
+        <img
+          src={src}
+          alt={item.name || item.productName}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      </div>
+    );
+  };
+
+  const customStyles = {
+    headCells: {
+      style: {
+        backgroundColor: "#1A73E8",
+        color: "white",
+        fontWeight: "bold",
+        fontSize: "16px", 
+      },
+    },
+    rows: {
+      style: {
+        minHeight: "60px", // reduce row height
+        fontSize: "15px", 
+      },
+    },
+  };
+
+  const getStepData = () => {
+    switch (step) {
+      case 0: {
+        const columns = [
+          { name: "Sr No.", cell: (row, index) => index + 1, width: "13%" },
+          { name: "Image", cell: row => renderImage(row, "image"), width: "10%" },
+          { name: "Name", selector: row => row.name },
+          { name: "Sub Categories", selector: row => (row.subCategories || []).length, width: "20%" },
+          { name: "Products", selector: row => row.productCount || 0, width: "100px" },
+          {
+            name: "Select",
+            cell: row => (
+              <Switch
+                checked={selectedCategories.some(c => c.id === row.id)}
+                onChange={() => toggleSelection(row, selectedCategories, setSelectedCategories)}
+              />
+            ),
+            width: "100px"
+          }
+        ];
+        return <DataTable columns={columns} data={categories} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
+      }
+      case 1: {
+        const subCats = selectedCategories.flatMap(cat =>
+          (cat.subCategories || []).map(sc => ({ ...sc, parentCategoryId: cat.id }))
+        );
+        const columns = [
+          { name: "Sr No.", cell: (row, index) => index + 1, width: "13%" },
+          { name: "Image", cell: row => renderImage(row, "image"), width: "10%" },
+          { name: "Name", selector: row => row.name },
+          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0, width: "14%" },
+          { name: "Sub Sub Categories", selector: row => (row.subSubCategories || []).length, width: "22%" },
+          { name: "Products", selector: row => row.productCount || 0, width: "100px" },
+          {
+            name: "Select",
+            cell: row => (
+              <Switch
+                checked={selectedSubCategories.some(sc => sc.id === row.id)}
+                onChange={() => toggleSelection(row, selectedSubCategories, setSelectedSubCategories)}
+              />
+            ),
+            width: "100px"
+          }
+        ];
+        return <DataTable columns={columns} data={subCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
+      }
+      case 2: {
+        const subSubCats = selectedSubCategories.flatMap(sub =>
+          (sub.subSubCategories || []).map(ss => ({ ...ss, parentSubCategoryId: sub.id }))
+        );
+        const columns = [
+          { name: "Sr No.", cell: (row, index) => index + 1, width: "13%" },
+          { name: "Image", cell: row => renderImage(row, "image"), width: "10%" },
+          { name: "Name", selector: row => row.name },
+          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0, width: "22%" },
+          { name: "Products", selector: row => row.productCount || 0, width: "19%" },
+          {
+            name: "Select",
+            cell: row => (
+              <Switch
+                checked={selectedSubSubCategories.some(ss => ss.id === row.id)}
+                onChange={() => toggleSelection(row, selectedSubSubCategories, setSelectedSubSubCategories)}
+              />
+            ),
+            width: "100px"
+          }
+        ];
+        return <DataTable columns={columns} data={subSubCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
+      }
+      case 3: {
+        const columns = [
+          { name: "Sr No.", cell: (row, index) => index + 1, width: "10%" },
+          { name: "Image", cell: row => renderImage(row, "productThumbnailUrl"), width: "10%" },
+          { name: "Name", selector: row => row.productName },
+          {
+            name: "Select",
+            cell: row => (
+              <Switch
+                checked={selectedProducts.some(p => p._id === row._id)}
+                onChange={() => {
+                  if (selectedProducts.some(p => p._id === row._id))
+                    setSelectedProducts(selectedProducts.filter(p => p._id !== row._id));
+                  else setSelectedProducts([...selectedProducts, row]);
+                }}
+              />
+            ),
+            width: "100px"
+          }
+        ];
+        return <DataTable columns={columns} data={products} customStyles={customStyles} pagination highlightOnHover pointerOnHover progressPending={loadingProducts} />;
+      }
+      default:
+        return null;
+    }
+  };
+
+  const getHeader = () => ["Main Categories", "Sub Categories", "Sub Sub Categories", "Products"][step];
+
   return (
     <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "20px" }}>
-      <div
-        style={{
-          width: "85%",
-          margin: "0 auto",
-          borderRadius: "10px",
-          padding: "20px",
-          border: "1px solid gray",
-          boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        <h2 style={{ textAlign: "center", marginBottom: "30px", fontWeight: "bold", color: "green" }}>
-          {selectedCategories.length ? "UPDATE" : "ADD"} CATEGORY TO STORE
-        </h2>
-
-        {/* Category */}
-        <Autocomplete
-          multiple
-          options={categories}
-          getOptionLabel={(opt) => `${opt.name}${opt.commison ? ` (${opt.commison}%)` : ""}`}
-          value={selectedCategories}
-          onChange={(e, v) => {
-            setSelectedCategories(v);
-
-            // Filter selected subCategories to only those in newly selected categories
-            setSelectedSubCategories((prev) =>
-              prev.filter((sub) => v.some((cat) => cat.subCategories?.some((sc) => sc.id === sub.id)))
-            );
-
-            // Filter selected subSubCategories to only those in newly selected subCategories
-            setSelectedSubSubCategories((prev) =>
-              prev.filter((ss) =>
-                selectedSubCategories.some((sub) => sub.subSubCategories?.some((su) => su.id === ss.id))
-              )
-            );
-          }}
-          renderInput={(params) => <TextField {...params} variant="outlined" label="Select Categories" />}
-          sx={{ mb: 2 }}
-        />
-
-        {/* SubCategory */}
-        {selectedCategories.length > 0 && (
-          <Autocomplete
-            multiple
-            options={selectedCategories.flatMap((cat) =>
-              (cat.subCategories || []).map((sc) => ({ ...sc, parentCategoryId: cat.id }))
-            )}
-            getOptionLabel={(opt) => `${opt.name}${opt.commison ? ` (${opt.commison}%)` : ""}`}
-            value={selectedSubCategories}
-            onChange={(e, v) => {
-              setSelectedSubCategories(v);
-
-              // Filter selected subSubCategories to only those in newly selected subCategories
-              setSelectedSubSubCategories((prev) =>
-                prev.filter((ss) => v.some((sub) => sub.subSubCategories?.some((su) => su.id === ss.id)))
-              );
-            }}
-            renderInput={(params) => <TextField {...params} variant="outlined" label="Select SubCategories" />}
-            sx={{ mb: 2 }}
-          />
-        )}
-
-        {/* Sub-SubCategory */}
-        {selectedSubCategories.length > 0 && (
-          <Autocomplete
-            multiple
-            options={selectedSubCategories.flatMap((sub) =>
-              (sub.subSubCategories || []).map((ss) => ({ ...ss, parentSubCategoryId: sub.id }))
-            )}
-            getOptionLabel={(opt) => `${opt.name}${opt.commison ? ` (${opt.commison}%)` : ""}`}
-            value={selectedSubSubCategories}
-            onChange={(_, v) => setSelectedSubSubCategories(v)}
-            renderInput={(params) => <TextField {...params} variant="outlined" label="Select Sub‑SubCategories" />}
-            sx={{ mb: 2 }}
-          />
-        )}
-
-        {/* Products */}
-        {products.length > 0 && (
-          <Autocomplete
-            multiple
-            options={products}
-            getOptionLabel={(opt) => opt.productName}
-            value={selectedProducts}
-            onChange={(_, v) => setSelectedProducts(v)}
-            isOptionEqualToValue={(option, value) => option._id === value._id}
-            renderInput={(params) => <TextField {...params} label="Select Products" variant="outlined" />}
-          />
-        )}
-
-        {/* Actions */}
-        <div style={{ textAlign: "center", marginTop: "30px" }}>
-          <Button
-            onClick={handleSubmit}
-            style={{ backgroundColor: "#00c853", color: "white", marginRight: "20px" }}
-            disabled={loadingProducts}
-          >
-            {loadingProducts ? "Saving..." : "SAVE"}
-          </Button>
-          <Button onClick={() => navigate(-1)} style={{ backgroundColor: "#00c853", color: "white" }}>
-            BACK
-          </Button>
+      <div style={{ width: "95%", margin: "0 auto", padding: "20px", border: "1px solid gray", borderRadius: "10px" }}>
+        <h2 style={{ textAlign: "center", marginBottom: "20px", color: "green" }}>{getHeader()}</h2>
+        {getStepData()}
+        <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between" }}>
+          <Button disabled={step === 0} onClick={handlePrev} variant="contained"   style={{ backgroundColor: "#989898ff", color: "white" }}>Previous</Button>
+          {step < 3 ? (
+            <Button
+              onClick={handleNext}
+              variant="contained"
+              style={{ backgroundColor: "#1A73E8", color: "white" }}
+              disabled={
+                (step === 0 && selectedCategories.length === 0) ||
+                (step === 1 && selectedSubCategories.length === 0) ||
+                (step === 2 && selectedSubSubCategories.length === 0)
+              }
+            >
+              Next
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} variant="contained" color="success" disabled={selectedProducts.length === 0}>Submit</Button>
+          )}
         </div>
       </div>
+
+      {/* Modal for image preview */}
+      <Modal open={openModal} onClose={() => setOpenModal(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop:"-2%"}}>
+        <div style={{ maxWidth: "80%", maxHeight: "80%",overflow: "auto", }}>
+          <img src={modalImage} alt="Preview" style={{
+        maxWidth: "100%",
+        maxHeight: "100%",
+        height: "auto",
+        width: "auto",
+        objectFit: "contain",
+        borderRadius: 8,
+        display: "block",
+        margin: "0 auto"
+      }}
+    />
+        </div>
+      </Modal>
     </MDBox>
   );
 };
