@@ -2,15 +2,8 @@ import React, { useEffect, useState } from "react";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
 import { useNavigate } from "react-router-dom";
-import {
-  Button,
-  Checkbox,
-  Grid,
-  Card,
-  CardMedia,
-  CardContent,
-  FormControlLabel,
-} from "@mui/material";
+import { Button, Switch, Modal } from "@mui/material";
+import DataTable from "react-data-table-component";
 import { ENDPOINTS } from "../apis/endpoints";
 import { get, put } from "../apis/apiClient";
 
@@ -22,14 +15,15 @@ const AddStoreCat = () => {
   const [storeId, setStoreId] = useState("");
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedSubCategories, setSelectedSubCategories] = useState([]);
   const [selectedSubSubCategories, setSelectedSubSubCategories] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
-
   const [step, setStep] = useState(0);
   const [loadingProducts, setLoadingProducts] = useState(false);
+
+  const [openModal, setOpenModal] = useState(false);
+  const [modalImage, setModalImage] = useState("");
 
   useEffect(() => {
     const id = localStorage.getItem("sellerId");
@@ -49,29 +43,31 @@ const AddStoreCat = () => {
   }, []);
 
   const fetchProducts = async () => {
-    const selectedCatIds = selectedCategories.map((c) => c.id);
-    const selectedSubIds = selectedSubCategories.map((s) => s.id);
-    const selectedSubSubIds = selectedSubSubCategories.map((ss) => ss.id);
-
     const query = new URLSearchParams();
-    if (selectedCatIds.length) query.append("categories", selectedCatIds.join(","));
-    if (selectedSubIds.length) query.append("subCategories", selectedSubIds.join(","));
-    if (selectedSubSubIds.length) query.append("subSubCategories", selectedSubSubIds.join(","));
-
+    if (selectedCategories.length) query.append("categories", selectedCategories.map(c => c.id).join(","));
+    if (selectedSubCategories.length) query.append("subCategories", selectedSubCategories.map(s => s.id).join(","));
+    if (selectedSubSubCategories.length) query.append("subSubCategories", selectedSubSubCategories.map(ss => ss.id).join(","));
     try {
       setLoadingProducts(true);
       const res = await get(`${ENDPOINTS.GET_PRODUCTS}?${query.toString()}`);
       if (res.status === 200) setProducts(res.data.products || []);
     } catch (err) {
-      console.error("Error fetching products:", err);
+      console.error(err);
     } finally {
       setLoadingProducts(false);
     }
   };
 
+  const toggleSelection = (item, selectedList, setSelectedList) => {
+    const id = item.id || item._id;
+    const exists = selectedList.some(i => (i.id || i._id) === id);
+    if (exists) setSelectedList(selectedList.filter(i => (i.id || i._id) !== id));
+    else setSelectedList([...selectedList, item]);
+  };
+
   const handleNext = async () => {
     if (step === 1) {
-      const hasSubSub = selectedSubCategories.some((sc) => sc.subSubCategories?.length > 0);
+      const hasSubSub = selectedSubCategories.some(sc => sc.subSubCategories?.length > 0);
       if (!hasSubSub) {
         await fetchProducts();
         setStep(3);
@@ -79,44 +75,32 @@ const AddStoreCat = () => {
       }
     }
     if (step === 2) await fetchProducts();
-    setStep((prev) => prev + 1);
+    setStep(prev => prev + 1);
   };
 
   const handlePrev = () => {
-    if (step === 3 && !selectedSubCategories.some((sc) => sc.subSubCategories?.length > 0)) {
+    if (step === 3 && !selectedSubCategories.some(sc => sc.subSubCategories?.length > 0)) {
       setStep(1);
-    } else setStep((prev) => Math.max(prev - 1, 0));
-  };
-
-  const toggleSelection = (item, selectedList, setSelectedList) => {
-    const itemId = item.id || item._id;
-    const exists = selectedList.some((i) => (i.id || i._id) === itemId);
-    if (exists) {
-      setSelectedList(selectedList.filter((i) => (i.id || i._id) !== itemId));
-    } else {
-      setSelectedList([...selectedList, item]);
-    }
+    } else setStep(prev => Math.max(prev - 1, 0));
   };
 
   const handleSubmit = async () => {
     const payload = {
-      sellerCategories: selectedCategories.map((cat) => ({
+      sellerCategories: selectedCategories.map(cat => ({
         categoryId: cat.id,
         subCategories: selectedSubCategories
-          .filter((sc) => sc.parentCategoryId === cat.id)
-          .map((sc) => ({
+          .filter(sc => sc.parentCategoryId === cat.id)
+          .map(sc => ({
             subCategoryId: sc.id,
             subSubCategories: selectedSubSubCategories
-              .filter((ss) => ss.parentSubCategoryId === sc.id)
-              .map((ss) => ({ subSubCategoryId: ss.id })),
+              .filter(ss => ss.parentSubCategoryId === sc.id)
+              .map(ss => ({ subSubCategoryId: ss.id })),
           })),
       })),
-      sellerProducts: selectedProducts.map((p) => p._id),
+      sellerProducts: selectedProducts.map(p => p._id),
     };
     try {
-      const res = await put(`${ENDPOINTS.UPDATE_PRODUCT}/${storeId}`, payload, {
-        authRequired: true,
-      });
+      const res = await put(`${ENDPOINTS.UPDATE_PRODUCT}/${storeId}`, payload, { authRequired: true });
       if (res.status === 200) {
         alert("Saved successfully");
         navigate(-1);
@@ -127,235 +111,146 @@ const AddStoreCat = () => {
     }
   };
 
-  // ===== Renderers =====
+  const renderImage = (item, key = "image") => {
+    const src = item[key]
+      ? item[key].startsWith("http")
+        ? item[key]
+        : `${process.env.REACT_APP_IMAGE_LINK}${item[key]}`
+      : "/placeholder.png";
 
-  const renderItems = (
-    items,
-    selectedList,
-    setSelectedList,
-    type = "main", // "main" | "sub" | "subsub" | "product"
-    getImageKey = "image",
-    small = false
-  ) => (
-    <Grid container spacing={2}>
-      {items.map((item) => {
-        const itemId = item.id || item._id;
-        const isSelected = selectedList.some((i) => (i.id || i._id) === itemId);
-
-        // Extra info (show productCount everywhere)
-        let extraInfo = null;
-
-        if (type === "main") {
-          const subCount = Array.isArray(item.subCategories) ? item.subCategories.length : 0;
-          const subSubCount = Array.isArray(item.subCategories)
-            ? item.subCategories.reduce(
-                (acc, sc) =>
-                  acc + (Array.isArray(sc.subSubCategories) ? sc.subSubCategories.length : 0),
-                0
-              )
-            : 0;
-          const prodCount = item.productCount || 0;
-
-          extraInfo = (
-            <>
-              <div style={{ fontSize: 13, color: "gray", marginTop: 4 }}>
-                {subCount} Sub Categories
-              </div>
-              <div style={{ fontSize: 13, color: "gray" }}>
-                {subSubCount} Sub Sub Categories
-              </div>
-              <div style={{ fontSize: 13, color: "gray" }}>
-                {prodCount} Products
-              </div>
-            </>
-          );
-        } else if (type === "sub") {
-          const subSubCount = Array.isArray(item.subSubCategories)
-            ? item.subSubCategories.length
-            : 0;
-          extraInfo = (
-            <>
-              <div style={{ fontSize: 13, color: "gray", marginTop: 4 }}>
-                {subSubCount} Sub Sub Categories
-              </div>
-              <div style={{ fontSize: 13, color: "gray" }}>
-                {item.productCount || 0} Products
-              </div>
-              <div style={{ fontSize: 13, color: "green" }}>
-                Commission: {item.commison || 0}%
-              </div>
-            </>
-          );
-        } else if (type === "subsub") {
-          extraInfo = (
-            <>
-              <div style={{ fontSize: 13, color: "gray", marginTop: 4 }}>
-                {item.productCount || 0} Products
-              </div>
-              <div style={{ fontSize: 13, color: "green" }}>
-                Commission: {item.commison || 0}%
-              </div>
-            </>
-          );
-        }
-
-        return (
-          <Grid item xs={12} sm={6} md={4} lg={small ? 2 : 3} key={itemId}>
-            <Card
-              sx={{
-                border: isSelected ? "2px solid #1A73E8" : "1px solid #ccc",
-                cursor: "pointer",
-                height: small ? 200 : 280,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-              onClick={() => toggleSelection(item, selectedList, setSelectedList)}
-            >
-              <CardMedia
-                component="img"
-                height={small ? 100 : 140}
-                image={
-                  item[getImageKey]
-                    ? item[getImageKey].startsWith?.("http")
-                      ? item[getImageKey]
-                      : `${process.env.REACT_APP_IMAGE_LINK}${item[getImageKey]}`
-                    : "/placeholder.png"
-                }
-                alt={item.name || item.productName}
-              />
-              <CardContent
-                sx={{
-                  flexGrow: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "flex-start",
-                }}
-              >
-                <FormControlLabel
-                  control={<Checkbox checked={isSelected} />}
-                  label={item.name || item.productName}
-                />
-                {extraInfo}
-              </CardContent>
-            </Card>
-          </Grid>
-        );
-      })}
-    </Grid>
-  );
-
-  const renderProductsStep = () => (
-    <>
-      <Button
-        variant="contained"
-        onClick={() =>
-          selectedProducts.length === products.length
-            ? setSelectedProducts([])
-            : setSelectedProducts(products)
-        }
-        style={{ marginBottom: 10, backgroundColor: "#00c853", color: "white" }}
+    return (
+      <div style={{ width: 50, height: 50, overflow: "hidden", borderRadius: 4, cursor: "pointer" }}
+        onClick={() => { setModalImage(src); setOpenModal(true); }}
       >
-        {selectedProducts.length === products.length ? "Deselect All" : "Select All"}
-      </Button>
-      {renderItems(
-        products,
-        selectedProducts,
-        setSelectedProducts,
-        "product",
-        "productThumbnailUrl",
-        true
-      )}
-    </>
-  );
+        <img
+          src={src}
+          alt={item.name || item.productName}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      </div>
+    );
+  };
 
-  const getHeader = () => {
+  const customStyles = {
+    headCells: {
+      style: {
+        backgroundColor: "#1A73E8",
+        color: "white",
+        fontWeight: "bold",
+      },
+    },
+    rows: {
+      style: {
+        minHeight: "50px", // reduce row height
+      },
+    },
+  };
+
+  const getStepData = () => {
     switch (step) {
-      case 0:
-        return "Select Categories";
-      case 1:
-        return "Select Sub Categories";
-      case 2:
-        return "Select Sub Sub Categories";
-      case 3:
-        return "Select Products";
+      case 0: {
+        const columns = [
+          { name: "Sr No", cell: (row, index) => index + 1, width: "60px" },
+          { name: "Image", cell: row => renderImage(row, "image"), width: "70px" },
+          { name: "Name", selector: row => row.name },
+          { name: "Sub Categories", selector: row => (row.subCategories || []).length, width: "120px" },
+          { name: "Products", selector: row => row.productCount || 0, width: "100px" },
+          {
+            name: "Select",
+            cell: row => (
+              <Switch
+                checked={selectedCategories.some(c => c.id === row.id)}
+                onChange={() => toggleSelection(row, selectedCategories, setSelectedCategories)}
+              />
+            ),
+            width: "100px"
+          }
+        ];
+        return <DataTable columns={columns} data={categories} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
+      }
+      case 1: {
+        const subCats = selectedCategories.flatMap(cat =>
+          (cat.subCategories || []).map(sc => ({ ...sc, parentCategoryId: cat.id }))
+        );
+        const columns = [
+          { name: "Sr No", cell: (row, index) => index + 1, width: "60px" },
+          { name: "Image", cell: row => renderImage(row, "image"), width: "70px" },
+          { name: "Name", selector: row => row.name },
+          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0, width: "120px" },
+          { name: "Sub Sub Categories", selector: row => (row.subSubCategories || []).length, width: "150px" },
+          { name: "Products", selector: row => row.productCount || 0, width: "100px" },
+          {
+            name: "Select",
+            cell: row => (
+              <Switch
+                checked={selectedSubCategories.some(sc => sc.id === row.id)}
+                onChange={() => toggleSelection(row, selectedSubCategories, setSelectedSubCategories)}
+              />
+            ),
+            width: "100px"
+          }
+        ];
+        return <DataTable columns={columns} data={subCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
+      }
+      case 2: {
+        const subSubCats = selectedSubCategories.flatMap(sub =>
+          (sub.subSubCategories || []).map(ss => ({ ...ss, parentSubCategoryId: sub.id }))
+        );
+        const columns = [
+          { name: "Sr No", cell: (row, index) => index + 1, width: "60px" },
+          { name: "Image", cell: row => renderImage(row, "image"), width: "70px" },
+          { name: "Name", selector: row => row.name },
+          { name: "Commission", selector: row => row.commission ?? row.commison ?? 0, width: "120px" },
+          { name: "Products", selector: row => row.productCount || 0, width: "100px" },
+          {
+            name: "Select",
+            cell: row => (
+              <Switch
+                checked={selectedSubSubCategories.some(ss => ss.id === row.id)}
+                onChange={() => toggleSelection(row, selectedSubSubCategories, setSelectedSubSubCategories)}
+              />
+            ),
+            width: "100px"
+          }
+        ];
+        return <DataTable columns={columns} data={subSubCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
+      }
+      case 3: {
+        const columns = [
+          { name: "Sr No", cell: (row, index) => index + 1, width: "60px" },
+          { name: "Image", cell: row => renderImage(row, "productThumbnailUrl"), width: "70px" },
+          { name: "Name", selector: row => row.productName },
+          {
+            name: "Select",
+            cell: row => (
+              <Switch
+                checked={selectedProducts.some(p => p._id === row._id)}
+                onChange={() => {
+                  if (selectedProducts.some(p => p._id === row._id))
+                    setSelectedProducts(selectedProducts.filter(p => p._id !== row._id));
+                  else setSelectedProducts([...selectedProducts, row]);
+                }}
+              />
+            ),
+            width: "100px"
+          }
+        ];
+        return <DataTable columns={columns} data={products} customStyles={customStyles} pagination highlightOnHover pointerOnHover progressPending={loadingProducts} />;
+      }
       default:
-        return "";
+        return null;
     }
   };
 
+  const getHeader = () => ["Main Categories", "Sub Categories", "Sub Sub Categories", "Products"][step];
+
   return (
     <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "20px" }}>
-      <div
-        style={{
-          width: "90%",
-          margin: "0 auto",
-          borderRadius: "10px",
-          padding: "20px",
-          border: "1px solid gray",
-          boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        <h2
-          style={{
-            textAlign: "center",
-            marginBottom: "30px",
-            fontWeight: "bold",
-            color: "green",
-          }}
-        >
-          {getHeader()}
-        </h2>
-
-        {step === 0 &&
-          renderItems(
-            categories,
-            selectedCategories,
-            setSelectedCategories,
-            "main",
-            "image"
-          )}
-
-        {step === 1 &&
-          renderItems(
-            selectedCategories.flatMap((cat) =>
-              (cat.subCategories || []).map((sc) => ({
-                ...sc,
-                parentCategoryId: cat.id,
-              }))
-            ),
-            selectedSubCategories,
-            setSelectedSubCategories,
-            "sub",
-            "image"
-          )}
-
-        {step === 2 &&
-          renderItems(
-            selectedSubCategories.flatMap((sub) =>
-              (sub.subSubCategories || []).map((ss) => ({
-                ...ss,
-                parentSubCategoryId: sub.id,
-              }))
-            ),
-            selectedSubSubCategories,
-            setSelectedSubSubCategories,
-            "subsub",
-            "image"
-          )}
-
-        {step === 3 && renderProductsStep()}
-
-        <div style={{ marginTop: "30px", display: "flex", justifyContent: "space-between" }}>
-          <Button
-            disabled={step === 0}
-            onClick={handlePrev}
-            variant="contained"
-            style={{ backgroundColor: "#7b809a", color: "white" }}
-          >
-            Previous
-          </Button>
-
+      <div style={{ width: "95%", margin: "0 auto", padding: "20px", border: "1px solid gray", borderRadius: "10px" }}>
+        <h2 style={{ textAlign: "center", marginBottom: "20px", color: "green" }}>{getHeader()}</h2>
+        {getStepData()}
+        <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between" }}>
+          <Button disabled={step === 0} onClick={handlePrev} variant="contained" color="secondary">Previous</Button>
           {step < 3 ? (
             <Button
               onClick={handleNext}
@@ -364,25 +259,33 @@ const AddStoreCat = () => {
               disabled={
                 (step === 0 && selectedCategories.length === 0) ||
                 (step === 1 && selectedSubCategories.length === 0) ||
-                (step === 2 &&
-                  selectedSubCategories.some((sub) => sub.subSubCategories?.length > 0) &&
-                  selectedSubSubCategories.length === 0)
+                (step === 2 && selectedSubSubCategories.length === 0)
               }
             >
               Next
             </Button>
           ) : (
-            <Button
-              onClick={handleSubmit}
-              variant="contained"
-              color="success"
-              disabled={selectedProducts.length === 0 || loadingProducts}
-            >
-              {loadingProducts ? "Saving..." : "Save"}
-            </Button>
+            <Button onClick={handleSubmit} variant="contained" color="success" disabled={selectedProducts.length === 0}>Submit</Button>
           )}
         </div>
       </div>
+
+      {/* Modal for image preview */}
+      <Modal open={openModal} onClose={() => setOpenModal(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop:"-2%"}}>
+        <div style={{ maxWidth: "80%", maxHeight: "80%",overflow: "auto", }}>
+          <img src={modalImage} alt="Preview" style={{
+        maxWidth: "100%",
+        maxHeight: "100%",
+        height: "auto",
+        width: "auto",
+        objectFit: "contain",
+        borderRadius: 8,
+        display: "block",
+        margin: "0 auto"
+      }}
+    />
+        </div>
+      </Modal>
     </MDBox>
   );
 };
