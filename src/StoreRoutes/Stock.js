@@ -66,7 +66,7 @@ function StockManagement() {
   const [priceUpdates, setPriceUpdates] = useState({});
   const [mrpUpdates, setMrpUpdates] = useState({});
 
-  const [perPage, setPerPage] = useState(10);
+  const [perPage, setPerPage] = useState(100);
   const [searchText, setSearchText] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [error, setError] = useState("");
@@ -158,15 +158,33 @@ function StockManagement() {
     }));
   };
 
-  const handlePriceChange = (productId, variantId, newValue) => {
+const handlePriceChange = (productId, variantId, newValue) => {
+  const newPrice = Number(newValue);
+  const currentMrp = mrpUpdates[productId]?.[variantId] ??
+                     data.find(p => p._id === productId)
+                         ?.variants.find(v => v._id === variantId)?.mrp;
+
+  if (newPrice > currentMrp) {
+    // clamp price to MRP
     setPriceUpdates((prev) => ({
       ...prev,
       [productId]: {
         ...(prev[productId] || {}),
-        [variantId]: Number(newValue),
+        [variantId]: currentMrp,
       },
     }));
-  };
+    alert("Selling price cannot be higher than MRP");
+    return;
+  }
+
+  setPriceUpdates((prev) => ({
+    ...prev,
+    [productId]: {
+      ...(prev[productId] || {}),
+      [variantId]: newPrice,
+    },
+  }));
+};
 
   const handleMrpChange = (productId, variantId, newValue) => {
     setMrpUpdates((prev) => ({
@@ -366,6 +384,31 @@ function StockManagement() {
               </table>
             )}
           </div>
+{/* Pagination Controls */}
+<div style={{ marginTop: 15, display: "flex", justifyContent: "center", gap: 10 }}>
+  <Button
+     style={{   backgroundColor: "#989898ff",color: "white",}}
+    disabled={currentPage === 1}
+    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+  >
+    Previous
+  </Button>
+
+  <Typography variant="body2" style={{ alignSelf: "center" }}>
+    Page {currentPage} of {totalPages || 1}
+  </Typography>
+
+  <Button
+    variant="outlined"
+     style={{   backgroundColor: "#3c95ef",
+  color: "white",
+ }}
+    disabled={currentPage === totalPages}
+    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+  >
+    Next
+  </Button>
+</div>
 
           {/* Popover */}
           <Popover
@@ -390,7 +433,7 @@ function StockManagement() {
                       />
                       <TextField
                         size="small"
-                        label="Price"
+                        label="Selling Price"
                         type="number"
                         value={priceUpdates[p._id]?.[v._id] ?? v.sell_price}
                         onChange={(e) => handlePriceChange(p._id, v._id, e.target.value)}
