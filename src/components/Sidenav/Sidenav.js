@@ -61,7 +61,7 @@ function StoreSidenav() {
       variant="permanent"
       ownerState={{ transparentSidenav, whiteSidenav, miniSidenav, darkMode }}
       onMouseEnter={() => setMiniSidenav(dispatch, false)}
-      onMouseLeave={() => setMiniSidenav(dispatch, true)}
+      onMouseLeave={() => setMiniSidenav(dispatch, false)}
     >
       <MDBox pt={3} pb={1} px={miniSidenav ? 1 : 4} textAlign="center">
         <MDTypography
