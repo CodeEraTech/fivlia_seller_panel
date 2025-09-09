@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   TextField,
   CircularProgress,
@@ -13,7 +13,6 @@ import MDBox from "../components/MDBox";
 import { useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 
-// ✅ Table styles
 const customStyles = {
   headCells: {
     style: {
@@ -44,34 +43,53 @@ const SearchProduct = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [storeId, setStoreId] = useState("");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(100);
+  const [totalRows, setTotalRows] = useState(0);
+
+  // 🔹 keep track of previous search term
+  const prevSearchTerm = useRef("");
+
   useEffect(() => {
     const id = localStorage.getItem("sellerId");
     if (!id) return navigate("/login");
     setStoreId(id);
   }, [navigate]);
 
-  // Debounce search
+  // 🔹 Debounce search
   useEffect(() => {
     if (searchTerm.length >= 3) {
       const delay = setTimeout(() => {
-        searchProducts(searchTerm);
+        // only reset to page 1 if the term actually changed
+        if (prevSearchTerm.current !== searchTerm) {
+          setCurrentPage(1);
+          prevSearchTerm.current = searchTerm;
+          searchProducts(searchTerm, 1, perPage);
+        } else {
+          searchProducts(searchTerm, currentPage, perPage);
+        }
       }, 500);
       return () => clearTimeout(delay);
     } else {
       setProductResults([]);
       setHasSearched(false);
+      setTotalRows(0);
     }
-  }, [searchTerm]);
+  }, [searchTerm, currentPage, perPage]);
 
-  const searchProducts = async (query) => {
+  const searchProducts = async (query, page = 1, limit = perPage) => {
     setLoading(true);
     setHasSearched(true);
     try {
-      const res = await get(`${ENDPOINTS.GET_EXISTING_PRODUCT_LIST}?q=${query}`);
+      const res = await get(
+        `${ENDPOINTS.GET_EXISTING_PRODUCT_LIST}?q=${query}&page=${page}&limit=${limit}`
+      );
       setProductResults(res.data?.products || []);
+      setTotalRows(res.data?.totalCount || 0);
     } catch (error) {
       console.error("Search failed", error);
       setProductResults([]);
+      setTotalRows(0);
     } finally {
       setLoading(false);
     }
@@ -163,7 +181,6 @@ const SearchProduct = () => {
     navigate("/add-seller-product");
   };
 
-  // ✅ Table columns
   const columns = [
     {
       name: "Image",
@@ -211,7 +228,6 @@ const SearchProduct = () => {
         transition: "margin-left 0.3s ease",
       }}
     >
-      {/* Search Bar */}
       <Box
         mb={3}
         sx={{
@@ -229,43 +245,54 @@ const SearchProduct = () => {
         />
       </Box>
 
-      {/* Loader */}
       {loading && (
         <Box display="flex" justifyContent="center" mt={5}>
           <CircularProgress />
         </Box>
       )}
 
-      {/* Results Table */}
       {!loading && productResults.length > 0 && (
-          <div
+        <div
           style={{
             background: "white",
             borderRadius: "10px",
             padding: "10px",
           }}
         >
-        <DataTable
-          columns={columns}
-          data={productResults}
-          customStyles={customStyles}
-          highlightOnHover
-          striped
-          responsive
-          pagination
-          noDataComponent={
-            <div style={{ padding: "20px", textAlign: "center", fontSize: "16px" }}>
-              No Products Found
-            </div>
-          }
-        />
+          <DataTable
+            columns={columns}
+            data={productResults}
+            customStyles={customStyles}
+            highlightOnHover
+            striped
+            responsive
+            pagination
+            paginationServer
+            paginationTotalRows={totalRows}
+            paginationPerPage={perPage}
+            defaultPerPage={100}
+            paginationRowsPerPageOptions={[100, 200, 300, 500, 1000]}
+            onChangePage={(page) => setCurrentPage(page)}
+            onChangeRowsPerPage={(newPerPage) => {
+              setPerPage(newPerPage);
+              setCurrentPage(1);
+            }}
+            noDataComponent={
+              <div
+                style={{ padding: "20px", textAlign: "center", fontSize: "16px" }}
+              >
+                No Products Found
+              </div>
+            }
+          />
         </div>
       )}
 
-      {/* No Results */}
       {!loading && hasSearched && productResults.length === 0 && (
         <Box textAlign="center" mt={5}>
-          <p style={{ fontSize: "18px", fontWeight: 500 }}>No matching products found.</p>
+          <p style={{ fontSize: "18px", fontWeight: 500 }}>
+            No matching products found.
+          </p>
           <Button
             sx={{ mt: 2, backgroundColor: "#00c853", color: "#fff" }}
             onClick={handleAddNewProduct}

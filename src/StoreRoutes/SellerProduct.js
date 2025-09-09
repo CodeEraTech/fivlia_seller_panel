@@ -55,7 +55,8 @@ function SellerProduct() {
   const [loading, setLoading] = useState(false);
   const [totalRows, setTotalRows] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
+  const [perPage, setPerPage] = useState(100);
+
   const [searchText, setSearchText] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
 
@@ -87,7 +88,7 @@ function SellerProduct() {
     get(`${ENDPOINTS.GET_SELLER_PRODUCTS}?${params.toString()}`)
       .then((res) => {
         setProducts(res.data.products || []);
-        setTotalRows(res.data.totalCount || 0);
+        setTotalRows(res.data.total || 0);
       })
       .catch((err) => console.error("Fetch Products failed", err))
       .finally(() => setLoading(false));
@@ -254,6 +255,8 @@ function SellerProduct() {
             paginationServer
             paginationTotalRows={totalRows}
             paginationPerPage={perPage}
+            defaultPerPage={100}
+            paginationRowsPerPageOptions={[100, 200, 300, 500, 1000]}
             onChangePage={(page) => setCurrentPage(page)}
             onChangeRowsPerPage={(newPerPage) => {
               setPerPage(newPerPage);
