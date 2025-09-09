@@ -187,7 +187,7 @@ const AddStoreCat = () => {
 }
 
         ];
-        return <DataTable columns={columns} data={categories} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
+        return <DataTable columns={columns} data={categories} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
       }
       case 1: {
         const subCats = selectedCategories.flatMap(cat =>
@@ -230,7 +230,7 @@ const AddStoreCat = () => {
 }
 
         ];
-        return <DataTable columns={columns} data={subCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
+        return <DataTable columns={columns} data={subCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
       }
       case 2: {
         const subSubCats = selectedSubCategories.flatMap(sub =>
@@ -271,7 +271,7 @@ const AddStoreCat = () => {
             width: "100px"
           }
         ];
-        return <DataTable columns={columns} data={subSubCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover />;
+        return <DataTable columns={columns} data={subSubCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
       }
       case 3: {
         const columns = [
@@ -311,7 +311,7 @@ const AddStoreCat = () => {
             width: "100px"
           }
         ];
-        return <DataTable columns={columns} data={products} customStyles={customStyles} pagination highlightOnHover pointerOnHover progressPending={loadingProducts} />;
+        return <DataTable columns={columns} data={products} customStyles={customStyles} pagination highlightOnHover pointerOnHover progressPending={loadingProducts} paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
       }
       default:
         return null;
