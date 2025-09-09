@@ -5,7 +5,7 @@ import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
 import { ENDPOINTS } from "apis/endpoints";
-import { get } from "apis/apiClient";
+import { get, post } from "apis/apiClient";
 
 // ✅ Button style
 const btnStyle = {
@@ -84,13 +84,9 @@ function StoreCategories() {
       const confirmDelete = window.confirm("Are you sure you want to remove this category?");
       if (!confirmDelete) return;
 
-      const result = await fetch(`https://api.fivlia.in/removeCategoryInStore/${storeId}`, {
-        method: "DELETE",
-        body: JSON.stringify({ Category: id }),
-        headers: { "Content-Type": "application/json" },
-      });
+      const res = await post(ENDPOINTS.DELETE_CATEGORY, { storeId, categoryId: id });
 
-      if (result.ok) {
+      if (res.status === 200) {
         alert("Removed Successfully");
         setCategories((prev) => prev.filter((cat) => cat._id !== id));
       } else {
