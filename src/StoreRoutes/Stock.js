@@ -411,17 +411,17 @@ function StockManagement() {
                   />
                   <TextField
                     size="small"
-                    label="Price"
-                    type="number"
-                    value={priceUpdates[p._id]?.[v._id] ?? v.sell_price}
-                    onChange={(e) => handlePriceChange(p._id, v._id, e.target.value)}
-                  />
-                  <TextField
-                    size="small"
                     label="MRP"
                     type="number"
                     value={mrpUpdates[p._id]?.[v._id] ?? v.mrp}
                     onChange={(e) => handleMrpChange(p._id, v._id, e.target.value)}
+                  />
+                  <TextField
+                    size="small"
+                    label="Selling Price"
+                    type="number"
+                    value={priceUpdates[p._id]?.[v._id] ?? v.sell_price}
+                    onChange={(e) => handlePriceChange(p._id, v._id, e.target.value)}
                   />
                 </div>
               ))}

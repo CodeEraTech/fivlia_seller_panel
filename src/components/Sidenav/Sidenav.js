@@ -73,7 +73,7 @@ function StoreSidenav() {
           sx={{ gap: 1, fontSize: miniSidenav ? "18px" : "20px" }}
         >
           <StoreIcon fontSize="medium" style={{ color: "white" }} />
-          {!miniSidenav && "Fivlia Store"}
+          {!miniSidenav && "Fivlia Seller"}
           {miniSidenav && "Fivlia"}
         </MDTypography>
       </MDBox>
