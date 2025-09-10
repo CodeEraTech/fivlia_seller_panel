@@ -20,6 +20,9 @@ const customStyles = {
       fontWeight: "bold",
       backgroundColor: "#3c95ef",
       color: "white",
+      position: "sticky",
+       right: 0,
+       zIndex: 2,
     },
   },
   cells: {
@@ -27,6 +30,10 @@ const customStyles = {
       fontSize: "14px",
       paddingTop: "14px",
       paddingBottom: "14px",
+      position: "sticky",
+      backgroundColor: "#fff",
+      right: 0,
+      zIndex: 1,
     },
   },
 };
