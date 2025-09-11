@@ -17,5 +17,5 @@ export const ENDPOINTS = {
   UPDATE_SELLER_PRODUCT_STOCK: "/updateSellerStock",
   GET_CATEGORY_LIST: "/getSellerCategoryList",
   GET_EXISTING_PRODUCT_LIST: "/getExistingProductList",
-  DELETE_CATEGORY: "/seller/categories/delete",
+  DELETE_CATEGORY: "/removeCategory",
 }; 

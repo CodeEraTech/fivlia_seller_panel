@@ -87,6 +87,7 @@ function SellerLogin() {
         alert("Login successful!");
         localStorage.setItem("userType", "seller");
         localStorage.setItem("sellerId", res.data.sellerId);
+        localStorage.setItem("storeName", res.data.storeName);
         navigate("/dashboard1");
       } else {
         alert(res.data?.message || "Invalid OTP");

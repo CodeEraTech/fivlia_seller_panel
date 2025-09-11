@@ -5,7 +5,7 @@ import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
 import { ENDPOINTS } from "apis/endpoints";
-import { get, post } from "apis/apiClient";
+import { get, put } from "apis/apiClient";
 
 // ✅ Button style
 const btnStyle = {
@@ -84,7 +84,7 @@ function StoreCategories() {
       const confirmDelete = window.confirm("Are you sure you want to remove this category?");
       if (!confirmDelete) return;
 
-      const res = await post(ENDPOINTS.DELETE_CATEGORY, { storeId, categoryId: id });
+      const res = await put(ENDPOINTS.DELETE_CATEGORY, { storeId, categoryId: id });
 
       if (res.status === 200) {
         alert("Removed Successfully");

@@ -76,6 +76,7 @@ function StockManagement() {
         ...p,
         _id: p.sellerProductId,
         totalStock: (p.variants || []).reduce((sum, v) => sum + (v.stock || 0), 0),
+        commission: p.commission || 0,
       }));
 
       setProducts(products);
@@ -178,7 +179,11 @@ function StockManagement() {
     handlePopoverClose();
   };
 
-  // 👉 Which products show in popover
+  const calculateNetAmount = (price, commission) => {
+  if (!price || isNaN(price)) return 0;
+  return price - (price * (commission / 100));
+  };
+
   const popoverProducts =
     popoverType === "outOfStock"
       ? products.filter((p) => p.totalStock === 0)
@@ -392,6 +397,7 @@ function StockManagement() {
       >
         <div style={{ padding: "15px",backgroundColor:"white", maxWidth: 500, maxHeight: 400, overflowY: "auto" }}>
           {popoverProducts.map((p) => (
+            
             <div key={p._id}>
               <h4>{p.productName}</h4>
               {p.variants.map((v) => (
@@ -423,6 +429,14 @@ function StockManagement() {
                     value={priceUpdates[p._id]?.[v._id] ?? v.sell_price}
                     onChange={(e) => handlePriceChange(p._id, v._id, e.target.value)}
                   />
+                  <div style={{ fontSize: "12px", color: "#555", marginTop: "4px" }}>
+                  You will get ₹
+                  {calculateNetAmount(
+                    priceUpdates[p._id]?.[v._id] ?? v.sell_price,
+                    p.commission
+                  ).toFixed(2)}{" "}
+                  after {p.commission}% commission
+                </div>
                 </div>
               ))}
             </div>

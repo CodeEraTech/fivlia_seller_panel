@@ -17,6 +17,7 @@ import {
 import StoreRoutes from "route"; // Update this path if needed
 
 function StoreSidenav() {
+  const storeName = localStorage.getItem("storeName") || "Fivlia";
   const [controller, dispatch] = useMaterialUIController();
   const { miniSidenav, transparentSidenav, whiteSidenav, darkMode } = controller;
   const location = useLocation();
@@ -25,7 +26,6 @@ function StoreSidenav() {
 
   const renderRoutes = StoreRoutes.map(({ type, name, key, icon, route }) => {
     const active = location.pathname === route;
-
     if (type === "collapse") {
       if (key === "logout") {
         return (
@@ -73,7 +73,7 @@ function StoreSidenav() {
           sx={{ gap: 1, fontSize: miniSidenav ? "18px" : "20px" }}
         >
           <StoreIcon fontSize="medium" style={{ color: "white" }} />
-          {!miniSidenav && "Fivlia Seller"}
+          {!miniSidenav && `${storeName} Store`}
           {miniSidenav && "Fivlia"}
         </MDTypography>
       </MDBox>
