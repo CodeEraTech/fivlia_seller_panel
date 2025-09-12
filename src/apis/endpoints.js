@@ -18,4 +18,5 @@ export const ENDPOINTS = {
   GET_CATEGORY_LIST: "/getSellerCategoryList",
   GET_EXISTING_PRODUCT_LIST: "/getExistingProductList",
   DELETE_CATEGORY: "/removeCategory",
+  DELETE_PRODUCT: "/removeProduct",
 }; 

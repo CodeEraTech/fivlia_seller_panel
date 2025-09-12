@@ -25,6 +25,11 @@ const btnStyle = {
   cursor: "pointer",
   fontWeight: 500,
 };
+const BtnStyle = {
+  backgroundColor: "#dc3545",
+  color: "white",
+  cursor: "pointer",
+};
 
 const customStyles = {
   headCells: {
@@ -114,6 +119,28 @@ function SellerProduct() {
     }
   };
 
+  const handleRemoveProduct = async (rowId) => {
+  if (!window.confirm("Are you sure you want to remove this product?")) return;
+
+  try {
+    const res = await put(ENDPOINTS.DELETE_PRODUCT, {
+      storeId,
+      productId: rowId,
+    });
+
+    if (res.status === 200) {
+      setProducts((prev) => prev.filter((p) => p.productId !== rowId));
+      alert("Product removed successfully");
+    } else {
+      alert(res.data?.message || "Failed to remove product");
+    }
+  } catch (err) {
+    console.error("Failed to remove product", err);
+    alert("Something went wrong while removing the product.");
+  }
+};
+
+
   const columns = [
     {
       name: "Sr No",
@@ -150,8 +177,23 @@ function SellerProduct() {
       ),
       width: "120px",
       center: true,
-    },
-  ];
+    }, 
+    {
+    name: "Action",
+    cell: (row) => (
+      <Button
+        variant="contained"
+        style={BtnStyle}
+        size="small"
+        onClick={() => handleRemoveProduct(row.productId)}
+      >
+        Remove
+      </Button>
+    ),
+    width: "120px",
+    center: true,
+  },
+];
 
   return (
     <MDBox

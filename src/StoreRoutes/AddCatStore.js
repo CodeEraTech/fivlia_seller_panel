@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
 import { useNavigate } from "react-router-dom";
-import { Button, Checkbox, Modal } from "@mui/material";
+import { Button, Checkbox, Modal, CircularProgress, Box} from "@mui/material";
 import DataTable from "react-data-table-component";
 import { ENDPOINTS } from "../apis/endpoints";
 import { get, put } from "../apis/apiClient";
@@ -15,12 +15,13 @@ const AddStoreCat = () => {
   const [storeId, setStoreId] = useState("");
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedSubCategories, setSelectedSubCategories] = useState([]);
   const [selectedSubSubCategories, setSelectedSubSubCategories] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [step, setStep] = useState(0);
-  const [loadingProducts, setLoadingProducts] = useState(false);
 
   const [openModal, setOpenModal] = useState(false);
   const [modalImage, setModalImage] = useState("");
@@ -32,11 +33,14 @@ const AddStoreCat = () => {
 
   useEffect(() => {
     const fetchCategories = async () => {
+      setLoading(true);
       try {
         const res = await get(ENDPOINTS.CATEGORIES);
         if (res.status === 200) setCategories(res.data.categories || []);
       } catch (err) {
         console.error("Error fetching categories", err);
+      } finally {
+        setLoading(false); // ✅ Hide Loader
       }
     };
     fetchCategories();
@@ -47,14 +51,14 @@ const AddStoreCat = () => {
     if (selectedCategories.length) query.append("categories", selectedCategories.map(c => c.id).join("%"));
     if (selectedSubCategories.length) query.append("subCategories", selectedSubCategories.map(s => s.id).join("%"));
     if (selectedSubSubCategories.length) query.append("subSubCategories", selectedSubSubCategories.map(ss => ss.id).join("%"));
+    setLoading(true); 
     try {
-      setLoadingProducts(true);
       const res = await get(`${ENDPOINTS.GET_PRODUCTS}?${query.toString()}`);
       if (res.status === 200) setProducts(res.data.products || []);
     } catch (err) {
       console.error(err);
     } finally {
-      setLoadingProducts(false);
+      setLoading(false);
     }
   };
 
@@ -99,6 +103,7 @@ const AddStoreCat = () => {
       })),
       sellerProducts: selectedProducts.map(p => p._id),
     };
+    setSubmitting(true); 
     try {
       const res = await put(`${ENDPOINTS.UPDATE_PRODUCT}/${storeId}`, payload, { authRequired: true });
       if (res.status === 200) {
@@ -108,6 +113,8 @@ const AddStoreCat = () => {
     } catch (err) {
       console.error(err);
       alert("Save failed");
+    } finally {
+      setSubmitting(false); // ✅ Hide Loader
     }
   };
 
@@ -311,7 +318,7 @@ const AddStoreCat = () => {
             width: "100px"
           }
         ];
-        return <DataTable columns={columns} data={products} customStyles={customStyles} pagination highlightOnHover pointerOnHover progressPending={loadingProducts} paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
+        return <DataTable columns={columns} data={products} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
       }
       default:
         return null;
@@ -322,6 +329,28 @@ const AddStoreCat = () => {
 
   return (
     <MDBox ml={miniSidenav ? "80px" : "250px"} p={2} sx={{ marginTop: "20px" }}>
+
+      {/* ✅ Full-Screen Loading Overlay */}
+ {loading && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: -10,
+            left: 130,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(255,255,255,0.7)",
+            zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "10px",
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      )}
+
       <div style={{ width: "95%", margin: "0 auto", padding: "20px", border: "1px solid gray", borderRadius: "10px" }}>
         <h2 style={{ textAlign: "center", marginBottom: "20px", color: "green" }}>{getHeader()}</h2>
         {getStepData()}
@@ -341,7 +370,7 @@ const AddStoreCat = () => {
               Next
             </Button>
           ) : (
-            <Button onClick={handleSubmit} variant="contained" color="success" disabled={selectedProducts.length === 0}>Submit</Button>
+            <Button onClick={handleSubmit} variant="contained" color="success" disabled={selectedProducts.length === 0}> {submitting ? <CircularProgress size={22} color="inherit" /> : "Submit"}</Button>
           )}
         </div>
       </div>

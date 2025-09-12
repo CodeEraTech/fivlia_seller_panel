@@ -403,8 +403,9 @@ function StockManagement() {
               {p.variants.map((v) => (
                 <div
                   key={v._id}
-                  style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}
+                  style={{ marginBottom: "13px" }}
                 >
+                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <span>
                     {v.attributeName}: {v.variantValue}
                   </span>
@@ -429,7 +430,8 @@ function StockManagement() {
                     value={priceUpdates[p._id]?.[v._id] ?? v.sell_price}
                     onChange={(e) => handlePriceChange(p._id, v._id, e.target.value)}
                   />
-                  <div style={{ fontSize: "12px", color: "#555", marginTop: "4px" }}>
+                </div>
+              <div style={{ fontSize: "14px",fontWeight:"600", color: "#2e7d32",marginTop: "4px", marginLeft: "80px", }}>
                   You will get ₹
                   {calculateNetAmount(
                     priceUpdates[p._id]?.[v._id] ?? v.sell_price,
