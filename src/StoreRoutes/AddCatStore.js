@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
 import { useNavigate } from "react-router-dom";
-import { Button, Checkbox, Modal, CircularProgress, Box} from "@mui/material";
+import { Button, Checkbox, Modal, CircularProgress, Box, TextField} from "@mui/material";
 import DataTable from "react-data-table-component";
 import { ENDPOINTS } from "../apis/endpoints";
 import { get, put } from "../apis/apiClient";
@@ -21,6 +21,7 @@ const AddStoreCat = () => {
   const [selectedSubCategories, setSelectedSubCategories] = useState([]);
   const [selectedSubSubCategories, setSelectedSubSubCategories] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [step, setStep] = useState(0);
 
   const [openModal, setOpenModal] = useState(false);
@@ -155,6 +156,13 @@ const AddStoreCat = () => {
     },
   };
 
+const getFilteredData = (data, key = "name") => {
+  if (!searchTerm.trim()) return data;
+  return data.filter(item =>
+    (item[key] || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+};
+
   const getStepData = () => {
     switch (step) {
       case 0: {
@@ -194,7 +202,8 @@ const AddStoreCat = () => {
 }
 
         ];
-        return <DataTable columns={columns} data={categories} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
+        const filteredCategories = getFilteredData(categories, "name");
+        return <DataTable columns={columns} data={filteredCategories} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
       }
       case 1: {
         const subCats = selectedCategories.flatMap(cat =>
@@ -237,7 +246,8 @@ const AddStoreCat = () => {
 }
 
         ];
-        return <DataTable columns={columns} data={subCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
+        const filteredSubCats = getFilteredData(subCats, "name");
+        return <DataTable columns={columns} data={filteredSubCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
       }
       case 2: {
         const subSubCats = selectedSubCategories.flatMap(sub =>
@@ -278,7 +288,8 @@ const AddStoreCat = () => {
             width: "100px"
           }
         ];
-        return <DataTable columns={columns} data={subSubCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
+        const filteredSubSubCats = getFilteredData(subSubCats, "name");
+        return <DataTable columns={columns} data={filteredSubSubCats} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
       }
       case 3: {
         const columns = [
@@ -318,7 +329,8 @@ const AddStoreCat = () => {
             width: "100px"
           }
         ];
-        return <DataTable columns={columns} data={products} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
+        const filteredProducts = getFilteredData(products, "productName");
+        return <DataTable columns={columns} data={filteredProducts} customStyles={customStyles} pagination highlightOnHover pointerOnHover paginationRowsPerPageOptions={[30, 50, 100]} paginationPerPage={30}/>;
       }
       default:
         return null;
@@ -351,9 +363,25 @@ const AddStoreCat = () => {
         </Box>
       )}
 
-      <div style={{ width: "95%", margin: "0 auto", padding: "20px", border: "1px solid gray", borderRadius: "10px" }}>
-        <h2 style={{ textAlign: "center", marginBottom: "20px", color: "green" }}>{getHeader()}</h2>
-        {getStepData()}
+     <div style={{ 
+  width: "95%", margin: "0 auto", padding: "20px", border: "1px solid gray", borderRadius: "10px",
+}}>
+  {/* Heading + Search in one row */}
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+    <h2 style={{ margin:0, color: "green" }}>{getHeader()}</h2>
+    <TextField
+      placeholder="Search..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      variant="outlined"
+      size="small"
+      style={{ width: "250px" }}
+    />
+  </div>
+
+  {/* Table below heading/search */}
+  {getStepData()}
+
         <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between" }}>
           <Button disabled={step === 0} onClick={handlePrev} variant="contained"   style={{ backgroundColor: "#989898ff", color: "white" }}>Previous</Button>
           {step < 3 ? (
