@@ -12,6 +12,7 @@ import StoreOrder from "./StoreRoutes/StoreOrder";
 import StoreSidenav from "./components/Sidenav/Sidenav";
 import AddSellerProduct from "./StoreRoutes/addProduct";
 import SearchProduct from "./StoreRoutes/SearchProduct";
+import Profile from './StoreRoutes/Profile';
 
 function App() {
   const { pathname } = useLocation();
@@ -28,6 +29,7 @@ function App() {
         <Route path="/sellerProduct" element={<SellerProduct />} />
         <Route path="/add-seller-product" element={<AddSellerProduct />} />
         <Route path="/stock" element={<Stock />} />
+        <Route path="/Profile" element={<Profile />} />
         <Route path="/addstorecat" element={<AddStoreCat />} />
         <Route path="/store-orders" element={<StoreOrder />} />
         <Route path="/search-products" element={<SearchProduct />} />

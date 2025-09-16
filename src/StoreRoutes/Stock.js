@@ -132,7 +132,14 @@ function StockManagement() {
 
   const handleSaveStock = async () => {
     let updated = [...products];
-    for (const productId of Object.keys(stockUpdates)) {
+
+     const allProductIds = new Set([
+    ...Object.keys(stockUpdates),
+    ...Object.keys(priceUpdates),
+    ...Object.keys(mrpUpdates),
+  ]);
+
+    for (const productId of allProductIds) {
       const product = products.find((p) => p._id === productId);
       if (!product) continue;
 

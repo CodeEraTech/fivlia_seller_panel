@@ -73,7 +73,17 @@ function StoreSidenav() {
           sx={{ gap: 1, fontSize: miniSidenav ? "18px" : "20px" }}
         >
           <StoreIcon fontSize="medium" style={{ color: "white" }} />
-          {!miniSidenav && `${storeName} Store`}
+          {!miniSidenav && (
+            // eslint-disable-next-line jsx-a11y/no-distracting-elements
+            <marquee
+              behavior="scroll"
+              direction="left"
+              scrollamount="4"
+              style={{ marginLeft: "8px", whiteSpace: "nowrap" }}
+            >
+              {storeName} Store
+            </marquee>
+          )}
           {miniSidenav && "Fivlia"}
         </MDTypography>
       </MDBox>

@@ -3,6 +3,7 @@ import WalletIcon from "@mui/icons-material/Wallet";
 import CategoryIcon from "@mui/icons-material/Category";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import AccountCircle from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import Wallet from "./StoreRoutes/SellerWallet"
@@ -10,6 +11,7 @@ import DashBoard from './StoreRoutes/DashBoard';
 import StoreCategories from './StoreRoutes/Categories';
 import SellerProduct from './StoreRoutes/SellerProduct';
 import Stock from './StoreRoutes/Stock';
+import Profile from './StoreRoutes/Profile';
 import StoreOrder from './StoreRoutes/StoreOrder';
 
 const StoreRoutes = [
@@ -60,6 +62,14 @@ const StoreRoutes = [
     icon: <ShoppingCartIcon />,
     route: "/store-orders",
     component: <StoreOrder />,
+  },
+  {
+    type: "collapse",
+    name: "Profile",
+    key: "profile",
+    icon: <AccountCircle />,
+    route: "/profile",
+    component: <Profile />,
   },
   {
     type: "collapse",
