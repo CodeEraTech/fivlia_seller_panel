@@ -64,6 +64,7 @@ export default function SellerProfile() {
     gstNumber: "",
     fsiNumber: "",
     image: "",
+    aadharCard: ""
   });
 
   const [bankDetails, setBankDetails] = useState({});
@@ -141,6 +142,7 @@ export default function SellerProfile() {
         gstNumber: data.gstNumber || "",
         fsiNumber: data.fsiNumber || "",
         image: data.image || "",
+        aadharCard: Array.isArray(data.aadharCard) ? data.aadharCard[0] : (data.aadharCard || "")
       });
       setBankDetails(data.bankDetails || {});
       setAddress({
@@ -195,6 +197,10 @@ export default function SellerProfile() {
       formData.append("gstNumber", form.gstNumber);
       if (form.image instanceof File) {
         formData.append("image", form.image);
+      }
+
+      if (form.aadharCard instanceof File) {
+        formData.append("aadharCard", form.aadharCard);
       }
 
       const res = await fetch(`${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`, {
@@ -627,6 +633,58 @@ console.log('payload',payload)
   </Box>
 </Grid>
 
+<Grid item xs={12}>
+  <Box display="flex" alignItems="center" gap={2}>
+    {/* File Input for Aadhar Card */}
+    <TextField
+      label="Aadhar Card"
+      type="file"
+      fullWidth
+      margin="dense"
+      InputLabelProps={{ shrink: true }}
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          handleFormChange("aadharCard", file);
+        }
+      }}
+      helperText="Upload Aadhar card"
+      variant="outlined"
+    />
+
+   {form.aadharCard &&
+  (form.aadharCard.endsWith(".jpg") ||
+   form.aadharCard.endsWith(".jpeg") ||
+   form.aadharCard.endsWith(".png")) && (
+    <Box
+      sx={{
+        width: 104,
+        height: 84,
+        borderRadius: 2,
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        border: "1px solid #ddd",
+        backgroundColor: "#fafafa",
+      }}
+    >
+      <img
+        src={`${process.env.REACT_APP_IMAGE_LINK}${form.aadharCard}`}
+        alt="Aadhar Card"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
+      />
+    </Box>
+)}
+
+  </Box>
+</Grid>
+
+
             </Grid>
             <Box display="flex" gap={2} mt={3} justifyContent={{ xs: "center", sm: "flex-end" }}>
               <Button
@@ -700,7 +758,8 @@ console.log('payload',payload)
               </Typography>
               <Button
                 variant="contained"
-                sx={{ bgcolor: "primary.main", color: "white" }}
+                // color= "primary" 
+                sx={{color:"white !important" }}
                 startIcon={<AddIcon />}
                 onClick={openBankDialog}
               >
@@ -716,7 +775,7 @@ console.log('payload',payload)
                   />
                   <ListItemSecondaryAction>
                     <Tooltip title="Primary account">
-                      <AccountBalanceIcon color="primary" sx={{ mr: 1 }} />
+                      <AccountBalanceIcon color="primary" sx={{ mr: 1}} />
                     </Tooltip>
                     <IconButton edge="end" onClick={openBankDialog}>
                       <EditIcon />
@@ -794,7 +853,7 @@ console.log('payload',payload)
           <Button
             onClick={saveBankAccount}
             variant="contained"
-            color="primary"
+            sx={{color:"white !important"}}
             disabled={saving}
           >
             {saving ? "Saving..." : "Save"}
@@ -930,7 +989,7 @@ console.log('payload',payload)
                 </Button>
                 <Button
                   variant="contained"
-                  color="primary"
+                  sx={{color:"white !important"}}
                   onClick={() => {
                     if (zoneCenter) {
                       setMarkerPosition(zoneCenter);
@@ -955,7 +1014,7 @@ console.log('payload',payload)
           <Button
             onClick={submitAddressUpdateRequest}
             variant="contained"
-            color="primary"
+            sx={{color:"white !important"}}
             startIcon={<SaveIcon />}
             disabled={saving}
           >
