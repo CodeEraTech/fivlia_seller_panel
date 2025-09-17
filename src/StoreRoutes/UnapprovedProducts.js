@@ -1,34 +1,35 @@
 import React, { useEffect, useState } from "react";
 import {
   Button,
-  Switch,
   TextField,
   CircularProgress,
   Box,
-  MenuItem,
-  FormControl,
-  Select,
-  InputLabel,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
-import { get, put } from "apis/apiClient";
+import { get, post, put } from "apis/apiClient";
 import { ENDPOINTS } from "apis/endpoints";
 
 const btnStyle = {
-  backgroundColor: "#00c853",
+  backgroundColor: "#1976d2",
   color: "white",
   padding: "8px 16px",
   borderRadius: "6px",
   cursor: "pointer",
   fontWeight: 500,
 };
-const BtnStyle = {
-  backgroundColor: "#dc3545",
-  color: "white",
-  cursor: "pointer",
+
+const statusColors = {
+  pending_admin_approval: "#FFD700", // yellow
+  request_brand_approval: "#FF8C00", // orange
+  approved: "#4CAF50", // green
+  rejected: "#F44336", // red
 };
 
 const customStyles = {
@@ -49,21 +50,24 @@ const customStyles = {
   },
 };
 
-function SellerProduct() {
+function UnapprovedProducts() {
   const navigate = useNavigate();
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
 
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [storeId, setStoreId] = useState("");
   const [loading, setLoading] = useState(false);
   const [totalRows, setTotalRows] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(100);
-
   const [searchText, setSearchText] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+
+  // Popup state
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [updateFile, setUpdateFile] = useState(null);
+  const [description, setDescription] = useState("");
 
   useEffect(() => {
     const id = localStorage.getItem("sellerId");
@@ -73,74 +77,66 @@ function SellerProduct() {
 
   useEffect(() => {
     if (!storeId) return;
-    get(`${ENDPOINTS.GET_CATEGORY_LIST}/${storeId}`)
-      .then((res) => setCategories(res.data.categories || []))
-      .catch((err) => console.error("Failed to fetch categories", err));
-  }, [storeId]);
+    fetchProducts();
+  }, [storeId, currentPage, perPage, searchText]);
 
-  useEffect(() => {
-    if (!storeId) return;
+  const fetchProducts = () => {
     setLoading(true);
-
     const params = new URLSearchParams({
       sellerId: storeId,
       page: currentPage,
       limit: perPage,
       search: searchText,
-      category: categoryFilter,
     });
 
-    get(`${ENDPOINTS.GET_SELLER_PRODUCTS}?${params.toString()}`)
+    get(`${ENDPOINTS.GET_UNAPPROVED_PRODUCTS}?${params.toString()}`)
       .then((res) => {
         setProducts(res.data.products || []);
         setTotalRows(res.data.total || 0);
       })
       .catch((err) => console.error("Fetch Products failed", err))
       .finally(() => setLoading(false));
-  }, [storeId, currentPage, perPage, searchText, categoryFilter]);
-
-  const handleStatusToggle = async (rowId, currentStatus) => {
-    try {
-      const res = await put(
-        `${ENDPOINTS.UPDATE_SELLER_PRODUCT_STATUS}/${storeId}`,
-        {
-          productId: rowId,
-          status: !currentStatus,
-        }
-      );
-      if (res.status === 200) {
-        setProducts((prev) =>
-          prev.map((p) =>
-            p.productId === rowId ? { ...p, status: !currentStatus } : p
-          )
-        );
-      } else {
-        alert(res.data?.message || "Failed to update status");
-      }
-    } catch (err) {
-      console.error("Failed to update status", err);
-    }
   };
 
-  const handleRemoveProduct = async (rowId) => {
-    if (!window.confirm("Are you sure you want to remove this product?"))
-      return;
+  const handleOpenDialog = (product) => {
+    if (product.sellerProductStatus !== "request_brand_approval") return;
+
+    setSelectedProduct(product);
+    setUpdateFile(null);
+    setDescription("");
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedProduct(null);
+    setUpdateFile(null);
+    setDescription("");
+  };
+
+  const handleSaveUpdate = async () => {
+    if (!selectedProduct) return;
+
+    const formData = new FormData();
+    formData.append("productId", selectedProduct._id);
+    if (updateFile) formData.append("brandDocument", updateFile);
+    if (description) formData.append("description", description);
 
     try {
-      const res = await put(ENDPOINTS.DELETE_PRODUCT, {
-        storeId,
-        productId: rowId,
+      const res = await post(ENDPOINTS.UPDATE_BRAND_DOCUMENT, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (res.status === 200) {
-        setProducts((prev) => prev.filter((p) => p.productId !== rowId));
-        alert("Product removed successfully");
+        fetchProducts();
+        handleCloseDialog();
+        alert("Brand update submitted successfully");
       } else {
-        alert(res.data?.message || "Failed to remove product");
+        alert(res.data?.message || "Failed to update brand approval");
       }
     } catch (err) {
-      console.error("Failed to remove product", err);
-      alert("Something went wrong while removing the product.");
+      //console.error("Failed to update brand approval", err);
+      alert("Something went wrong while submitting brand update.");
     }
   };
 
@@ -157,12 +153,7 @@ function SellerProduct() {
         <img
           src={`${process.env.REACT_APP_IMAGE_LINK}${row.productThumbnailUrl}`}
           alt={row.productName}
-          style={{
-            width: 50,
-            height: 50,
-            borderRadius: 6,
-            objectFit: "cover",
-          }}
+          style={{ width: 50, height: 50, borderRadius: 6, objectFit: "cover" }}
         />
       ),
       width: "90px",
@@ -173,30 +164,45 @@ function SellerProduct() {
       selector: (row) => row.productName,
       sortable: true,
     },
-    { name: "Category", selector: (row) => row.category },
+    {
+      name: "Category",
+      selector: (row) => {
+        if (Array.isArray(row.category)) return row.category.map((c) => c.name).join(", ");
+        if (row.category && typeof row.category === "object") return row.category.name;
+        return "-";
+      },
+    },
     {
       name: "Status",
+      selector: (row) => row.sellerProductStatus,
       cell: (row) => (
-        <Switch
-          checked={Boolean(row.status)}
-          onChange={() => handleStatusToggle(row.productId, row.status)}
-        />
+        <span
+          style={{
+            backgroundColor: statusColors[row.sellerProductStatus] || "#ccc",
+            color: "white",
+            padding: "3px 8px",
+            borderRadius: "6px",
+            fontWeight: "bold",
+          }}
+        >
+          {row.sellerProductStatus.replace(/_/g, " ")}
+        </span>
       ),
-      width: "120px",
-      center: true,
+      sortable: true,
     },
     {
       name: "Action",
-      cell: (row) => (
-        <Button
-          variant="contained"
-          style={BtnStyle}
-          size="small"
-          onClick={() => handleRemoveProduct(row.productId)}
-        >
-          Remove
-        </Button>
-      ),
+      cell: (row) =>
+        row.sellerProductStatus === "request_brand_approval" ? (
+          <Button
+            variant="contained"
+            style={btnStyle}
+            size="small"
+            onClick={() => handleOpenDialog(row)}
+          >
+            Update
+          </Button>
+        ) : "--",
       width: "120px",
       center: true,
     },
@@ -211,7 +217,7 @@ function SellerProduct() {
         position: "relative",
       }}
     >
-      {/* Header & Filters */}
+      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -224,32 +230,11 @@ function SellerProduct() {
         }}
       >
         <div>
-          <span style={{ fontWeight: "bold", fontSize: 26 }}>
-            Products List
-          </span>
+          <span style={{ fontWeight: "bold", fontSize: 26 }}>Unapproved Products</span>
           <br />
-          <span style={{ fontSize: 17 }}>Manage your products</span>
+          <span style={{ fontSize: 17 }}>Manage your unapproved products</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-          <FormControl variant="outlined" size="small">
-            <InputLabel>Category</InputLabel>
-            <Select
-              label="Category"
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              style={{ width: 180, height: 38 }}
-            >
-              <MenuItem value="">All</MenuItem>
-              {categories.map((cat) => (
-                <MenuItem key={cat._id} value={cat._id}>
-                  {cat.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
           <TextField
             label="Search"
             variant="outlined"
@@ -260,20 +245,6 @@ function SellerProduct() {
               setCurrentPage(1);
             }}
           />
-          <Button
-            variant="contained"
-            style={{ ...btnStyle, fontSize: 14, height: 40, background:"red", }}
-            onClick={() => navigate("/unapproved-products")}
-          >
-            Unapproved Product
-          </Button>
-          <Button
-            variant="contained"
-            style={{ ...btnStyle, fontSize: 14, height: 40 }}
-            onClick={() => navigate("/search-products")}
-          >
-            Add Product
-          </Button>
         </div>
       </div>
 
@@ -298,13 +269,7 @@ function SellerProduct() {
             <CircularProgress />
           </Box>
         )}
-        <div
-          style={{
-            background: "white",
-            borderRadius: "10px",
-            padding: "10px",
-          }}
-        >
+        <div style={{ background: "white", borderRadius: "10px", padding: "10px" }}>
           <DataTable
             columns={columns}
             data={products}
@@ -324,21 +289,44 @@ function SellerProduct() {
             striped
             responsive
             noDataComponent={
-              <div
-                style={{
-                  padding: "20px",
-                  textAlign: "center",
-                  fontSize: "16px",
-                }}
-              >
+              <div style={{ padding: "20px", textAlign: "center", fontSize: "16px" }}>
                 No Products Found
               </div>
             }
           />
         </div>
       </div>
+
+      {/* Brand Approval Dialog */}
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Brand Approval Update</DialogTitle>
+        <DialogContent
+          style={{ display: "flex", flexDirection: "column", gap: 15, minWidth: 400 }}
+        >
+          <input
+            type="file"
+            onChange={(e) => setUpdateFile(e.target.files[0])}
+            accept="image/*"
+          />
+          <TextField
+            label="Description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            multiline
+            rows={4}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleSaveUpdate} style={btnStyle}>
+            Submit
+          </Button>
+        </DialogActions>
+      </Dialog>
     </MDBox>
   );
 }
 
-export default SellerProduct;
+export default UnapprovedProducts;
