@@ -17,7 +17,7 @@ function SellerLogin() {
 
   // ✅ Auto-redirect if already logged in
   useEffect(() => {
-    const sellerId = localStorage.getItem("sellerId");
+    const sellerId = localStorage.getItem("token");
     if (sellerId) {
       navigate("/dashboard1", { replace: true });
     }

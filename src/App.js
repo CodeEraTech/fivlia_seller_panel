@@ -15,6 +15,12 @@ import SearchProduct from "./StoreRoutes/SearchProduct";
 import Profile from './StoreRoutes/Profile';
 import UnapprovedProducts from "StoreRoutes/UnapprovedProducts";
 
+function PrivateRoute({ element }) {
+  const token = localStorage.getItem("token");
+  return token ? element : <Navigate to="/seller-login" replace />;
+}
+
+
 function App() {
   const { pathname } = useLocation();
   const showSidebar = pathname !== "/seller-login";
@@ -24,17 +30,17 @@ function App() {
       {showSidebar && <StoreSidenav />}
       <Routes>
         <Route path="/seller-login" element={<SellerLogin />} />
-        <Route path="/dashboard1" element={ <DashBoard />} />
-        <Route path="/Wallet" element={ <Wallet />} />
-        <Route path="/storecat" element={<StoreCategories />} />
-        <Route path="/sellerProduct" element={<SellerProduct />} />
-        <Route path="/add-seller-product" element={<AddSellerProduct />} />
-        <Route path="/stock" element={<Stock />} />
-        <Route path="/Profile" element={<Profile />} />
-        <Route path="/addstorecat" element={<AddStoreCat />} />
-        <Route path="/store-orders" element={<StoreOrder />} />
-        <Route path="/search-products" element={<SearchProduct />} />
-        <Route path="/unapproved-products" element={<UnapprovedProducts />} />
+        <Route path="/dashboard1" element={<PrivateRoute element={<DashBoard />} />} />
+        <Route path="/Wallet" element={<PrivateRoute element={<Wallet />} />} />
+        <Route path="/storecat" element={<PrivateRoute element={<StoreCategories />} />} />
+        <Route path="/sellerProduct" element={<PrivateRoute element={<SellerProduct />} />} />
+        <Route path="/add-seller-product" element={<PrivateRoute element={<AddSellerProduct />}/>} />
+        <Route path="/stock" element={<PrivateRoute element={<Stock />}/>} />
+        <Route path="/Profile" element={<PrivateRoute element={<Profile />}/>} />
+        <Route path="/addstorecat" element={<PrivateRoute element={<AddStoreCat />}/>} />
+        <Route path="/store-orders" element={<PrivateRoute element={<StoreOrder />}/>} />
+        <Route path="/search-products" element={<PrivateRoute element={<SearchProduct />}/>} />
+        <Route path="/unapproved-products" element={<PrivateRoute element={<UnapprovedProducts />}/>} />
         <Route path="*" element={<Navigate to="/seller-login" />} />
       </Routes>
     </>
