@@ -21,6 +21,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Snackbar,
+  Alert,
   Fade,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -65,6 +67,7 @@ export default function SellerProfile() {
     fsiNumber: "",
     image: "",
     aadharCard: "",
+    invoicePrefix: "",
     advertisementImages: [],
   });
 
@@ -92,6 +95,7 @@ export default function SellerProfile() {
   const [cityOptions, setCityOptions] = useState([]);
   const [zoneOptions, setZoneOptions] = useState([]);
   const [zoneRadius, setZoneRadius] = useState(null);
+  const [alert, setAlert] = useState({ open: false, message: "", severity: "info" });
   const [zoneCenter, setZoneCenter] = useState(null);
   const [markerPosition, setMarkerPosition] = useState({ lat: 29.1492, lng: 75.7217 });
   const [message, setMessage] = useState("");
@@ -142,6 +146,7 @@ export default function SellerProfile() {
         gstNumber: data.gstNumber || "",
         fsiNumber: data.fsiNumber || "",
         image: data.image || "",
+        invoicePrefix:data.invoicePrefix || "",
         aadharCard: Array.isArray(data.aadharCard) ? data.aadharCard[0] : (data.aadharCard || ""),
         advertisementImages: Array.isArray(data.advertisementImages) ? data.advertisementImages : [],
       });
@@ -182,6 +187,51 @@ export default function SellerProfile() {
     }
   }
 
+   const handleAdImages = (files) => {
+    const fileArray = Array.from(files);
+    const loadImage = (file) =>
+      new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ file, width: img.width, height: img.height });
+        img.onerror = () => resolve({ file, width: null, height: null });
+        img.src = URL.createObjectURL(file);
+      });
+
+    Promise.all(fileArray.map(loadImage)).then((results) => {
+      const validFiles = [];
+      const invalidFiles = [];
+
+      results.forEach(({ file, width, height }) => {
+        if (width === 1500 && height === 620) {
+          validFiles.push(file);
+        } else {
+          invalidFiles.push(`${file.name} (${width || "?"}×${height || "?"})`);
+        }
+      });
+
+      if (invalidFiles.length > 0) {
+        setAlert({
+          open: true,
+          message: `These images must be 1500×620: ${invalidFiles.join(", ")}`,
+          severity: "error",
+        });
+      }
+
+      setForm((prev) => {
+        const current = prev.advertisementImages || [];
+        const combined = [...current, ...validFiles];
+        if (combined.length > 4) {
+          setAlert({
+            open: true,
+            message: "You can upload a maximum of 4 advertisement images.",
+            severity: "warning",
+          });
+          return prev;
+        }
+        return { ...prev, advertisementImages: combined };
+      });
+    });
+  };
   // Profile handlers
   function handleFormChange(key, value) {
     if (key === "advertisementImages") {
@@ -209,6 +259,7 @@ export default function SellerProfile() {
       formData.append("email", form.email);
       formData.append("PhoneNumber", form.PhoneNumber);
       formData.append("gstNumber", form.gstNumber);
+      formData.append("invoicePrefix", form.invoicePrefix);
       if (form.image instanceof File) {
         formData.append("image", form.image);
       }
@@ -545,8 +596,22 @@ export default function SellerProfile() {
                   margin="dense"
                   onChange={(e) => handleFormChange("ownerName", e.target.value)}
                   variant="outlined"
+                  disabled
                 />
               </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Invoice Code" // Frontend-friendly label
+                  value={form.invoicePrefix}
+                  fullWidth
+                  margin="dense"
+                  onChange={(e) => handleFormChange("invoicePrefix", e.target.value)}
+                  helperText="Unique prefix for invoices (e.g., INV2025). Must be unique."
+                  variant="outlined"
+                />
+              </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   label="Store Name"
@@ -555,6 +620,7 @@ export default function SellerProfile() {
                   margin="dense"
                   onChange={(e) => handleFormChange("storeName", e.target.value)}
                   variant="outlined"
+                  disabled
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -566,6 +632,7 @@ export default function SellerProfile() {
                   type="email"
                   onChange={(e) => handleFormChange("email", e.target.value)}
                   variant="outlined"
+                  disabled
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -577,6 +644,7 @@ export default function SellerProfile() {
                   type="tel"
                   onChange={(e) => handleFormChange("PhoneNumber", e.target.value)}
                   variant="outlined"
+                  disabled
                 />
               </Grid>
               <Grid item xs={12}>
@@ -588,6 +656,7 @@ export default function SellerProfile() {
                     margin="dense"
                     onChange={(e) => handleFormChange("gstNumber", e.target.value)}
                     variant="outlined"
+                    disabled
                   />
                 )}
                 {form.fsiNumber !== "" && (
@@ -598,6 +667,7 @@ export default function SellerProfile() {
                     margin="dense"
                     onChange={(e) => handleFormChange("fsiNumber", e.target.value)}
                     variant="outlined"
+                    disabled
                   />
                 )}
               </Grid>
@@ -661,6 +731,7 @@ export default function SellerProfile() {
                     }}
                     helperText="Upload Aadhar card"
                     variant="outlined"
+                    disabled
                   />
 {form.aadharCard &&
   typeof form.aadharCard === "string" &&
@@ -696,75 +767,90 @@ export default function SellerProfile() {
               </Grid>
               <Grid item xs={12}>
                 <Box display="flex" flexDirection="column" gap={2}>
-                  <TextField
-                    label="Advertisement Images"
-                    type="file"
-                    fullWidth
-                    margin="dense"
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{ multiple: true, accept: "image/*,.gif" }}
-                    onChange={(e) => {
-                      handleFormChange("advertisementImages", e.target.files);
+          <TextField
+            label="Advertisement Images"
+            type="file"
+            fullWidth
+            margin="dense"
+            InputLabelProps={{ shrink: true }}
+            inputProps={{ multiple: true, accept: "image/*,.gif" }}
+            onChange={(e) => handleAdImages(e.target.files)}
+            helperText="Upload multiple images or GIFs for advertisements (1500×620px, max 4)"
+            variant="outlined"
+          />
+
+          {form.advertisementImages.length > 0 && (
+            <Box display="flex" flexWrap="wrap" gap={2}>
+              {form.advertisementImages.map((img, index) => (
+                <Box
+                  key={typeof img === "string" ? img : `file-${index}`}
+                  sx={{
+                    width: 300,
+                    height: 124,
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid #ddd",
+                    backgroundColor: "#fafafa",
+                    position: "relative",
+                  }}
+                >
+                  <img
+                    src={
+                      typeof img === "string"
+                        ? `${process.env.REACT_APP_IMAGE_LINK}${img}`
+                        : URL.createObjectURL(img)
+                    }
+                    alt={`Advertisement ${index + 1}`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
                     }}
-                    helperText="Upload multiple images or GIFs for advertisements (max 4)"
-                    variant="outlined"
                   />
-                  {form.advertisementImages.length > 0 && (
-                    <Box display="flex" flexWrap="wrap" gap={2}>
-                      {form.advertisementImages.map((img, index) => (
-                        <Box
-                          key={typeof img === "string" ? img : `file-${index}`}
-                          sx={{
-                            width: 104,
-                            height: 84,
-                            borderRadius: 2,
-                            overflow: "hidden",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            border: "1px solid #ddd",
-                            backgroundColor: "#fafafa",
-                            position: "relative",
-                          }}
-                        >
-                          <img
-                            src={
-                              typeof img === "string"
-                                ? `${process.env.REACT_APP_IMAGE_LINK}${img}`
-                                : URL.createObjectURL(img)
-                            }
-                            alt={`Advertisement ${index + 1}`}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                          <IconButton
-                            size="small"
-                            sx={{
-                              position: "absolute",
-                              top: 2,
-                              right: 2,
-                              bgcolor: "rgba(255, 255, 255, 0.7)",
-                            }}
-                            onClick={() => {
-                              setForm((p) => ({
-                                ...p,
-                                advertisementImages: p.advertisementImages.filter(
-                                  (_, i) => i !== index
-                                ),
-                              }));
-                            }}
-                          >
-                            <DeleteIcon color="error" fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      ))}
-                    </Box>
-                  )}
+                  <IconButton
+                    size="small"
+                    sx={{
+                      position: "absolute",
+                      top: 2,
+                      right: 2,
+                      bgcolor: "rgba(255, 255, 255, 0.7)",
+                    }}
+                    onClick={() => {
+                      setForm((p) => ({
+                        ...p,
+                        advertisementImages: p.advertisementImages.filter(
+                          (_, i) => i !== index
+                        ),
+                      }));
+                    }}
+                  >
+                    <DeleteIcon color="error" fontSize="small" />
+                  </IconButton>
                 </Box>
-              </Grid>
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Grid>
+
+      {/* ✅ Snackbar for error/warning popups */}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={4000}
+        onClose={() => setAlert((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setAlert((prev) => ({ ...prev, open: false }))}
+          severity={alert.severity}
+          sx={{ width: "100%" }}
+        >
+          {alert.message}
+        </Alert>
+      </Snackbar>
             </Grid>
             <Box display="flex" gap={2} mt={3} justifyContent={{ xs: "center", sm: "flex-end" }}>
               <Button
@@ -929,6 +1015,7 @@ export default function SellerProfile() {
               value={bankForm.bankName}
               onChange={(e) => setBankForm((p) => ({ ...p, bankName: e.target.value }))}
               variant="outlined"
+              disabled
             />
             <TextField
               label="Account Holder"
@@ -937,6 +1024,7 @@ export default function SellerProfile() {
               value={bankForm.accountHolder}
               onChange={(e) => setBankForm((p) => ({ ...p, accountHolder: e.target.value }))}
               variant="outlined"
+              disabled
             />
             <TextField
               label="Account Number"
@@ -945,6 +1033,7 @@ export default function SellerProfile() {
               value={bankForm.accountNumber}
               onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
               variant="outlined"
+              disabled
             />
             <TextField
               label="IFSC"
@@ -953,6 +1042,7 @@ export default function SellerProfile() {
               value={bankForm.ifsc}
               onChange={(e) => setBankForm((p) => ({ ...p, ifsc: e.target.value }))}
               variant="outlined"
+              disabled
             />
             <TextField
               label="Branch"
@@ -961,6 +1051,7 @@ export default function SellerProfile() {
               value={bankForm.branch}
               onChange={(e) => setBankForm((p) => ({ ...p, branch: e.target.value }))}
               variant="outlined"
+              disabled
             />
           </DialogContent>
           <DialogActions>
