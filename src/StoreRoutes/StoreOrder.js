@@ -93,6 +93,25 @@ function StoreOrder({ isDashboard = false }) {
   const [newStatus, setNewStatus] = useState("");
 
   // ✅ Fetch orders and statuses
+const STATUS_FLOW = {
+  Pending: ["Accepted", "Cancelled"],
+  Accepted: ["Going to Pickup", "Cancelled"],
+  "Going to Pickup": ["Delivered","Cancelled"],
+  Delivered: [],
+  Cancelled: []
+};
+
+const getAllowedStatuses = (currentStatus) => {
+  if (!currentStatus) return [];
+  const statusTitle =
+    deliveryStatuses.find(
+      (s) => s.statusCode === currentStatus || s.statusTitle === currentStatus
+    )?.statusTitle || currentStatus;
+
+  return STATUS_FLOW[statusTitle] || [];
+};
+
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -499,24 +518,34 @@ function StoreOrder({ isDashboard = false }) {
               <MenuItem value="" disabled>
                 <em>Select Status</em>
               </MenuItem>
-              {deliveryStatuses.map((status) => (
-                <MenuItem key={status._id} value={status.statusCode}>
-                  <div className="status-menu-item">
-                    <img
-                      src={`${process.env.REACT_APP_IMAGE_LINK}${status.image}`}
-                      alt={status.statusTitle}
-                      style={{
-                        width: 20,
-                        height: 20,
-                        marginRight: 6,
-                        objectFit: "contain",
-                        borderRadius: 2,
-                      }}
-                    />
-                    <span>{status.statusTitle}</span>
-                  </div>
-                </MenuItem>
-              ))}
+             {deliveryStatuses.map((status) => {
+  const isAllowed = getAllowedStatuses(selectedOrder?.orderStatus).includes(status.statusTitle);
+  return (
+    <MenuItem
+      key={status._id}
+      value={status.statusCode}
+      disabled={!isAllowed}
+    >
+      <div className="status-menu-item">
+        {status.image && (
+          <img
+            src={`${process.env.REACT_APP_IMAGE_LINK}${status.image}`}
+            alt={status.statusTitle}
+            style={{
+              width: 20,
+              height: 20,
+              marginRight: 6,
+              objectFit: "contain",
+              borderRadius: 2,
+            }}
+          />
+        )}
+        <span>{status.statusTitle}</span>
+      </div>
+    </MenuItem>
+  );
+})}
+
             </Select>
           </FormControl>
           <Box display="flex" gap={2}>
