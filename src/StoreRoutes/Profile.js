@@ -24,12 +24,14 @@ import {
   Snackbar,
   Alert,
   Fade,
+  Switch,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import SaveIcon from "@mui/icons-material/Save";
 import RoomIcon from "@mui/icons-material/Room";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
@@ -69,6 +71,8 @@ export default function SellerProfile() {
     aadharCard: "",
     invoicePrefix: "",
     advertisementImages: [],
+    openTime: "",
+    closeTime: "",
   });
 
   const [bankDetails, setBankDetails] = useState({});
@@ -146,9 +150,11 @@ export default function SellerProfile() {
         gstNumber: data.gstNumber || "",
         fsiNumber: data.fsiNumber || "",
         image: data.image || "",
-        invoicePrefix:data.invoicePrefix || "",
+        invoicePrefix: data.invoicePrefix || "",
         aadharCard: Array.isArray(data.aadharCard) ? data.aadharCard[0] : (data.aadharCard || ""),
         advertisementImages: Array.isArray(data.advertisementImages) ? data.advertisementImages : [],
+        openTime: data.openTime || "",
+        closeTime: data.closeTime || "",
       });
       setBankDetails(data.bankDetails || {});
       setAddress({
@@ -187,7 +193,7 @@ export default function SellerProfile() {
     }
   }
 
-   const handleAdImages = (files) => {
+  const handleAdImages = (files) => {
     const fileArray = Array.from(files);
     const loadImage = (file) =>
       new Promise((resolve) => {
@@ -232,6 +238,7 @@ export default function SellerProfile() {
       });
     });
   };
+
   // Profile handlers
   function handleFormChange(key, value) {
     if (key === "advertisementImages") {
@@ -260,6 +267,8 @@ export default function SellerProfile() {
       formData.append("PhoneNumber", form.PhoneNumber);
       formData.append("gstNumber", form.gstNumber);
       formData.append("invoicePrefix", form.invoicePrefix);
+      formData.append("openTime", form.openTime);
+      formData.append("closeTime", form.closeTime);
       if (form.image instanceof File) {
         formData.append("image", form.image);
       }
@@ -432,7 +441,6 @@ export default function SellerProfile() {
       },
     });
 
-    // Center map on marker position
     useEffect(() => {
       map.setView(markerPosition, map.getZoom());
     }, [markerPosition, map]);
@@ -504,7 +512,6 @@ export default function SellerProfile() {
         Latitude: address.lat,
         Longitude: address.lng,
       };
-      console.log('payload', payload);
       const res = await fetch(`${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -599,10 +606,9 @@ export default function SellerProfile() {
                   disabled
                 />
               </Grid>
-
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="Invoice Code" // Frontend-friendly label
+                  label="Invoice Code"
                   value={form.invoicePrefix}
                   fullWidth
                   margin="dense"
@@ -611,7 +617,6 @@ export default function SellerProfile() {
                   variant="outlined"
                 />
               </Grid>
-
               <Grid item xs={12} sm={6}>
                 <TextField
                   label="Store Name"
@@ -647,29 +652,53 @@ export default function SellerProfile() {
                   disabled
                 />
               </Grid>
-              <Grid item xs={12}>
-                {form.gstNumber !== "" && (
-                  <TextField
-                    label="GST Number"
-                    value={form.gstNumber}
-                    fullWidth
-                    margin="dense"
-                    onChange={(e) => handleFormChange("gstNumber", e.target.value)}
-                    variant="outlined"
-                    disabled
-                  />
-                )}
-                {form.fsiNumber !== "" && (
-                  <TextField
-                    label="FSSAI Number"
-                    value={form.fsiNumber}
-                    fullWidth
-                    margin="dense"
-                    onChange={(e) => handleFormChange("fsiNumber", e.target.value)}
-                    variant="outlined"
-                    disabled
-                  />
-                )}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="GST Number"
+                  value={form.gstNumber}
+                  fullWidth
+                  margin="dense"
+                  onChange={(e) => handleFormChange("gstNumber", e.target.value)}
+                  variant="outlined"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="FSSAI Number"
+                  value={form.fsiNumber}
+                  fullWidth
+                  margin="dense"
+                  onChange={(e) => handleFormChange("fsiNumber", e.target.value)}
+                  variant="outlined"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Open Time"
+                  type="time"
+                  value={form.openTime}
+                  fullWidth
+                  margin="dense"
+                  InputLabelProps={{ shrink: true }}
+                  onChange={(e) => handleFormChange("openTime", e.target.value)}
+                  variant="outlined"
+                  helperText="Set store opening time"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Close Time"
+                  type="time"
+                  value={form.closeTime}
+                  fullWidth
+                  margin="dense"
+                  InputLabelProps={{ shrink: true }}
+                  onChange={(e) => handleFormChange("closeTime", e.target.value)}
+                  variant="outlined"
+                  helperText="Set store closing time"
+                />
               </Grid>
               <Grid item xs={12}>
                 <Box display="flex" alignItems="center" gap={2}>
@@ -733,124 +762,120 @@ export default function SellerProfile() {
                     variant="outlined"
                     disabled
                   />
-{form.aadharCard &&
-  typeof form.aadharCard === "string" &&
-  (form.aadharCard.toLowerCase().endsWith(".jpg") ||
-   form.aadharCard.toLowerCase().endsWith(".jpeg") ||
-   form.aadharCard.toLowerCase().endsWith(".png")) && (
-    <Box
-      sx={{
-        width: 104,
-        height: 84,
-        borderRadius: 2,
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border: "1px solid #ddd",
-        backgroundColor: "#fafafa",
-      }}
-    >
-      <img
-        src={`${process.env.REACT_APP_IMAGE_LINK}${form.aadharCard}`}
-        alt="Aadhar Card"
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-        }}
-      />
-    </Box>
-)}
-
+                  {form.aadharCard &&
+                    typeof form.aadharCard === "string" &&
+                    (form.aadharCard.toLowerCase().endsWith(".jpg") ||
+                     form.aadharCard.toLowerCase().endsWith(".jpeg") ||
+                     form.aadharCard.toLowerCase().endsWith(".png")) && (
+                    <Box
+                      sx={{
+                        width: 104,
+                        height: 84,
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "1px solid #ddd",
+                        backgroundColor: "#fafafa",
+                      }}
+                    >
+                      <img
+                        src={`${process.env.REACT_APP_IMAGE_LINK}${form.aadharCard}`}
+                        alt="Aadhar Card"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Box>
+                  )}
                 </Box>
               </Grid>
               <Grid item xs={12}>
                 <Box display="flex" flexDirection="column" gap={2}>
-          <TextField
-            label="Advertisement Images"
-            type="file"
-            fullWidth
-            margin="dense"
-            InputLabelProps={{ shrink: true }}
-            inputProps={{ multiple: true, accept: "image/*,.gif" }}
-            onChange={(e) => handleAdImages(e.target.files)}
-            helperText="Upload multiple images or GIFs for advertisements (1500×620px, max 4)"
-            variant="outlined"
-          />
-
-          {form.advertisementImages.length > 0 && (
-            <Box display="flex" flexWrap="wrap" gap={2}>
-              {form.advertisementImages.map((img, index) => (
-                <Box
-                  key={typeof img === "string" ? img : `file-${index}`}
-                  sx={{
-                    width: 300,
-                    height: 124,
-                    borderRadius: 2,
-                    overflow: "hidden",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "1px solid #ddd",
-                    backgroundColor: "#fafafa",
-                    position: "relative",
-                  }}
-                >
-                  <img
-                    src={
-                      typeof img === "string"
-                        ? `${process.env.REACT_APP_IMAGE_LINK}${img}`
-                        : URL.createObjectURL(img)
-                    }
-                    alt={`Advertisement ${index + 1}`}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
+                  <TextField
+                    label="Advertisement Images"
+                    type="file"
+                    fullWidth
+                    margin="dense"
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ multiple: true, accept: "image/*,.gif" }}
+                    onChange={(e) => handleAdImages(e.target.files)}
+                    helperText="Upload multiple images or GIFs for advertisements (1500×620px, max 4)"
+                    variant="outlined"
                   />
-                  <IconButton
-                    size="small"
-                    sx={{
-                      position: "absolute",
-                      top: 2,
-                      right: 2,
-                      bgcolor: "rgba(255, 255, 255, 0.7)",
-                    }}
-                    onClick={() => {
-                      setForm((p) => ({
-                        ...p,
-                        advertisementImages: p.advertisementImages.filter(
-                          (_, i) => i !== index
-                        ),
-                      }));
-                    }}
-                  >
-                    <DeleteIcon color="error" fontSize="small" />
-                  </IconButton>
+                  {form.advertisementImages.length > 0 && (
+                    <Box display="flex" flexWrap="wrap" gap={2}>
+                      {form.advertisementImages.map((img, index) => (
+                        <Box
+                          key={typeof img === "string" ? img : `file-${index}`}
+                          sx={{
+                            width: 300,
+                            height: 124,
+                            borderRadius: 2,
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "1px solid #ddd",
+                            backgroundColor: "#fafafa",
+                            position: "relative",
+                          }}
+                        >
+                          <img
+                            src={
+                              typeof img === "string"
+                                ? `${process.env.REACT_APP_IMAGE_LINK}${img}`
+                                : URL.createObjectURL(img)
+                            }
+                            alt={`Advertisement ${index + 1}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                          <IconButton
+                            size="small"
+                            sx={{
+                              position: "absolute",
+                              top: 2,
+                              right: 2,
+                              bgcolor: "rgba(255, 255, 255, 0.7)",
+                            }}
+                            onClick={() => {
+                              setForm((p) => ({
+                                ...p,
+                                advertisementImages: p.advertisementImages.filter(
+                                  (_, i) => i !== index
+                                ),
+                              }));
+                            }}
+                          >
+                            <DeleteIcon color="error" fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
                 </Box>
-              ))}
-            </Box>
-          )}
-        </Box>
-      </Grid>
-
-      {/* ✅ Snackbar for error/warning popups */}
-      <Snackbar
-        open={alert.open}
-        autoHideDuration={4000}
-        onClose={() => setAlert((prev) => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setAlert((prev) => ({ ...prev, open: false }))}
-          severity={alert.severity}
-          sx={{ width: "100%" }}
-        >
-          {alert.message}
-        </Alert>
-      </Snackbar>
+              </Grid>
+              <Snackbar
+                open={alert.open}
+                autoHideDuration={4000}
+                onClose={() => setAlert((prev) => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+              >
+                <Alert
+                  onClose={() => setAlert((prev) => ({ ...prev, open: false }))}
+                  severity={alert.severity}
+                  sx={{ width: "100%" }}
+                >
+                  {alert.message}
+                </Alert>
+              </Snackbar>
             </Grid>
             <Box display="flex" gap={2} mt={3} justifyContent={{ xs: "center", sm: "flex-end" }}>
               <Button
@@ -884,7 +909,7 @@ export default function SellerProfile() {
             }}
           >
             <Typography variant="h6" sx={{ mb: 2, fontWeight: "medium" }}>
-              Address
+              Address & Hours
             </Typography>
             <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
               <RoomIcon color="action" />
@@ -894,6 +919,14 @@ export default function SellerProfile() {
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Lat: {address.lat || "N/A"}, Lng: {address.lng || "N/A"}
+                </Typography>
+              </Box>
+            </Box>
+            <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
+              <AccessTimeIcon color="action" />
+              <Box>
+                <Typography variant="body1">
+                  Hours: {form.openTime && form.closeTime ? `${form.openTime} - ${form.closeTime}` : "Not set"}
                 </Typography>
               </Box>
             </Box>
@@ -943,293 +976,290 @@ export default function SellerProfile() {
                       : "N/A"}
                   </Typography>
                 </Box>
-                </Box>
-              </Paper>
-            </Grid>
-          )}
+              </Box>
+            </Paper>
+          </Grid>
+        )}
 
-          <Grid item xs={12}>
-            <Paper
-              sx={{
-                p: { xs: 2, sm: 3 },
-                borderRadius: 2,
-                boxShadow: 3,
-              }}
-            >
-              <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: "medium" }}>
-                  Bank Account
+        <Grid item xs={12}>
+          <Paper
+            sx={{
+              p: { xs: 2, sm: 3 },
+              borderRadius: 2,
+              boxShadow: 3,
+            }}
+          >
+            <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: "medium" }}>
+                Bank Account
+              </Typography>
+              <Button
+                variant="contained"
+                sx={{ color: "white !important" }}
+                startIcon={<AddIcon />}
+                onClick={openBankDialog}
+              >
+                {Object.keys(bankDetails).length > 0 ? "Edit Bank" : "Add Bank"}
+              </Button>
+            </Box>
+            {Object.keys(bankDetails).length > 0 ? (
+              <List>
+                <ListItem sx={{ borderBottom: "1px solid #eee" }}>
+                  <ListItemText
+                    primary={`${bankDetails.bankName} — ${bankDetails.accountHolder}`}
+                    secondary={`A/C: ${bankDetails.accountNumber} • IFSC: ${bankDetails.ifsc || "-"} • Branch: ${bankDetails.branch || "-"}`}
+                  />
+                  <ListItemSecondaryAction>
+                    <Tooltip title="Primary account">
+                      <AccountBalanceIcon color="primary" sx={{ mr: 1}} />
+                    </Tooltip>
+                    <IconButton edge="end" onClick={openBankDialog}>
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton edge="end" onClick={deleteBank}>
+                      <DeleteIcon color="error" />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              </List>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                No bank account added
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+
+      <Dialog
+        open={bankDialogOpen}
+        onClose={() => setBankDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={window.innerWidth < 600}
+      >
+        <DialogTitle>{Object.keys(bankDetails).length > 0 ? "Edit Bank Account" : "Add Bank Account"}</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Bank Name"
+            fullWidth
+            margin="dense"
+            value={bankForm.bankName}
+            onChange={(e) => setBankForm((p) => ({ ...p, bankName: e.target.value }))}
+            variant="outlined"
+            disabled
+          />
+          <TextField
+            label="Account Holder"
+            fullWidth
+            margin="dense"
+            value={bankForm.accountHolder}
+            onChange={(e) => setBankForm((p) => ({ ...p, accountHolder: e.target.value }))}
+            variant="outlined"
+            disabled
+          />
+          <TextField
+            label="Account Number"
+            fullWidth
+            margin="dense"
+            value={bankForm.accountNumber}
+            onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
+            variant="outlined"
+            disabled
+          />
+          <TextField
+            label="IFSC"
+            fullWidth
+            margin="dense"
+            value={bankForm.ifsc}
+            onChange={(e) => setBankForm((p) => ({ ...p, ifsc: e.target.value }))}
+            variant="outlined"
+            disabled
+          />
+          <TextField
+            label="Branch"
+            fullWidth
+            margin="dense"
+            value={bankForm.branch}
+            onChange={(e) => setBankForm((p) => ({ ...p, branch: e.target.value }))}
+            variant="outlined"
+            disabled
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBankDialogOpen(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={saveBankAccount}
+            variant="contained"
+            sx={{ color: "white !important" }}
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={addressDialogOpen}
+        onClose={() => setAddressDialogOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        fullScreen={window.innerWidth < 600}
+      >
+        <DialogTitle>Update Address & Location (Pending Admin Approval)</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth margin="dense">
+                <InputLabel>Selling City</InputLabel>
+                <Select
+                  value={address.city}
+                  onChange={(e) => handleAddressChange("city", e.target.value)}
+                  label="Selling City"
+                  sx={{ minHeight: 48 }}
+                >
+                  <MenuItem value="">Select City</MenuItem>
+                  {cityOptions.map((c) => (
+                    <MenuItem key={c._id} value={c.city}>
+                      {c.city}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth margin="dense">
+                <InputLabel>Selling Zone</InputLabel>
+                <Select
+                  value={address.zone}
+                  onChange={(e) => handleAddressChange("zone", e.target.value)}
+                  label="Selling Zone"
+                  sx={{ minHeight: 48 }}
+                >
+                  <MenuItem value="">Select Zone</MenuItem>
+                  {zoneOptions.map((z) => (
+                    <MenuItem key={z._id} value={z._id}>
+                      {z.zoneTitle}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Box mt={2}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Latitude / Longitude
                 </Typography>
+                <Box display="flex" gap={2}>
+                  <TextField
+                    label="Latitude"
+                    value={address.lat}
+                    fullWidth
+                    onChange={(e) => {
+                      setAddress((p) => ({ ...p, lat: e.target.value }));
+                      setMarkerPosition((p) => ({ ...p, lat: parseFloat(e.target.value) || 0 }));
+                    }}
+                    variant="outlined"
+                  />
+                  <TextField
+                    label="Longitude"
+                    value={address.lng}
+                    fullWidth
+                    onChange={(e) => {
+                      setAddress((p) => ({ ...p, lng: e.target.value }));
+                      setMarkerPosition((p) => ({ ...p, lng: parseFloat(e.target.value) || 0 }));
+                    }}
+                    variant="outlined"
+                  />
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                  Tip: Click on the map to set coordinates or enter them manually.
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Pick Location on Map
+              </Typography>
+              <Box
+                id="seller-map"
+                sx={{
+                  height: { xs: 250, sm: 350, md: 400 },
+                  width: "100%",
+                  borderRadius: 2,
+                  border: "1px solid #ddd",
+                  overflow: "hidden",
+                }}
+              >
+                <MapContainer
+                  center={markerPosition}
+                  zoom={12}
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
+                  />
+                  {zoneRadius && zoneCenter && (
+                    <Circle
+                      center={zoneCenter}
+                      radius={zoneRadius}
+                      color="lightgreen"
+                      fillColor="lightgreen"
+                      fillOpacity={0.4}
+                    />
+                  )}
+                  <Marker position={markerPosition} />
+                  <MapUpdater />
+                </MapContainer>
+              </Box>
+              <Box mt={2} display="flex" gap={2} justifyContent={{ xs: "center", sm: "flex-start" }}>
+                <Button
+                  variant="outlined"
+                  sx={{ color: "grey.600", borderColor: "grey.600" }}
+                  onClick={() => {
+                    setAddress((p) => ({
+                      ...p,
+                      lat: markerPosition.lat,
+                      lng: markerPosition.lng,
+                    }));
+                  }}
+                >
+                  Use Marker Coordinates
+                </Button>
                 <Button
                   variant="contained"
                   sx={{ color: "white !important" }}
-                  startIcon={<AddIcon />}
-                  onClick={openBankDialog}
-                >
-                  {Object.keys(bankDetails).length > 0 ? "Edit Bank" : "Add Bank"}
-                </Button>
-              </Box>
-              {Object.keys(bankDetails).length > 0 ? (
-                <List>
-                  <ListItem sx={{ borderBottom: "1px solid #eee" }}>
-                    <ListItemText
-                      primary={`${bankDetails.bankName} — ${bankDetails.accountHolder}`}
-                      secondary={`A/C: ${bankDetails.accountNumber} • IFSC: ${bankDetails.ifsc || "-"} • Branch: ${bankDetails.branch || "-"}`}
-                    />
-                    <ListItemSecondaryAction>
-                      <Tooltip title="Primary account">
-                        <AccountBalanceIcon color="primary" sx={{ mr: 1}} />
-                      </Tooltip>
-                      <IconButton edge="end" onClick={openBankDialog}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton edge="end" onClick={deleteBank}>
-                        <DeleteIcon color="error" />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                </List>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No bank account added
-                </Typography>
-              )}
-            </Paper>
-          </Grid>
-        </Grid>
-
-        {/* Bank dialog */}
-        <Dialog
-          open={bankDialogOpen}
-          onClose={() => setBankDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-          fullScreen={window.innerWidth < 600}
-        >
-          <DialogTitle>{Object.keys(bankDetails).length > 0 ? "Edit Bank Account" : "Add Bank Account"}</DialogTitle>
-          <DialogContent>
-            <TextField
-              label="Bank Name"
-              fullWidth
-              margin="dense"
-              value={bankForm.bankName}
-              onChange={(e) => setBankForm((p) => ({ ...p, bankName: e.target.value }))}
-              variant="outlined"
-              disabled
-            />
-            <TextField
-              label="Account Holder"
-              fullWidth
-              margin="dense"
-              value={bankForm.accountHolder}
-              onChange={(e) => setBankForm((p) => ({ ...p, accountHolder: e.target.value }))}
-              variant="outlined"
-              disabled
-            />
-            <TextField
-              label="Account Number"
-              fullWidth
-              margin="dense"
-              value={bankForm.accountNumber}
-              onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
-              variant="outlined"
-              disabled
-            />
-            <TextField
-              label="IFSC"
-              fullWidth
-              margin="dense"
-              value={bankForm.ifsc}
-              onChange={(e) => setBankForm((p) => ({ ...p, ifsc: e.target.value }))}
-              variant="outlined"
-              disabled
-            />
-            <TextField
-              label="Branch"
-              fullWidth
-              margin="dense"
-              value={bankForm.branch}
-              onChange={(e) => setBankForm((p) => ({ ...p, branch: e.target.value }))}
-              variant="outlined"
-              disabled
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setBankDialogOpen(false)} color="secondary">
-              Cancel
-            </Button>
-            <Button
-              onClick={saveBankAccount}
-              variant="contained"
-              sx={{ color: "white !important" }}
-              disabled={saving}
-            >
-              {saving ? "Saving..." : "Save"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Address dialog */}
-        <Dialog
-          open={addressDialogOpen}
-          onClose={() => setAddressDialogOpen(false)}
-          maxWidth="lg"
-          fullWidth
-          fullScreen={window.innerWidth < 600}
-        >
-          <DialogTitle>Update Address & Location (Pending Admin Approval)</DialogTitle>
-          <DialogContent>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth margin="dense">
-                  <InputLabel>Selling City</InputLabel>
-                  <Select
-                    value={address.city}
-                    onChange={(e) => handleAddressChange("city", e.target.value)}
-                    label="Selling City"
-                    sx={{ minHeight: 48 }}
-                  >
-                    <MenuItem value="">Select City</MenuItem>
-                    {cityOptions.map((c) => (
-                      <MenuItem key={c._id} value={c.city}>
-                        {c.city}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl fullWidth margin="dense">
-                  <InputLabel>Selling Zone</InputLabel>
-                  <Select
-                    value={address.zone}
-                    onChange={(e) => handleAddressChange("zone", e.target.value)}
-                    label="Selling Zone"
-                    sx={{ minHeight: 48 }}
-                  >
-                    <MenuItem value="">Select Zone</MenuItem>
-                    {zoneOptions.map((z) => (
-                      <MenuItem key={z._id} value={z._id}>
-                        {z.zoneTitle}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <Box mt={2}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                    Latitude / Longitude
-                  </Typography>
-                  <Box display="flex" gap={2}>
-                    <TextField
-                      label="Latitude"
-                      value={address.lat}
-                      fullWidth
-                      onChange={(e) => {
-                        setAddress((p) => ({ ...p, lat: e.target.value }));
-                        setMarkerPosition((p) => ({ ...p, lat: parseFloat(e.target.value) || 0 }));
-                      }}
-                      variant="outlined"
-                    />
-                    <TextField
-                      label="Longitude"
-                      value={address.lng}
-                      fullWidth
-                      onChange={(e) => {
-                        setAddress((p) => ({ ...p, lng: e.target.value }));
-                        setMarkerPosition((p) => ({ ...p, lng: parseFloat(e.target.value) || 0 }));
-                      }}
-                      variant="outlined"
-                    />
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                    Tip: Click on the map to set coordinates or enter them manually.
-                  </Typography>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Pick Location on Map
-                </Typography>
-                <Box
-                  id="seller-map"
-                  sx={{
-                    height: { xs: 250, sm: 350, md: 400 },
-                    width: "100%",
-                    borderRadius: 2,
-                    border: "1px solid #ddd",
-                    overflow: "hidden",
-                  }}
-                >
-                  <MapContainer
-                    center={markerPosition}
-                    zoom={12}
-                    style={{ height: "100%", width: "100%" }}
-                  >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
-                    />
-                    {zoneRadius && zoneCenter && (
-                      <Circle
-                        center={zoneCenter}
-                        radius={zoneRadius}
-                        color="lightgreen"
-                        fillColor="lightgreen"
-                        fillOpacity={0.4}
-                      />
-                    )}
-                    <Marker position={markerPosition} />
-                    <MapUpdater />
-                  </MapContainer>
-                </Box>
-                <Box mt={2} display="flex" gap={2} justifyContent={{ xs: "center", sm: "flex-start" }}>
-                  <Button
-                    variant="outlined"
-                    sx={{ color: "grey.600", borderColor: "grey.600" }}
-                    onClick={() => {
+                  onClick={() => {
+                    if (zoneCenter) {
+                      setMarkerPosition(zoneCenter);
                       setAddress((p) => ({
                         ...p,
-                        lat: markerPosition.lat,
-                        lng: markerPosition.lng,
+                        lat: zoneCenter.lat,
+                        lng: zoneCenter.lng,
                       }));
-                    }}
-                  >
-                    Use Marker Coordinates
-                  </Button>
-                  <Button
-                    variant="contained"
-                    sx={{ color: "white !important" }}
-                    onClick={() => {
-                      if (zoneCenter) {
-                        setMarkerPosition(zoneCenter);
-                        setAddress((p) => ({
-                          ...p,
-                          lat: zoneCenter.lat,
-                          lng: zoneCenter.lng,
-                        }));
-                      }
-                    }}
-                  >
-                    Center Map
-                  </Button>
-                </Box>
-              </Grid>
+                    }
+                  }}
+                >
+                  Center Map
+                </Button>
+              </Box>
             </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setAddressDialogOpen(false)} color="secondary">
-              Cancel
-            </Button>
-            <Button
-              onClick={submitAddressUpdateRequest}
-              variant="contained"
-              sx={{ color: "white !important" }}
-              startIcon={<SaveIcon />}
-              disabled={saving}
-            >
-              {saving ? "Submitting..." : "Submit for Approval"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </MDBox>
-    );
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddressDialogOpen(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={submitAddressUpdateRequest}
+            variant="contained"
+            sx={{ color: "white !important" }}
+            startIcon={<SaveIcon />}
+            disabled={saving}
+          >
+            {saving ? "Submitting..." : "Submit for Approval"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </MDBox>
+  );
 }
