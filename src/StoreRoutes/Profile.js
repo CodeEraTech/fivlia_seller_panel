@@ -21,13 +21,17 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Snackbar,
+  Alert,
   Fade,
+  Switch,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import SaveIcon from "@mui/icons-material/Save";
 import RoomIcon from "@mui/icons-material/Room";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import { useMaterialUIController } from "context";
 import { useNavigate } from "react-router-dom";
@@ -64,7 +68,11 @@ export default function SellerProfile() {
     gstNumber: "",
     fsiNumber: "",
     image: "",
-    aadharCard: ""
+    aadharCard: "",
+    invoicePrefix: "",
+    advertisementImages: [],
+    openTime: "",
+    closeTime: "",
   });
 
   const [bankDetails, setBankDetails] = useState({});
@@ -91,9 +99,9 @@ export default function SellerProfile() {
   const [cityOptions, setCityOptions] = useState([]);
   const [zoneOptions, setZoneOptions] = useState([]);
   const [zoneRadius, setZoneRadius] = useState(null);
+  const [alert, setAlert] = useState({ open: false, message: "", severity: "info" });
   const [zoneCenter, setZoneCenter] = useState(null);
   const [markerPosition, setMarkerPosition] = useState({ lat: 29.1492, lng: 75.7217 });
-
   const [message, setMessage] = useState("");
 
   // Effects
@@ -142,7 +150,11 @@ export default function SellerProfile() {
         gstNumber: data.gstNumber || "",
         fsiNumber: data.fsiNumber || "",
         image: data.image || "",
-        aadharCard: Array.isArray(data.aadharCard) ? data.aadharCard[0] : (data.aadharCard || "")
+        invoicePrefix: data.invoicePrefix || "",
+        aadharCard: Array.isArray(data.aadharCard) ? data.aadharCard[0] : (data.aadharCard || ""),
+        advertisementImages: Array.isArray(data.advertisementImages) ? data.advertisementImages : [],
+        openTime: data.openTime || "",
+        closeTime: data.closeTime || "",
       });
       setBankDetails(data.bankDetails || {});
       setAddress({
@@ -181,9 +193,68 @@ export default function SellerProfile() {
     }
   }
 
+  const handleAdImages = (files) => {
+    const fileArray = Array.from(files);
+    const loadImage = (file) =>
+      new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ file, width: img.width, height: img.height });
+        img.onerror = () => resolve({ file, width: null, height: null });
+        img.src = URL.createObjectURL(file);
+      });
+
+    Promise.all(fileArray.map(loadImage)).then((results) => {
+      const validFiles = [];
+      const invalidFiles = [];
+
+      results.forEach(({ file, width, height }) => {
+        if (width === 1500 && height === 620) {
+          validFiles.push(file);
+        } else {
+          invalidFiles.push(`${file.name} (${width || "?"}×${height || "?"})`);
+        }
+      });
+
+      if (invalidFiles.length > 0) {
+        setAlert({
+          open: true,
+          message: `These images must be 1500×620: ${invalidFiles.join(", ")}`,
+          severity: "error",
+        });
+      }
+
+      setForm((prev) => {
+        const current = prev.advertisementImages || [];
+        const combined = [...current, ...validFiles];
+        if (combined.length > 4) {
+          setAlert({
+            open: true,
+            message: "You can upload a maximum of 4 advertisement images.",
+            severity: "warning",
+          });
+          return prev;
+        }
+        return { ...prev, advertisementImages: combined };
+      });
+    });
+  };
+
   // Profile handlers
   function handleFormChange(key, value) {
-    setForm((p) => ({ ...p, [key]: value }));
+    if (key === "advertisementImages") {
+      const newFiles = Array.from(value);
+      setForm((p) => {
+        const currentFiles = p.advertisementImages || [];
+        const totalFiles = [...currentFiles, ...newFiles];
+        if (totalFiles.length > 4) {
+          setMessage("You can upload a maximum of 4 advertisement images.");
+          return p;
+        }
+        return { ...p, [key]: totalFiles };
+      });
+    } else {
+      setForm((p) => ({ ...p, [key]: value }));
+    }
   }
 
   async function handleProfileSave() {
@@ -195,13 +266,20 @@ export default function SellerProfile() {
       formData.append("email", form.email);
       formData.append("PhoneNumber", form.PhoneNumber);
       formData.append("gstNumber", form.gstNumber);
+      formData.append("invoicePrefix", form.invoicePrefix);
+      formData.append("openTime", form.openTime);
+      formData.append("closeTime", form.closeTime);
       if (form.image instanceof File) {
         formData.append("image", form.image);
       }
-
       if (form.aadharCard instanceof File) {
         formData.append("aadharCard", form.aadharCard);
       }
+      form.advertisementImages.forEach((file) => {
+        if (file instanceof File) {
+          formData.append("MultipleImage", file);
+        }
+      });
 
       const res = await fetch(`${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`, {
         method: "PUT",
@@ -363,7 +441,6 @@ export default function SellerProfile() {
       },
     });
 
-    // Center map on marker position
     useEffect(() => {
       map.setView(markerPosition, map.getZoom());
     }, [markerPosition, map]);
@@ -435,7 +512,6 @@ export default function SellerProfile() {
         Latitude: address.lat,
         Longitude: address.lng,
       };
-console.log('payload',payload)
       const res = await fetch(`${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -527,6 +603,18 @@ console.log('payload',payload)
                   margin="dense"
                   onChange={(e) => handleFormChange("ownerName", e.target.value)}
                   variant="outlined"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Invoice Code"
+                  value={form.invoicePrefix}
+                  fullWidth
+                  margin="dense"
+                  onChange={(e) => handleFormChange("invoicePrefix", e.target.value)}
+                  helperText="Unique prefix for invoices (e.g., INV2025). Must be unique."
+                  variant="outlined"
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -537,6 +625,7 @@ console.log('payload',payload)
                   margin="dense"
                   onChange={(e) => handleFormChange("storeName", e.target.value)}
                   variant="outlined"
+                  disabled
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -548,6 +637,7 @@ console.log('payload',payload)
                   type="email"
                   onChange={(e) => handleFormChange("email", e.target.value)}
                   variant="outlined"
+                  disabled
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -559,132 +649,233 @@ console.log('payload',payload)
                   type="tel"
                   onChange={(e) => handleFormChange("PhoneNumber", e.target.value)}
                   variant="outlined"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="GST Number"
+                  value={form.gstNumber}
+                  fullWidth
+                  margin="dense"
+                  onChange={(e) => handleFormChange("gstNumber", e.target.value)}
+                  variant="outlined"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="FSSAI Number"
+                  value={form.fsiNumber}
+                  fullWidth
+                  margin="dense"
+                  onChange={(e) => handleFormChange("fsiNumber", e.target.value)}
+                  variant="outlined"
+                  disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Open Time"
+                  type="time"
+                  value={form.openTime}
+                  fullWidth
+                  margin="dense"
+                  InputLabelProps={{ shrink: true }}
+                  onChange={(e) => handleFormChange("openTime", e.target.value)}
+                  variant="outlined"
+                  helperText="Set store opening time"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Close Time"
+                  type="time"
+                  value={form.closeTime}
+                  fullWidth
+                  margin="dense"
+                  InputLabelProps={{ shrink: true }}
+                  onChange={(e) => handleFormChange("closeTime", e.target.value)}
+                  variant="outlined"
+                  helperText="Set store closing time"
                 />
               </Grid>
               <Grid item xs={12}>
-             {form.gstNumber !== "" && (
-  <TextField
-    label="GST Number"
-    value={form.gstNumber}
-    fullWidth
-    margin="dense"
-    onChange={(e) => handleFormChange("gstNumber", e.target.value)}
-    variant="outlined"
-  />
-)}
-
-{/* FSSAI Number Field */}
-{form.fsiNumber !== "" && (
-  <TextField
-    label="FSSAI Number"
-    value={form.fsiNumber}
-    fullWidth
-    margin="dense"
-    onChange={(e) => handleFormChange("fsiNumber", e.target.value)}
-    variant="outlined"
-  />
-)}
+                <Box display="flex" alignItems="center" gap={2}>
+                  <TextField
+                    label="Image"
+                    type="file"
+                    fullWidth
+                    margin="dense"
+                    InputLabelProps={{ shrink: true }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleFormChange("image", file);
+                      }
+                    }}
+                    helperText="Upload image shown on product/store pages"
+                    variant="outlined"
+                  />
+                  {form.image && typeof form.image === "string" && (
+                    <Box
+                      sx={{
+                        width: 104,
+                        height: 84,
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "1px solid #ddd",
+                        backgroundColor: "#fafafa",
+                      }}
+                    >
+                      <img
+                        src={`${process.env.REACT_APP_IMAGE_LINK}${form.image}`}
+                        alt="Profile"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Box>
               </Grid>
-            <Grid item xs={12}>
-  <Box display="flex" alignItems="center" gap={2}>
-    {/* File Input */}
-    <TextField
-      label="Image"
-      type="file"
-      fullWidth
-      margin="dense"
-      InputLabelProps={{ shrink: true }}
-      onChange={(e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-          handleFormChange("image", file);
-        }
-      }}
-      helperText="Upload image shown on product/store pages"
-      variant="outlined"
-    />
-
-    {/* Preview Image */}
-    {form.image && typeof form.image === "string" && (
-      <Box
-        sx={{
-          width: 104,
-          height: 84,
-          borderRadius: 2,
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          border: "1px solid #ddd",
-          backgroundColor: "#fafafa",
-        }}
-      >
-        <img
-          src={`${process.env.REACT_APP_IMAGE_LINK}${form.image}`}
-          alt="Profile"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
-      </Box>
-    )}
-  </Box>
-</Grid>
-
-<Grid item xs={12}>
-  <Box display="flex" alignItems="center" gap={2}>
-    {/* File Input for Aadhar Card */}
-    <TextField
-      label="Aadhar Card"
-      type="file"
-      fullWidth
-      margin="dense"
-      InputLabelProps={{ shrink: true }}
-      onChange={(e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-          handleFormChange("aadharCard", file);
-        }
-      }}
-      helperText="Upload Aadhar card"
-      variant="outlined"
-    />
-
-   {form.aadharCard &&
-  (form.aadharCard.endsWith(".jpg") ||
-   form.aadharCard.endsWith(".jpeg") ||
-   form.aadharCard.endsWith(".png")) && (
-    <Box
-      sx={{
-        width: 104,
-        height: 84,
-        borderRadius: 2,
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border: "1px solid #ddd",
-        backgroundColor: "#fafafa",
-      }}
-    >
-      <img
-        src={`${process.env.REACT_APP_IMAGE_LINK}${form.aadharCard}`}
-        alt="Aadhar Card"
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-        }}
-      />
-    </Box>
-)}
-
-  </Box>
-</Grid>
-
-
+              <Grid item xs={12}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <TextField
+                    label="Aadhar Card"
+                    type="file"
+                    fullWidth
+                    margin="dense"
+                    InputLabelProps={{ shrink: true }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleFormChange("aadharCard", file);
+                      }
+                    }}
+                    helperText="Upload Aadhar card"
+                    variant="outlined"
+                    disabled
+                  />
+                  {form.aadharCard &&
+                    typeof form.aadharCard === "string" &&
+                    (form.aadharCard.toLowerCase().endsWith(".jpg") ||
+                     form.aadharCard.toLowerCase().endsWith(".jpeg") ||
+                     form.aadharCard.toLowerCase().endsWith(".png")) && (
+                    <Box
+                      sx={{
+                        width: 104,
+                        height: 84,
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "1px solid #ddd",
+                        backgroundColor: "#fafafa",
+                      }}
+                    >
+                      <img
+                        src={`${process.env.REACT_APP_IMAGE_LINK}${form.aadharCard}`}
+                        alt="Aadhar Card"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Box>
+              </Grid>
+              <Grid item xs={12}>
+                <Box display="flex" flexDirection="column" gap={2}>
+                  <TextField
+                    label="Advertisement Images"
+                    type="file"
+                    fullWidth
+                    margin="dense"
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ multiple: true, accept: "image/*,.gif" }}
+                    onChange={(e) => handleAdImages(e.target.files)}
+                    helperText="Upload multiple images or GIFs for advertisements (1500×620px, max 4)"
+                    variant="outlined"
+                  />
+                  {form.advertisementImages.length > 0 && (
+                    <Box display="flex" flexWrap="wrap" gap={2}>
+                      {form.advertisementImages.map((img, index) => (
+                        <Box
+                          key={typeof img === "string" ? img : `file-${index}`}
+                          sx={{
+                            width: 300,
+                            height: 124,
+                            borderRadius: 2,
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "1px solid #ddd",
+                            backgroundColor: "#fafafa",
+                            position: "relative",
+                          }}
+                        >
+                          <img
+                            src={
+                              typeof img === "string"
+                                ? `${process.env.REACT_APP_IMAGE_LINK}${img}`
+                                : URL.createObjectURL(img)
+                            }
+                            alt={`Advertisement ${index + 1}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                          <IconButton
+                            size="small"
+                            sx={{
+                              position: "absolute",
+                              top: 2,
+                              right: 2,
+                              bgcolor: "rgba(255, 255, 255, 0.7)",
+                            }}
+                            onClick={() => {
+                              setForm((p) => ({
+                                ...p,
+                                advertisementImages: p.advertisementImages.filter(
+                                  (_, i) => i !== index
+                                ),
+                              }));
+                            }}
+                          >
+                            <DeleteIcon color="error" fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+              </Grid>
+              <Snackbar
+                open={alert.open}
+                autoHideDuration={4000}
+                onClose={() => setAlert((prev) => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+              >
+                <Alert
+                  onClose={() => setAlert((prev) => ({ ...prev, open: false }))}
+                  severity={alert.severity}
+                  sx={{ width: "100%" }}
+                >
+                  {alert.message}
+                </Alert>
+              </Snackbar>
             </Grid>
             <Box display="flex" gap={2} mt={3} justifyContent={{ xs: "center", sm: "flex-end" }}>
               <Button
@@ -718,7 +909,7 @@ console.log('payload',payload)
             }}
           >
             <Typography variant="h6" sx={{ mb: 2, fontWeight: "medium" }}>
-              Address
+              Address & Hours
             </Typography>
             <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
               <RoomIcon color="action" />
@@ -728,6 +919,14 @@ console.log('payload',payload)
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Lat: {address.lat || "N/A"}, Lng: {address.lng || "N/A"}
+                </Typography>
+              </Box>
+            </Box>
+            <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
+              <AccessTimeIcon color="action" />
+              <Box>
+                <Typography variant="body1">
+                  Hours: {form.openTime && form.closeTime ? `${form.openTime} - ${form.closeTime}` : "Not set"}
                 </Typography>
               </Box>
             </Box>
@@ -744,6 +943,44 @@ console.log('payload',payload)
           </Paper>
         </Grid>
 
+        {profile?.pendingAddressUpdate && (
+          <Grid item xs={12}>
+            <Paper
+              sx={{
+                p: { xs: 2, sm: 3 },
+                borderRadius: 2,
+                boxShadow: 3,
+                mb: 2,
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: "medium" }}>
+                Pending Address Request
+              </Typography>
+              <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
+                <RoomIcon color="action" />
+                <Box>
+                  <Typography variant="body1">
+                    {profile.pendingAddressUpdate.city?.name && profile.pendingAddressUpdate.zone?.[0]?.title
+                      ? `${profile.pendingAddressUpdate.zone[0].title}, ${profile.pendingAddressUpdate.city.name}`
+                      : "No pending address set"}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Lat: {profile.pendingAddressUpdate.Latitude || "N/A"}, Lng: {profile.pendingAddressUpdate.Longitude || "N/A"}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Status: {profile.pendingAddressUpdate.status || "N/A"}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Requested At: {profile.pendingAddressUpdate.requestedAt
+                      ? new Date(profile.pendingAddressUpdate.requestedAt).toLocaleString()
+                      : "N/A"}
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+          </Grid>
+        )}
+
         <Grid item xs={12}>
           <Paper
             sx={{
@@ -758,8 +995,7 @@ console.log('payload',payload)
               </Typography>
               <Button
                 variant="contained"
-                // color= "primary" 
-                sx={{color:"white !important" }}
+                sx={{ color: "white !important" }}
                 startIcon={<AddIcon />}
                 onClick={openBankDialog}
               >
@@ -795,7 +1031,6 @@ console.log('payload',payload)
         </Grid>
       </Grid>
 
-      {/* Bank dialog */}
       <Dialog
         open={bankDialogOpen}
         onClose={() => setBankDialogOpen(false)}
@@ -812,6 +1047,7 @@ console.log('payload',payload)
             value={bankForm.bankName}
             onChange={(e) => setBankForm((p) => ({ ...p, bankName: e.target.value }))}
             variant="outlined"
+            disabled
           />
           <TextField
             label="Account Holder"
@@ -820,6 +1056,7 @@ console.log('payload',payload)
             value={bankForm.accountHolder}
             onChange={(e) => setBankForm((p) => ({ ...p, accountHolder: e.target.value }))}
             variant="outlined"
+            disabled
           />
           <TextField
             label="Account Number"
@@ -828,6 +1065,7 @@ console.log('payload',payload)
             value={bankForm.accountNumber}
             onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
             variant="outlined"
+            disabled
           />
           <TextField
             label="IFSC"
@@ -836,6 +1074,7 @@ console.log('payload',payload)
             value={bankForm.ifsc}
             onChange={(e) => setBankForm((p) => ({ ...p, ifsc: e.target.value }))}
             variant="outlined"
+            disabled
           />
           <TextField
             label="Branch"
@@ -844,6 +1083,7 @@ console.log('payload',payload)
             value={bankForm.branch}
             onChange={(e) => setBankForm((p) => ({ ...p, branch: e.target.value }))}
             variant="outlined"
+            disabled
           />
         </DialogContent>
         <DialogActions>
@@ -853,7 +1093,7 @@ console.log('payload',payload)
           <Button
             onClick={saveBankAccount}
             variant="contained"
-            sx={{color:"white !important"}}
+            sx={{ color: "white !important" }}
             disabled={saving}
           >
             {saving ? "Saving..." : "Save"}
@@ -861,7 +1101,6 @@ console.log('payload',payload)
         </DialogActions>
       </Dialog>
 
-      {/* Address dialog */}
       <Dialog
         open={addressDialogOpen}
         onClose={() => setAddressDialogOpen(false)}
@@ -936,7 +1175,6 @@ console.log('payload',payload)
                 </Typography>
               </Box>
             </Grid>
-
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Pick Location on Map
@@ -989,7 +1227,7 @@ console.log('payload',payload)
                 </Button>
                 <Button
                   variant="contained"
-                  sx={{color:"white !important"}}
+                  sx={{ color: "white !important" }}
                   onClick={() => {
                     if (zoneCenter) {
                       setMarkerPosition(zoneCenter);
@@ -1014,7 +1252,7 @@ console.log('payload',payload)
           <Button
             onClick={submitAddressUpdateRequest}
             variant="contained"
-            sx={{color:"white !important"}}
+            sx={{ color: "white !important" }}
             startIcon={<SaveIcon />}
             disabled={saving}
           >

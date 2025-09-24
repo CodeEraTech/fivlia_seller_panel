@@ -3,62 +3,123 @@ import "./Wallet.css";
 import { FaArrowUp, FaArrowDown, FaWallet } from "react-icons/fa";
 import MDBox from "components/MDBox";
 import axios from "axios";
-import { useMaterialUIController, setMiniSidenav } from "../context";
+import { useMaterialUIController } from "../context";
 
 export default function Wallet() {
-  const [wallet, setWallet] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [loading, setLoading] = useState(true);
-const [controller, dispatch] = useMaterialUIController();
-const { miniSidenav } = controller;
+  const [controller] = useMaterialUIController();
+  const { miniSidenav } = controller;
+
+  const storeId = localStorage.getItem("sellerId");
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchWalletData = async () => {
       try {
-        // Wallet summary
-        const walletRes = await axios.get("https://api.fivlia.in/walletSeller");
-        setWallet(walletRes.data);
-        // Transactions
-        const txnRes = await axios.get("https://api.fivlia.in/SellerTranaction");
-        const sortedTxns = txnRes.data.Tranaction
-          .filter((txn) => txn.createdAt) // ignore incomplete entries
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setLoading(true);
+
+        // ⚡ Replace with the seller's storeId dynamically if available
+        const res = await axios.get(`https://api.fivlia.in/getStoreTransaction/${storeId}`);
+
+        const storeData = res.data?.storeData || [];
+        
+        const latestCredit = storeData
+  .slice() // create a copy to avoid mutating original
+  .reverse() // start from latest transaction
+  .find(txn => txn.type.toLowerCase() !== "debit");
+
+        // ✅ Wallet Balance = currentAmount of latest transaction
+        if (storeData.length > 0) {
+          setWalletBalance(latestCredit ? latestCredit.currentAmount : 0);
+        } else {
+          setWalletBalance(0);
+        }
+
+        // ✅ Sort transactions (latest first)
+        const sortedTxns = storeData.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
         setTransactions(sortedTxns);
-      } catch (err) {
-        console.error("Failed to fetch wallet data", err);
+      } catch (error) {
+        console.error("Failed to fetch wallet transactions:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+
+    fetchWalletData();
   }, []);
 
-  if (loading) return <p className="loading-text">Loading wallet...</p>;
+  const handleWithdrawal = async () => {
+    if (!withdrawAmount || isNaN(withdrawAmount) || Number(withdrawAmount) <= 0) {
+      alert("Enter a valid amount");
+      return;
+    }
 
-  // Calculate total credits/debits from transactions
+    setWithdrawLoading(true);
+
+    try {
+      const res = await axios.post(
+        "https://api.fivlia.in/seller/withdrawalRequest",
+        { storeId, amount: Number(withdrawAmount) }
+      );
+
+      alert(res.data.message);
+
+      setTransactions(prev => [res.data.pendingWithdrawal, ...prev]);
+
+      setWithdrawAmount(""); // Reset input
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.message || "Withdrawal request failed");
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
+
+
+  if (loading) {
+    return <p className="loading-text">Loading wallet...</p>;
+  }
+
+  // ✅ Calculate total credits & debits
   const totalCredits = transactions
     .filter((txn) => txn.type === "Credit")
     .reduce((sum, txn) => sum + (txn.amount || 0), 0);
+
   const totalDebits = transactions
     .filter((txn) => txn.type === "Debit")
     .reduce((sum, txn) => sum + (txn.amount || 0), 0);
 
   return (
-    <MDBox ml={{ xs: "0", md: "250px" }}style={{
+    <MDBox
+      ml={{ xs: "0", md: "250px" }}
+      style={{
         marginLeft: miniSidenav ? "80px" : "250px",
         transition: "margin-left 0.3s ease",
-      }} p={3} className="wallet-container">
+      }}
+      p={3}
+      className="wallet-container"
+    >
       <div className="wallet-dashboard-container">
         <h2 className="dashboard-title">Wallet Overview</h2>
+
+        {/* Wallet summary cards */}
         <div className="card-grid">
           <div className="card green">
             <div className="card-header">
               <div className="icon"><FaWallet /></div>
               <div>
                 <div className="card-title">Wallet Balance</div>
-                <div className="card-value">₹{wallet?.totalCash.toFixed(2) || 0}</div>
+                <div className="card-value">₹{walletBalance}</div>
               </div>
             </div>
           </div>
+
           <div className="card blue">
             <div className="card-header">
               <div className="icon"><FaArrowDown /></div>
@@ -68,6 +129,7 @@ const { miniSidenav } = controller;
               </div>
             </div>
           </div>
+
           <div className="card red">
             <div className="card-header">
               <div className="icon"><FaArrowUp /></div>
@@ -78,23 +140,84 @@ const { miniSidenav } = controller;
             </div>
           </div>
         </div>
-        {/* Transactions */}
+
+<div className="withdraw-section">
+  <h3>Request Withdrawal</h3>
+  <p className="wallet-info">
+    Wallet Balance: ₹{walletBalance || 0} | Pending Withdrawals: ₹
+    {transactions
+      .filter(txn => txn.type === "debit" && txn.status === "Pending")
+      .reduce((sum, txn) => sum + (txn.amount || 0), 0)}
+  </p>
+
+  <input
+    type="number"
+    placeholder="Enter amount"
+    value={withdrawAmount}
+    onChange={(e) => setWithdrawAmount(e.target.value)}
+    className="withdraw-input"
+    style={{
+      padding: "10px",
+      fontSize: "1rem",
+      width: "200px",
+      marginRight: "10px",
+      borderRadius: "5px",
+      border: "1px solid #ccc"
+    }}
+  />
+
+  <button
+    onClick={handleWithdrawal}
+    disabled={withdrawLoading}
+    className="withdraw-btn"
+    style={{
+      padding: "10px 20px",
+      fontSize: "1rem",
+      borderRadius: "5px",
+      border: "none",
+      backgroundColor: "#4f46e5",
+      color: "#fff",
+      cursor: withdrawLoading ? "not-allowed" : "pointer",
+    }}
+  >
+    {withdrawLoading ? "Submitting..." : "Request Withdrawal"}
+  </button>
+
+  {/* Optional: Display message if invalid */}
+  {withdrawAmount && Number(withdrawAmount) <= 0 && (
+    <p className="error-msg" style={{ color: "red", marginTop: "5px" }}>
+      Enter a valid amount
+    </p>
+  )}
+</div>
+
+        {/* Transactions list */}
         <div className="transactions-section">
           <h3 className="section-title">Recent Transactions</h3>
+
           {transactions.length > 0 ? (
             <ul className="transaction-list">
               {transactions.map((txn, idx) => (
                 <li key={idx} className={`txn ${txn.type.toLowerCase()}`}>
                   <span className="txn-icon">
-                    {txn.type === "Credit" ? <FaArrowDown color="#22c55e" /> : <FaArrowUp color="#ef4444" />}
+                    {txn.type === "Credit"
+                      ? <FaArrowDown color="#22c55e" />
+                      : <FaArrowUp color="#ef4444" />}
                   </span>
+
                   <span className="txn-details">
                     <strong>{txn.description || "No description"}</strong>
                     <br />
                     <small>Order ID: {txn.orderId || "-"}</small>
                     <br />
-                    <small>{new Date(txn.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</small>
+                    <small>
+                      {new Date(txn.createdAt).toLocaleString("en-IN", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </small>
                   </span>
+
                   <span className={`txn-amount ${txn.type.toLowerCase()}`}>
                     {txn.type === "Credit" ? "+" : "-"}₹{(txn.amount || 0).toFixed(2)}
                   </span>

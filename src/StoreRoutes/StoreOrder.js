@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Typography, CircularProgress, Modal, Box, FormControl, Select, MenuItem} from "@mui/material";
+import { Button, Typography, CircularProgress, Modal, Box, FormControl, Select, MenuItem } from "@mui/material";
 import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
@@ -26,6 +26,21 @@ const updateBtnStyle = {
   backgroundColor: "#007bff",
   color: "#fff",
   textTransform: "capitalize",
+};
+
+const invoiceButton = {
+  padding: "6px 12px", // smaller padding to prevent cut
+  minWidth: "80px",    // ensures text fits
+  borderRadius: "6px",
+  border: "none",
+  backgroundColor: "#007bff",
+  color: "#fff",
+  cursor: "pointer",
+  fontSize: "13px",
+  fontWeight: 500,
+  transition: "all 0.3s ease",
+  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.15)",
+  textTransform: "none", // keep text normal, not uppercase
 };
 
 const modalBoxStyle = {
@@ -77,7 +92,26 @@ function StoreOrder({ isDashboard = false }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [newStatus, setNewStatus] = useState("");
 
-  // Fetch orders and statuses
+  // ✅ Fetch orders and statuses
+const STATUS_FLOW = {
+  Pending: ["Accepted", "Cancelled"],
+  Accepted: ["Going to Pickup", "Cancelled"],
+  "Going to Pickup": ["Delivered","Cancelled"],
+  Delivered: [],
+  Cancelled: []
+};
+
+const getAllowedStatuses = (currentStatus) => {
+  if (!currentStatus) return [];
+  const statusTitle =
+    deliveryStatuses.find(
+      (s) => s.statusCode === currentStatus || s.statusTitle === currentStatus
+    )?.statusTitle || currentStatus;
+
+  return STATUS_FLOW[statusTitle] || [];
+};
+
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -88,7 +122,7 @@ function StoreOrder({ isDashboard = false }) {
         const params = `?storeId=${storeId}&page=${page}&limit=${perPage}&search=${searchTerm}`;
         const [ordersRes, statusesRes] = await Promise.all([
           fetch(`https://api.fivlia.in/orders${params}`),
-          fetch("https://api.fivlia.in/getdeliveryStatus")
+          fetch("https://api.fivlia.in/getdeliveryStatus"),
         ]);
 
         const ordersData = await ordersRes.json();
@@ -97,9 +131,14 @@ function StoreOrder({ isDashboard = false }) {
         if (!Array.isArray(ordersData.orders)) throw new Error("Invalid orders data");
         if (!Array.isArray(statusesData.Status)) throw new Error("Invalid statuses data");
 
+        // ✅ Filter only Accept, Reject, Ready to Pickup
+        const filteredStatuses = statusesData.Status.filter((s) =>
+          ["accepted", "cancelled", "going to pickup"].includes(s.statusTitle.toLowerCase())
+        );
+
         setOrders(ordersData.orders);
         setTotalRows(ordersData.count || ordersData.orders.length);
-        setDeliveryStatuses(statusesData.Status);
+        setDeliveryStatuses(filteredStatuses);
         setError("");
       } catch (err) {
         console.error(err);
@@ -113,8 +152,13 @@ function StoreOrder({ isDashboard = false }) {
 
   const statusColor = (status) => {
     const map = {
-      "100": "#ff9800", "101": "#2196f3", "102": "#9c27b0",
-      "103": "#ff5722", "104": "#f44336", "105": "#4caf50", "106": "#4caf50"
+      "100": "#ff9800",
+      "101": "#2196f3",
+      "102": "#9c27b0",
+      "103": "#ff5722",
+      "104": "#f44336",
+      "105": "#4caf50",
+      "106": "#4caf50",
     };
     return map[status] || "#666";
   };
@@ -154,14 +198,14 @@ function StoreOrder({ isDashboard = false }) {
   };
 
   const handleSave = async () => {
-    if (!selectedOrder || !newStatus) return;
+    if (!selectedOrder || !newStatus || newStatus === selectedOrder.orderStatus) return;
     try {
       const statusInfo = deliveryStatuses.find((s) => s.statusCode === newStatus);
       const statusTitle = statusInfo?.statusTitle || newStatus;
       const res = await fetch(`https://api.fivlia.in/orderStatus/${selectedOrder._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: statusTitle })
+        body: JSON.stringify({ status: statusTitle }),
       });
       if (!res.ok) throw new Error("Failed to update status");
       const { update } = await res.json();
@@ -178,6 +222,28 @@ function StoreOrder({ isDashboard = false }) {
     }
   };
 
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/thermal-invoice/${orderId}`, {
+        method: "GET",
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch PDF");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `thermal_invoice_${orderId}.pdf`;
+      link.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error downloading invoice:", err);
+    }
+  };
+
   const columns = [
     {
       name: "No.",
@@ -191,7 +257,10 @@ function StoreOrder({ isDashboard = false }) {
       cell: (row) => {
         const item = row.items?.[0];
         return item ? (
-          <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => openDetailsModal(row)}>
+          <div
+            style={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+            onClick={() => openDetailsModal(row)}
+          >
             <img
               src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
               alt={item.name}
@@ -199,7 +268,9 @@ function StoreOrder({ isDashboard = false }) {
             />
             {truncateText(item.name)}
           </div>
-        ) : "-";
+        ) : (
+          "-"
+        );
       },
     },
     {
@@ -214,11 +285,35 @@ function StoreOrder({ isDashboard = false }) {
       name: "Payment",
       selector: (row) => row.paymentStatus || "-",
       cell: (row) => (
-        <span style={{ color: statusColor(row.paymentStatus) }}>
-          {row.paymentStatus || "-"}
-        </span>
+        <span style={{ color: statusColor(row.paymentStatus) }}>{row.paymentStatus || "-"}</span>
       ),
     },
+
+{
+  name: "Invoice",
+  cell: (row) => (
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      {row.orderStatus?.toLowerCase() === "delivered" || row.orderStatus === "106" ? (
+        <Button
+          variant="contained"
+          style={invoiceButton}
+          onClick={() => handleDownloadInvoice(row.orderId)} // use orderId
+        >
+          Invoice
+        </Button>
+      ) : (
+        <Typography
+          variant="body2"
+          style={{ color: "#999", fontStyle: "italic" }}
+        >
+          Not available
+        </Typography>
+      )}
+    </div>
+  ),
+},
+
+
     {
       name: "Status",
       cell: (row) => {
@@ -240,9 +335,11 @@ function StoreOrder({ isDashboard = false }) {
     {
       name: "Action",
       cell: (row) => (
-        <Button variant="contained" style={updateBtnStyle} onClick={() => openEditModal(row)}>
-          Edit
-        </Button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button variant="contained" style={updateBtnStyle} onClick={() => openEditModal(row)}>
+            Edit
+          </Button>
+        </div>
       ),
       ignoreRowClick: true,
       allowoverflow: true,
@@ -262,7 +359,9 @@ function StoreOrder({ isDashboard = false }) {
       >
         <div style={headerContainerStyle}>
           <div>
-            <Typography variant="h5" fontWeight="bold">Orders</Typography>
+            <Typography variant="h5" fontWeight="bold">
+              Orders
+            </Typography>
             <Typography variant="subtitle1" color="textSecondary">
               View and manage orders
             </Typography>
@@ -272,7 +371,10 @@ function StoreOrder({ isDashboard = false }) {
               type="text"
               placeholder="Search orders…"
               value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
               style={inputSearchStyle}
             />
           </div>
@@ -287,9 +389,17 @@ function StoreOrder({ isDashboard = false }) {
         {loading && (
           <Box
             sx={{
-              position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-              backgroundColor: "rgba(255,255,255,0.7)", zIndex: 2,
-              display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 1,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "rgba(255,255,255,0.7)",
+              zIndex: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 1,
             }}
           >
             <CircularProgress />
@@ -305,7 +415,10 @@ function StoreOrder({ isDashboard = false }) {
             paginationTotalRows={totalRows}
             paginationPerPage={perPage}
             onChangePage={(page) => setPage(page)}
-            onChangeRowsPerPage={(newPerPage, page) => { setPerPage(newPerPage); setPage(page); }}
+            onChangeRowsPerPage={(newPerPage, page) => {
+              setPerPage(newPerPage);
+              setPage(page);
+            }}
             noDataComponent={
               <div style={{ padding: 20, textAlign: "center", fontSize: 16 }}>
                 No orders found
@@ -330,7 +443,13 @@ function StoreOrder({ isDashboard = false }) {
                 <img
                   src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
                   alt={item.name}
-                  style={{ width: 50, height: 50, marginRight: 12, objectFit: "cover", borderRadius: 4 }}
+                  style={{
+                    width: 50,
+                    height: 50,
+                    marginRight: 12,
+                    objectFit: "cover",
+                    borderRadius: 4,
+                  }}
                 />
                 <Typography fontSize={14}>{item.name}</Typography>
               </Box>
@@ -339,7 +458,7 @@ function StoreOrder({ isDashboard = false }) {
             <Typography color="textSecondary">No items available</Typography>
           )}
           <Box mt={2}>
-            <Button variant="contained" style={{color:"white"}} fullWidth onClick={closeModal}>
+            <Button variant="contained" style={{ color: "white" }} fullWidth onClick={closeModal}>
               Close
             </Button>
           </Box>
@@ -374,18 +493,21 @@ function StoreOrder({ isDashboard = false }) {
               onChange={(e) => setNewStatus(e.target.value)}
               displayEmpty
               renderValue={(selected) => {
-                if (!selected) {
-                  return <em style={{ color: '#999' }}>Select Status</em>;
-                }
+                if (!selected) return <em style={{ color: "#999" }}>Select Status</em>;
                 const statusInfo = getStatusInfo(selected);
                 return (
-                  <div className="status-display" style={{ padding: "10px 0"}}>
+                  <div className="status-display" style={{ padding: "10px 0" }}>
                     {statusInfo.image && (
                       <img
                         src={`${process.env.REACT_APP_IMAGE_LINK}${statusInfo.image}`}
                         alt={statusInfo.title}
-                        className="status-image"
-                        style={{ width: 20, height: 20, marginRight: 6, objectFit: "contain", borderRadius: 2 }}
+                        style={{
+                          width: 20,
+                          height: 20,
+                          marginRight: 6,
+                          objectFit: "contain",
+                          borderRadius: 2,
+                        }}
                       />
                     )}
                     <span>{statusInfo.title}</span>
@@ -396,25 +518,48 @@ function StoreOrder({ isDashboard = false }) {
               <MenuItem value="" disabled>
                 <em>Select Status</em>
               </MenuItem>
-              {deliveryStatuses.map((status) => (
-                <MenuItem key={status._id} value={status.statusCode}>
-                  <div className="status-menu-item">
-                    <img
-                      src={`${process.env.REACT_APP_IMAGE_LINK}${status.image}`}
-                      alt={status.statusTitle}
-                      style={{ width: 20, height: 20, marginRight: 6, objectFit: "contain", borderRadius: 2 }}
-                    />
-                    <span>{status.statusTitle}</span>
-                  </div>
-                </MenuItem>
-              ))}
+             {deliveryStatuses.map((status) => {
+  const isAllowed = getAllowedStatuses(selectedOrder?.orderStatus).includes(status.statusTitle);
+  return (
+    <MenuItem
+      key={status._id}
+      value={status.statusCode}
+      disabled={!isAllowed}
+    >
+      <div className="status-menu-item">
+        {status.image && (
+          <img
+            src={`${process.env.REACT_APP_IMAGE_LINK}${status.image}`}
+            alt={status.statusTitle}
+            style={{
+              width: 20,
+              height: 20,
+              marginRight: 6,
+              objectFit: "contain",
+              borderRadius: 2,
+            }}
+          />
+        )}
+        <span>{status.statusTitle}</span>
+      </div>
+    </MenuItem>
+  );
+})}
+
             </Select>
           </FormControl>
           <Box display="flex" gap={2}>
             <Button variant="outlined" style={{ color: "black" }} fullWidth onClick={closeModal}>
               Cancel
             </Button>
-            <Button variant="contained" style={{ color: "white" }} fullWidth disabled={!newStatus} onClick={handleSave}>
+            {/* ✅ Disabled if same status selected */}
+            <Button
+              variant="contained"
+              style={{ color: "white" }}
+              fullWidth
+              disabled={!newStatus || newStatus === selectedOrder?.orderStatus}
+              onClick={handleSave}
+            >
               Update
             </Button>
           </Box>
