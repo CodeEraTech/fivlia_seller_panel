@@ -1272,7 +1272,7 @@ function AddSellerProduct() {
                   ))}
                 </select>
 
-                <h3
+                {/* <h3
                   style={{
                     fontSize: "12px",
                     cursor: "pointer",
@@ -1283,7 +1283,7 @@ function AddSellerProduct() {
                   onClick={() => setShowUnitPopup(true)}
                 >
                   + ADD UNIT
-                </h3>
+                </h3> */}
 
                 {showUnitPopup && (
                   <div
@@ -1347,7 +1347,7 @@ function AddSellerProduct() {
                   )}
                 </select>
 
-                <h3
+                {/* <h3
                   style={{
                     fontSize: "12px",
                     cursor: "pointer",
@@ -1358,7 +1358,7 @@ function AddSellerProduct() {
                   onClick={() => setShowbrandPopup(true)}
                 >
                   + ADD BRAND
-                </h3>
+                </h3> */}
 
                 {showbrandPopup && (
                   <div
@@ -1470,7 +1470,7 @@ function AddSellerProduct() {
                   })}
                 </select>
 
-                <h3
+                {/* <h3
                   style={{
                     fontSize: "12px",
                     cursor: "pointer",
@@ -1481,7 +1481,7 @@ function AddSellerProduct() {
                   onClick={() => setShowPopup(true)}
                 >
                   + ADD ATTRIBUTE
-                </h3>
+                </h3> */}
 
                 {showPopup && (
                   <div
@@ -1585,7 +1585,7 @@ function AddSellerProduct() {
                             >
                               {variant.name + unitname}
                             </span>
-                            <button
+                            {/* <button
                               onClick={() => handleDeleteVariant(variant._id, variant.name)}
                               style={{
                                 background: "red",
@@ -1598,13 +1598,13 @@ function AddSellerProduct() {
                               }}
                             >
                               Delete
-                            </button>
+                            </button> */}
                           </div>
                         ))}
                     </div>
                   )}
                 </div>
-                <h3
+                {/* <h3
                   style={{
                     fontSize: "12px",
                     cursor: "pointer",
@@ -1615,7 +1615,7 @@ function AddSellerProduct() {
                   onClick={() => setShowVariantPopup(true)}
                 >
                   + ADD VARIANT
-                </h3>
+                </h3> */}
 
                 {showVariantPopup && (
                   <div
@@ -1828,7 +1828,7 @@ function AddSellerProduct() {
                   ))}
                 </select>
 
-                <h3
+                {/* <h3
                   style={{
                     fontSize: "12px",
                     cursor: "pointer",
@@ -1839,7 +1839,7 @@ function AddSellerProduct() {
                   onClick={() => setFilterPopup(true)}
                 >
                   + ADD FILTER
-                </h3>
+                </h3> */}
 
                 {filterpopup && (
                   <div
@@ -1978,7 +1978,7 @@ function AddSellerProduct() {
                   )}
                 </div>
 
-                <h3
+                {/* <h3
                   style={{
                     fontSize: "12px",
                     cursor: "pointer",
@@ -1989,7 +1989,7 @@ function AddSellerProduct() {
                   onClick={() => setShowFilterDropdown(true)}
                 >
                   + ADD FILTER VALUE
-                </h3>
+                </h3> */}
 
                 {showfilterdropdown && (
                   <div

@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Button, CircularProgress, Box, Chip, Popover, TextField } from "@mui/material";
+import {
+  Button,
+  CircularProgress,
+  Box,
+  Chip,
+  Popover,
+  TextField,
+} from "@mui/material";
 import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
@@ -62,12 +69,16 @@ function StockManagement() {
     setStoreId(localStorage.getItem("sellerId"));
   }, []);
 
-  const fetchProducts = async (page = 1, limit = perPage, searchText = search) => {
+  const fetchProducts = async (
+    page = 1,
+    limit = perPage,
+    searchText = search
+  ) => {
     if (!storeId) return;
     setLoading(true);
     try {
       const res = await fetch(
-        `https://api.fivlia.in/getSellerProducts?sellerId=${storeId}&page=${page}&limit=${limit}&search=${searchText}`
+        `http://api.fivlia.in/getSellerProducts?sellerId=${storeId}&page=${page}&limit=${limit}&search=${searchText}`
       );
       if (!res.ok) throw new Error("Fetch failed");
       const result = await res.json();
@@ -75,7 +86,10 @@ function StockManagement() {
       const products = (result.products || []).map((p) => ({
         ...p,
         _id: p.sellerProductId,
-        totalStock: (p.variants || []).reduce((sum, v) => sum + (v.stock || 0), 0),
+        totalStock: (p.variants || []).reduce(
+          (sum, v) => sum + (v.stock || 0),
+          0
+        ),
         commission: p.commission || 0,
       }));
 
@@ -83,7 +97,9 @@ function StockManagement() {
       setTotalRows(result.total || 0);
 
       setOutOfStockCount(products.filter((p) => p.totalStock === 0).length);
-      setLowStockCount(products.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length);
+      setLowStockCount(
+        products.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length
+      );
     } catch (err) {
       console.error(err);
       setProducts([]);
@@ -133,11 +149,11 @@ function StockManagement() {
   const handleSaveStock = async () => {
     let updated = [...products];
 
-     const allProductIds = new Set([
-    ...Object.keys(stockUpdates),
-    ...Object.keys(priceUpdates),
-    ...Object.keys(mrpUpdates),
-  ]);
+    const allProductIds = new Set([
+      ...Object.keys(stockUpdates),
+      ...Object.keys(priceUpdates),
+      ...Object.keys(mrpUpdates),
+    ]);
 
     for (const productId of allProductIds) {
       const product = products.find((p) => p._id === productId);
@@ -170,7 +186,8 @@ function StockManagement() {
                   mrp: mrpUpdates[productId]?.[v._id] ?? v.mrp,
                 })),
                 totalStock: p.variants.reduce(
-                  (sum, v) => sum + (stockUpdates[productId]?.[v._id] ?? v.stock ?? 0),
+                  (sum, v) =>
+                    sum + (stockUpdates[productId]?.[v._id] ?? v.stock ?? 0),
                   0
                 ),
               }
@@ -182,13 +199,15 @@ function StockManagement() {
     }
     setProducts(updated);
     setOutOfStockCount(updated.filter((p) => p.totalStock === 0).length);
-    setLowStockCount(updated.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length);
+    setLowStockCount(
+      updated.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length
+    );
     handlePopoverClose();
   };
 
   const calculateNetAmount = (price, commission) => {
-  if (!price || isNaN(price)) return 0;
-  return price - (price * (commission / 100));
+    if (!price || isNaN(price)) return 0;
+    return price - price * (commission / 100);
   };
 
   const popoverProducts =
@@ -212,9 +231,16 @@ function StockManagement() {
       cell: (row) => (
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <img
-            src={`${process.env.REACT_APP_IMAGE_LINK}${row.productThumbnailUrl || "https://via.placeholder.com/50"}`}
+            src={`${process.env.REACT_APP_IMAGE_LINK}${
+              row.productThumbnailUrl || "https://via.placeholder.com/50"
+            }`}
             alt={row.productName}
-            style={{ width: "50px", height: "50px", borderRadius: "6px", objectFit: "cover" }}
+            style={{
+              width: "50px",
+              height: "50px",
+              borderRadius: "6px",
+              objectFit: "cover",
+            }}
           />
           <span>{row.productName}</span>
         </div>
@@ -232,8 +258,17 @@ function StockManagement() {
               size="small"
               style={{
                 backgroundColor:
-                  v.stock === 0 ? "#ffebee" : v.stock <= 10 ? "#fff3e0" : "#e8f5e9",
-                color: v.stock === 0 ? "#d32f2f" : v.stock <= 10 ? "#f57c00" : "#388e3c",
+                  v.stock === 0
+                    ? "#ffebee"
+                    : v.stock <= 10
+                    ? "#fff3e0"
+                    : "#e8f5e9",
+                color:
+                  v.stock === 0
+                    ? "#d32f2f"
+                    : v.stock <= 10
+                    ? "#f57c00"
+                    : "#388e3c",
               }}
             />
           ))}
@@ -251,7 +286,10 @@ function StockManagement() {
     {
       name: "Action",
       cell: (row) => (
-        <button style={btnStyle} onClick={(e) => handlePopoverOpen(e, "editStock", row._id)}>
+        <button
+          style={btnStyle}
+          onClick={(e) => handlePopoverOpen(e, "editStock", row._id)}
+        >
           Edit
         </button>
       ),
@@ -285,12 +323,32 @@ function StockManagement() {
         }}
       >
         <div>
-          <span style={{ fontWeight: "bold", fontSize: 26 }}>Stock Management</span>
+          <span style={{ fontWeight: "bold", fontSize: 26 }}>
+            Stock Management
+          </span>
           <br />
           <span style={{ fontSize: 17 }}>View and manage stock & prices</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+          {/* Total Products */}
+          <div
+            style={{
+              background: "#e8f5e9",
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "1px solid #388e3c",
+              textAlign: "center",
+              cursor: "pointer",
+            }}
+           // onClick={(e) => handlePopoverOpen(e, "outOfStock")}
+          >
+            <strong>Total Products</strong>
+            <br />
+            <span style={{ color: "#388e3c", fontWeight: "bold" }}>
+              {totalRows}
+            </span>
+          </div>
           {/* Out of stock */}
           <div
             style={{
@@ -301,11 +359,13 @@ function StockManagement() {
               textAlign: "center",
               cursor: "pointer",
             }}
-            onClick={(e) => handlePopoverOpen(e, "outOfStock")}
+            //onClick={(e) => handlePopoverOpen(e, "outOfStock")}
           >
             <strong>Out of Stock</strong>
             <br />
-            <span style={{ color: "#d32f2f", fontWeight: "bold" }}>{outOfStockCount}</span>
+            <span style={{ color: "#d32f2f", fontWeight: "bold" }}>
+              {outOfStockCount}
+            </span>
           </div>
 
           {/* Low stock */}
@@ -322,7 +382,9 @@ function StockManagement() {
           >
             <strong>Low Stock</strong>
             <br />
-            <span style={{ color: "#f57c00", fontWeight: "bold" }}>{lowStockCount}</span>
+            <span style={{ color: "#f57c00", fontWeight: "bold" }}>
+              {lowStockCount}
+            </span>
           </div>
 
           {/* Search */}
@@ -364,12 +426,20 @@ function StockManagement() {
           </Box>
         )}
 
-        <div style={{ background: "white", borderRadius: "10px", padding: "10px" }}>
+        <div
+          style={{ background: "white", borderRadius: "10px", padding: "10px" }}
+        >
           <DataTable
             columns={columns}
             data={products}
             noDataComponent={
-              <div style={{ padding: "20px", textAlign: "center", fontSize: "16px" }}>
+              <div
+                style={{
+                  padding: "20px",
+                  textAlign: "center",
+                  fontSize: "16px",
+                }}
+              >
                 No Products Found
               </div>
             }
@@ -402,50 +472,74 @@ function StockManagement() {
         onClose={handlePopoverClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
-        <div style={{ padding: "15px",backgroundColor:"white", maxWidth: 500, maxHeight: 400, overflowY: "auto" }}>
+        <div
+          style={{
+            padding: "15px",
+            backgroundColor: "white",
+            maxWidth: 500,
+            maxHeight: 400,
+            overflowY: "auto",
+          }}
+        >
           {popoverProducts.map((p) => (
-            
             <div key={p._id}>
               <h4>{p.productName}</h4>
               {p.variants.map((v) => (
-                <div
-                  key={v._id}
-                  style={{ marginBottom: "13px" }}
-                >
-                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span>
-                    {v.attributeName}: {v.variantValue}
-                  </span>
-                  <TextField
-                    size="small"
-                    label="Stock"
-                    type="number"
-                    value={stockUpdates[p._id]?.[v._id] ?? v.stock}
-                    onChange={(e) => handleStockChange(p._id, v._id, e.target.value)}
-                  />
-                  <TextField
-                    size="small"
-                    label="MRP"
-                    type="number"
-                    value={mrpUpdates[p._id]?.[v._id] ?? v.mrp}
-                    onChange={(e) => handleMrpChange(p._id, v._id, e.target.value)}
-                  />
-                  <TextField
-                    size="small"
-                    label="Selling Price"
-                    type="number"
-                    value={priceUpdates[p._id]?.[v._id] ?? v.sell_price}
-                    onChange={(e) => handlePriceChange(p._id, v._id, e.target.value)}
-                  />
-                </div>
-              <div style={{ fontSize: "14px",fontWeight:"600", color: "#2e7d32",marginTop: "4px", marginLeft: "80px", }}>
-                  You will get ₹
-                  {calculateNetAmount(
-                    priceUpdates[p._id]?.[v._id] ?? v.sell_price,
-                    p.commission
-                  ).toFixed(2)}{" "}
-                  after {p.commission}% commission
-                </div>
+                <div key={v._id} style={{ marginBottom: "13px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                    }}
+                  >
+                    <span>
+                      {v.attributeName}: {v.variantValue}
+                    </span>
+                    <TextField
+                      size="small"
+                      label="Stock"
+                      type="number"
+                      value={stockUpdates[p._id]?.[v._id] ?? v.stock}
+                      onChange={(e) =>
+                        handleStockChange(p._id, v._id, e.target.value)
+                      }
+                    />
+                    <TextField
+                      size="small"
+                      label="MRP"
+                      type="number"
+                      value={mrpUpdates[p._id]?.[v._id] ?? v.mrp}
+                      onChange={(e) =>
+                        handleMrpChange(p._id, v._id, e.target.value)
+                      }
+                    />
+                    <TextField
+                      size="small"
+                      label="Selling Price"
+                      type="number"
+                      value={priceUpdates[p._id]?.[v._id] ?? v.sell_price}
+                      onChange={(e) =>
+                        handlePriceChange(p._id, v._id, e.target.value)
+                      }
+                    />
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: "#2e7d32",
+                      marginTop: "4px",
+                      marginLeft: "80px",
+                    }}
+                  >
+                    You will get ₹
+                    {calculateNetAmount(
+                      priceUpdates[p._id]?.[v._id] ?? v.sell_price,
+                      p.commission
+                    ).toFixed(2)}{" "}
+                    after {p.commission}% commission
+                  </div>
                 </div>
               ))}
             </div>
