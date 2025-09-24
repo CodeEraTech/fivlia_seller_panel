@@ -93,7 +93,7 @@ export default function DashBoard() {
   const handleStatusToggle = async () => {
     try {
       const storeId = localStorage.getItem("sellerId");
-      const newStatus = !stats.status;
+      const newStatus = !stats.storeStatus;
 
       const confirm = window.confirm(
         `Are you sure you want to turn ${newStatus ? "ON (Open)" : "OFF (Close)"} the store?`
@@ -107,7 +107,7 @@ export default function DashBoard() {
       );
 
       if (response.data.success) {
-        setStats((prev) => ({ ...prev, status: newStatus }));
+        setStats((prev) => ({ ...prev, storeStatus: newStatus }));
         alert(`Store is now ${newStatus ? "Open" : "Closed"}`);
       } else {
         alert(response.data.message || "Failed to update status");
