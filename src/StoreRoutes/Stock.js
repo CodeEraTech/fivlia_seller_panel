@@ -78,7 +78,7 @@ function StockManagement() {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://api.fivlia.in/getSellerProducts?sellerId=${storeId}&page=${page}&limit=${limit}&search=${searchText}`
+        `https://api.fivlia.in/getSellerProducts?sellerId=${storeId}&page=${page}&limit=${limit}&search=${searchText}`
       );
       if (!res.ok) throw new Error("Fetch failed");
       const result = await res.json();
