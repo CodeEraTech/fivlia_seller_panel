@@ -44,11 +44,19 @@ export default function DashBoard() {
     dashboardStats();
   }, []);
 
+  const formatAmount = (amount) => {
+  if (typeof amount !== "number") amount = Number(amount);
+  if (isNaN(amount)) return "0.00";
+
+  return (Math.round(amount * 100) / 100).toFixed(2);
+};
+
+
   const data = stats
     ? [
         {
           title: "Total Earnings",
-          value: stats.totalEarning,
+          value: formatAmount(stats.totalEarning),
           color: "green",
           icon: <FaMoneyBillWave />,
         },

@@ -862,6 +862,59 @@ export default function SellerProfile() {
                   )}
                 </Box>
               </Grid>
+              {profile?.pendingAdvertisementImages?.image?.length > 0 && (
+                <Grid item xs={12}>
+                  <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: "medium" }}>
+                    Pending Advertisement Images
+                  </Typography>
+                  <Box display="flex" flexWrap="wrap" gap={2}>
+                    {profile.pendingAdvertisementImages.image.map((img, index) => (
+                      <Box
+                        key={`pending-${img}-${index}`}
+                        sx={{
+                          width: 300,
+                          height: 124,
+                          borderRadius: 2,
+                          overflow: "hidden",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "1px solid #ddd",
+                          backgroundColor: "#fafafa",
+                          position: "relative",
+                        }}
+                      >
+                        <img
+                          src={`${process.env.REACT_APP_IMAGE_LINK}${img}`}
+                          alt={`Pending Advertisement ${index + 1}`}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            position: "absolute",
+                            bottom: 2,
+                            left: 2,
+                            bgcolor: "rgba(0, 0, 0, 0.6)",
+                            color: "white",
+                            px: 1,
+                            borderRadius: 1,
+                          }}
+                        >
+                          Pending Approval
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                    Status: {profile.pendingAdvertisementImages.status || "N/A"}
+                  </Typography>
+                </Grid>
+              )}
               <Snackbar
                 open={alert.open}
                 autoHideDuration={4000}

@@ -1,4 +1,4 @@
-import React from "react";
+import React,{useEffect} from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import SellerLogin from "./SellerLogin";
 import { Navigate } from "react-router-dom";
@@ -14,6 +14,8 @@ import AddSellerProduct from "./StoreRoutes/addProduct";
 import SearchProduct from "./StoreRoutes/SearchProduct";
 import Profile from './StoreRoutes/Profile';
 import UnapprovedProducts from "StoreRoutes/UnapprovedProducts";
+import { getMessaging, onMessage } from "firebase/messaging";
+import firebaseApp from "./firebaseConfig";
 
 function PrivateRoute({ element }) {
   const token = localStorage.getItem("token");
@@ -22,6 +24,40 @@ function PrivateRoute({ element }) {
 
 
 function App() {
+  const messaging = getMessaging(firebaseApp);
+
+    useEffect(() => {
+    // Listen for foreground messages
+    const unsubscribe = onMessage(messaging, (payload) => {
+      console.log("🔔 Foreground notification received:", payload);
+
+      // You can use alert or a better notification UI here
+     if (Notification.permission === "granted") {
+  const { title, body } = payload.notification;
+  const click_action = payload.data?.click_action;
+
+  const notification = new Notification(title, {
+    body,
+    icon: "/logo192.png", // optional icon
+    data: { click_action }, // needed for click handler
+  });
+
+  notification.onclick = (event) => {
+  const targetUrl = notification.data?.click_action;
+  if (targetUrl) window.open(targetUrl, "_blank");
+};
+}
+
+
+      // OR use a toast library like react-toastify for better UX
+      // toast.info(`${payload.notification.title}: ${payload.notification.body}`);
+    });
+
+    return () => unsubscribe();
+  }, [messaging]);
+
+
+
   const { pathname } = useLocation();
   const showSidebar = pathname !== "/seller-login";
 

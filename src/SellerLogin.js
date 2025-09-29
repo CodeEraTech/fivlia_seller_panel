@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import logo from "./fivlialogo.png";
 import { ENDPOINTS } from "apis/endpoints";
 import { post } from "apis/apiClient";
+import getFcmToken from "fcmToken"
 import "./Store.css";
 import { startsWith } from "lodash";
 
 function SellerLogin() {
   const [loginMode, setLoginMode] = useState("email"); // "email" | "phone"
   const [email, setEmail] = useState("");
+  const [fcmToken, setFcmToken] = useState(null);
   const [mobileNumber, setMobileNumber] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -22,6 +24,14 @@ function SellerLogin() {
       navigate("/dashboard1", { replace: true });
     }
   }, []);
+
+  useEffect(() => {
+  async function fetchToken() {
+    const token = await getFcmToken();
+    setFcmToken(token);
+  }
+  fetchToken();
+}, []);
 
   // =========================
   // 🔹 Send OTP
@@ -76,12 +86,17 @@ function SellerLogin() {
 
     setLoading(true);
     try {
-      const res = await post(ENDPOINTS.VERIFY_OTP, {
-        email: loginMode === "email" ? email : undefined,
-        PhoneNumber: loginMode === "phone" ? mobileNumber : undefined,
-        otp,
-        type: "login",
-      });
+      const payload = {
+      email: loginMode === "email" ? email : undefined,
+      PhoneNumber: loginMode === "phone" ? mobileNumber : undefined,
+      otp,
+      type: "login",
+    };
+    if (fcmToken) {
+      payload.fcmToken = fcmToken;
+    }
+
+    const res = await post(ENDPOINTS.VERIFY_OTP, payload);
 
       if (res.status === 200 && res.data?.sellerId) {
         alert("Login successful!");

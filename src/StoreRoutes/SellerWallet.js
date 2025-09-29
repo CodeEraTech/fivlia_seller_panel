@@ -86,6 +86,12 @@ export default function Wallet() {
     return <p className="loading-text">Loading wallet...</p>;
   }
 
+   const formatAmount = (amount) => {
+  if (typeof amount !== "number") amount = Number(amount);
+  if (isNaN(amount)) return "0.00";
+
+  return (Math.round(amount * 100) / 100).toFixed(2);
+};
   // ✅ Calculate total credits & debits
   const totalCredits = transactions
     .filter((txn) => txn.type === "Credit")
@@ -115,7 +121,7 @@ export default function Wallet() {
               <div className="icon"><FaWallet /></div>
               <div>
                 <div className="card-title">Wallet Balance</div>
-                <div className="card-value">₹{walletBalance}</div>
+                <div className="card-value">₹{formatAmount(walletBalance)}</div>
               </div>
             </div>
           </div>
