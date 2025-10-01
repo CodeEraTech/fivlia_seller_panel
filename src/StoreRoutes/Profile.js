@@ -286,7 +286,7 @@ export default function SellerProfile() {
         }
       });
 
-      const res = await fetch(`http://127.0.0.1:8080/editSellerProfile/${id}`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`, {
         method: "PUT",
         body: formData,
       });
