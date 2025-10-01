@@ -69,6 +69,7 @@ export default function SellerProfile() {
     fsiNumber: "",
     image: "",
     aadharCard: "",
+    sellerSignature: "",
     invoicePrefix: "",
     advertisementImages: [],
     openTime: "",
@@ -150,8 +151,9 @@ export default function SellerProfile() {
         gstNumber: data.gstNumber || "",
         fsiNumber: data.fsiNumber || "",
         image: data.image || "",
-        invoicePrefix: data.invoicePrefix || "",
         aadharCard: Array.isArray(data.aadharCard) ? data.aadharCard[0] : (data.aadharCard || ""),
+        sellerSignature: data.sellerSignature || "",
+        invoicePrefix: data.invoicePrefix || "",
         advertisementImages: Array.isArray(data.advertisementImages) ? data.advertisementImages : [],
         openTime: data.openTime || "",
         closeTime: data.closeTime || "",
@@ -275,13 +277,16 @@ export default function SellerProfile() {
       if (form.aadharCard instanceof File) {
         formData.append("aadharCard", form.aadharCard);
       }
+      if (form.sellerSignature instanceof File) {
+        formData.append("file", form.sellerSignature);
+      }
       form.advertisementImages.forEach((file) => {
         if (file instanceof File) {
           formData.append("MultipleImage", file);
         }
       });
 
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`, {
+      const res = await fetch(`http://127.0.0.1:8080/editSellerProfile/${id}`, {
         method: "PUT",
         body: formData,
       });
@@ -493,7 +498,7 @@ export default function SellerProfile() {
         reverseButtons: true,
       }).then((result) => {
         if (result.isConfirmed) {
-          setMarkerPosition({ lat: zoneLat, lng: zoneLng });
+          setMarkerPosition({ lat: zoneLat, lng: zoneLat });
           setAddress((p) => ({
             ...p,
             lat: zoneLat,
@@ -787,6 +792,56 @@ export default function SellerProfile() {
                           width: "100%",
                           height: "100%",
                           objectFit: "cover",
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Box>
+              </Grid>
+              <Grid item xs={12}>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <TextField
+                    label="Signature"
+                    type="file"
+                    fullWidth
+                    margin="dense"
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ accept: "image/*" }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleFormChange("sellerSignature", file);
+                      }
+                    }}
+                    helperText="Upload signature image"
+                    variant="outlined"
+                  />
+                  {form.sellerSignature && (
+                    <Box
+                      sx={{
+                        width: 104,
+                        height: 84,
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "1px solid #ddd",
+                        backgroundColor: "#fff",
+                      }}
+                    >
+                      <img
+                        src={
+        typeof form.sellerSignature === "string"
+          ? `${process.env.REACT_APP_IMAGE_LINK}${form.sellerSignature}` // fetched from server
+          : URL.createObjectURL(form.sellerSignature) // newly selected file
+      }
+                        alt="Signature"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                          backgroundColor: "#fff",
                         }}
                       />
                     </Box>

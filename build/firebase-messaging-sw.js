@@ -1,7 +1,8 @@
 /* eslint-disable no-restricted-globals */
+// firebase-messaging-sw.js
 /* eslint-disable no-undef */
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
+importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js");
 
 firebase.initializeApp({
   apiKey: "AIzaSyD2kNJ9bPAzuGBvUh8OFfBY6yFnBvKZVNU",
@@ -13,62 +14,51 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function(payload) {
-  console.log('[firebase-messaging-sw.js] Received background message (FB):', payload);
+messaging.onBackgroundMessage((payload) => {
+  console.log("[SW] Background message:", payload);
 
-  const title = payload.notification?.title || "New Notification";
-  const body = payload.notification?.body || "";
-  const click_action = payload.data?.click_action || "/";
+  const title = payload.notification?.title || payload.data?.title || "Default Title";
+  const body = payload.notification?.body || payload.data?.body || "Default Body";
 
-  const options = {
+  self.registration.showNotification(title, {
     body,
-    icon: '/logo192.png',
-    data: { click_action }
-  };
-
-  self.registration.showNotification(title, options);
+    icon: "/logo192.png",
+    data: payload.data,
+  });
 });
 
-// Fallback push listener
 self.addEventListener('push', function(event) {
-  console.log('[SW push] event.data:', event.data);
   let payload = {};
-  try {
-    payload = event.data.json();
-  } catch (err) {
-    console.warn('Push event had no JSON', err);
+  if (event.data) {
+    try {
+      payload = event.data.json(); // JSON payload
+    } catch (err) {
+      // fallback for plain text
+      payload = {
+        notification: { title: "New Notification", body: event.data.text() },
+        data: { click_action: "/" },
+      };
+    }
+  } else {
+    payload = {
+      notification: { title: "New Notification", body: "You have a new message" },
+      data: { click_action: "/" },
+    };
   }
-  const title = payload.notification?.title || "New Notification";
-  const body = payload.notification?.body || "";
-  const click_action = payload.data?.click_action || "/";
 
+  const title = payload.notification.title;
   const options = {
-    body,
-    icon: '/favicon.png',
-    data: { click_action }
+    body: payload.notification.body,
+    icon: "/logo192.png",
+    data: payload.data,
   };
 
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// Click handler (top-level)
-self.addEventListener('notificationclick', function(event) {
-  console.log('[SW] Notification click:', event.notification);
-  const targetUrl = event.notification.data?.click_action || "/";
-  event.notification.close();
 
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      for (const client of clientList) {
-        if (client.url === targetUrl && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
-      }
-    })
-  );
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.click_action || "/";
+  event.waitUntil(clients.openWindow(targetUrl));
 });

@@ -16,6 +16,7 @@ import Profile from './StoreRoutes/Profile';
 import UnapprovedProducts from "StoreRoutes/UnapprovedProducts";
 import { getMessaging, onMessage } from "firebase/messaging";
 import firebaseApp from "./firebaseConfig";
+import { toast } from "react-toastify";
 
 function PrivateRoute({ element }) {
   const token = localStorage.getItem("token");
@@ -27,39 +28,18 @@ function App() {
   const messaging = getMessaging(firebaseApp);
 
   useEffect(() => {
-    if (Notification.permission !== "granted") {
-      Notification.requestPermission().then((permission) => {
-        console.log("🔔 Notification permission:", permission);
-      });
-    }
-  }, []);
+   const unsubscribe = onMessage(messaging, (payload) => {
+  console.log("🔔 Foreground notification received:", payload);
 
-    useEffect(() => {
-    // Listen for foreground messages
-    const unsubscribe = onMessage(messaging, (payload) => {
-      console.log("🔔 Foreground notification received:", payload);
+  const title = payload.notification?.title || payload.data?.title || "No Title";
+    const body = payload.notification?.body || payload.data?.body || "No Body";
 
-      // You can use alert or a better notification UI here
-     if (Notification.permission === "granted") {
-  const { title, body } = payload.notification;
-  const click_action = payload.data?.click_action;
-
-  const notification = new Notification(title, {
-    body,
-    icon: "/logo192.png", // optional icon
-    data: { click_action }, // needed for click handler
+  toast.info(`${title}: ${body}`, {
+    position: "top-right",
+    autoClose: 5000,
   });
+});
 
-  notification.onclick = (event) => {
-  const targetUrl = notification.data?.click_action;
-  if (targetUrl) window.open(targetUrl, "_blank");
-};
-}
-
-
-      // OR use a toast library like react-toastify for better UX
-      // toast.info(`${payload.notification.title}: ${payload.notification.body}`);
-    });
 
     return () => unsubscribe();
   }, [messaging]);
