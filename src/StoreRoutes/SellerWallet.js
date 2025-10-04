@@ -201,38 +201,71 @@ export default function Wallet() {
         <div className="transactions-section">
           <h3 className="section-title">Recent Transactions</h3>
 
-          {transactions.length > 0 ? (
-            <ul className="transaction-list">
-              {transactions.map((txn, idx) => (
-                <li key={idx} className={`txn ${txn.type.toLowerCase()}`}>
-                  <span className="txn-icon">
-                    {txn.type === "Credit"
-                      ? <FaArrowDown color="#22c55e" />
-                      : <FaArrowUp color="#ef4444" />}
-                  </span>
+         {transactions.length > 0 ? (
+  <ul className="transaction-list">
+    {transactions.map((txn, idx) => {
+      let icon, colorClass;
 
-                  <span className="txn-details">
-                    <strong>{txn.description || "No description"}</strong>
-                    <br />
-                    <small>Order ID: {txn.orderId || "-"}</small>
-                    <br />
-                    <small>
-                      {new Date(txn.createdAt).toLocaleString("en-IN", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </small>
-                  </span>
+      // Determine icon and color based on type or status
+      if (txn.status === "Accepted") {
+        icon = <FaArrowDown color="#22c55e" />; // green
+        colorClass = "accepted";
+      } else if (txn.status === "Declined") {
+        icon = <FaArrowUp color="#ef4444" />; // red
+        colorClass = "declined";
+      } else {
+        icon = txn.type === "Credit"
+          ? <FaArrowDown color="#22c55e" />
+          : <FaArrowUp color="#ef4444" />;
+        colorClass = txn.type.toLowerCase();
+      }
 
-                  <span className={`txn-amount ${txn.type.toLowerCase()}`}>
-                    {txn.type === "Credit" ? "+" : "-"}₹{(txn.amount || 0).toFixed(2)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="no-transactions">No transactions found</p>
-          )}
+      return (
+        <li key={idx} className={`txn ${colorClass}`}>
+          <span className="txn-icon">{icon}</span>
+
+          <span className="txn-details">
+            <strong>{txn.description || "No description"}</strong>
+            <br />
+            <small>Order ID: {txn.orderId || "-"}</small>
+            <br />
+            <small>
+              {new Date(txn.createdAt).toLocaleString("en-IN", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </small>
+            {/* Optional note */}
+            {txn.Note && (
+              <>
+                <br />
+                <small><strong>Note:</strong> {txn.Note}</small>
+              </>
+            )}
+            {/* Optional image */}
+            {txn.image && (
+              <>
+                <br />
+                <img
+                  src={txn.image}
+                  alt="transaction"
+                  style={{ maxWidth: "120px", borderRadius: "5px", marginTop: "5px" }}
+                />
+              </>
+            )}
+          </span>
+
+          <span className={`txn-amount ${colorClass}`}>
+            {(txn.type === "Credit" || txn.status === "Accepted") ? "+" : "-"}₹{(txn.amount || 0).toFixed(2)}
+          </span>
+        </li>
+      );
+    })}
+  </ul>
+) : (
+  <p className="no-transactions">No transactions found</p>
+)}
+
         </div>
       </div>
     </MDBox>

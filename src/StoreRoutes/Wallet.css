@@ -146,6 +146,27 @@
   color: #ef4444;
 }
 
+.txn.accepted {
+  background-color: #d1fae5; /* light green */
+  border-left: 4px solid #22c55e;
+}
+
+.txn.declined {
+  background-color: #fee2e2; /* light red */
+  border-left: 4px solid #ef4444;
+}
+
+.txn-amount.accepted {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.txn-amount.declined {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+
 .no-transactions {
   color: #64748b;
   font-size: 16px;
