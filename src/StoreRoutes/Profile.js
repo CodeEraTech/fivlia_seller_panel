@@ -800,22 +800,31 @@ export default function SellerProfile() {
               </Grid>
               <Grid item xs={12}>
                 <Box display="flex" alignItems="center" gap={2}>
-                  <TextField
-                    label="Signature"
-                    type="file"
-                    fullWidth
-                    margin="dense"
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{ accept: "image/*" }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
+                <TextField
+                  type="file"
+                  inputProps={{ accept: "image/*" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                  
+                    if (file.size / 1024 > 500) {
+                      Swal.fire("❌ File must be less than 500KB");
+                      e.target.value = "";
+                      return;
+                    }
+                  
+                    const img = new Image();
+                    img.onload = () => {
+                      if (img.width !== 100 || img.height !== 50) {
+                        Swal.fire("❌ Image must be 100x50 px");
+                        e.target.value = "";
+                      } else {
                         handleFormChange("sellerSignature", file);
                       }
-                    }}
-                    helperText="Upload signature image"
-                    variant="outlined"
-                  />
+                    };
+                    img.src = URL.createObjectURL(file);
+                  }}
+                />
                   {form.sellerSignature && (
                     <Box
                       sx={{

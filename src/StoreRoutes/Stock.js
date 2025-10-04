@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
+import Swal from "sweetalert2";
 import { useMaterialUIController } from "../context";
 
 // ✅ Button style
@@ -133,12 +134,26 @@ function StockManagement() {
       [productId]: { ...(prev[productId] || {}), [variantId]: Number(value) },
     }));
   };
-  const handlePriceChange = (productId, variantId, value) => {
-    setPriceUpdates((prev) => ({
-      ...prev,
-      [productId]: { ...(prev[productId] || {}), [variantId]: Number(value) },
-    }));
-  };
+ const handlePriceChange = (productId, variantId, value, mrp) => {
+  let newValue = Number(value);
+
+  // prevent selling price > mrp
+  if (newValue > mrp) {
+    Swal.fire({
+      icon: "warning",
+      title: "Invalid Price",
+      text: "Selling Price cannot be greater than MRP!",
+      confirmButtonColor: "#1976d2",
+    });
+    newValue = mrp;
+  }
+
+  setPriceUpdates((prev) => ({
+    ...prev,
+    [productId]: { ...(prev[productId] || {}), [variantId]: newValue },
+  }));
+};
+
   const handleMrpChange = (productId, variantId, value) => {
     setMrpUpdates((prev) => ({
       ...prev,
@@ -520,7 +535,7 @@ function StockManagement() {
                       type="number"
                       value={priceUpdates[p._id]?.[v._id] ?? v.sell_price}
                       onChange={(e) =>
-                        handlePriceChange(p._id, v._id, e.target.value)
+                        handlePriceChange(p._id, v._id, e.target.value, mrpUpdates[p._id]?.[v._id] ?? v.mrp)
                       }
                     />
                   </div>
