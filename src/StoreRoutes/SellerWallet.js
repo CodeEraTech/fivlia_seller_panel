@@ -25,11 +25,11 @@ export default function Wallet() {
         const res = await axios.get(`https://api.fivlia.in/getStoreTransaction/${storeId}`);
 
         const storeData = res.data?.storeData || [];
-        
+
         const latestCredit = storeData
-  .slice() // create a copy to avoid mutating original
-  .reverse() // start from latest transaction
-  .find(txn => txn.type.toLowerCase() !== "debit");
+          .slice() // create a copy to avoid mutating original
+          .reverse() // start from latest transaction
+          .find(txn => txn.type.toLowerCase() !== "debit");
 
         // ✅ Wallet Balance = currentAmount of latest transaction
         if (storeData.length > 0) {
@@ -86,12 +86,12 @@ export default function Wallet() {
     return <p className="loading-text">Loading wallet...</p>;
   }
 
-   const formatAmount = (amount) => {
-  if (typeof amount !== "number") amount = Number(amount);
-  if (isNaN(amount)) return "0.00";
+  const formatAmount = (amount) => {
+    if (typeof amount !== "number") amount = Number(amount);
+    if (isNaN(amount)) return "0.00";
 
-  return (Math.round(amount * 100) / 100).toFixed(2);
-};
+    return (Math.round(amount * 100) / 100).toFixed(2);
+  };
   // ✅ Calculate total credits & debits
   const totalCredits = transactions
     .filter((txn) => txn.type === "Credit")
@@ -147,124 +147,124 @@ export default function Wallet() {
           </div>
         </div>
 
-<div className="withdraw-section">
-  <h3>Request Withdrawal</h3>
-  <p className="wallet-info">
-    Wallet Balance: ₹{walletBalance || 0} | Pending Withdrawals: ₹
-    {transactions
-      .filter(txn => txn.type === "debit" && txn.status === "Pending")
-      .reduce((sum, txn) => sum + (txn.amount || 0), 0)}
-  </p>
+        <div className="withdraw-section">
+          <h3>Request Withdrawal</h3>
+          <p className="wallet-info">
+            Wallet Balance: ₹{walletBalance || 0} | Pending Withdrawals: ₹
+            {transactions
+              .filter(txn => txn.type === "debit" && txn.status === "Pending")
+              .reduce((sum, txn) => sum + (txn.amount || 0), 0)}
+          </p>
 
-  <input
-    type="number"
-    placeholder="Enter amount"
-    value={withdrawAmount}
-    onChange={(e) => setWithdrawAmount(e.target.value)}
-    className="withdraw-input"
-    style={{
-      padding: "10px",
-      fontSize: "1rem",
-      width: "200px",
-      marginRight: "10px",
-      borderRadius: "5px",
-      border: "1px solid #ccc"
-    }}
-  />
+          <input
+            type="number"
+            placeholder="Enter amount"
+            value={withdrawAmount}
+            onChange={(e) => setWithdrawAmount(e.target.value)}
+            className="withdraw-input"
+            style={{
+              padding: "10px",
+              fontSize: "1rem",
+              width: "200px",
+              marginRight: "10px",
+              borderRadius: "5px",
+              border: "1px solid #ccc"
+            }}
+          />
 
-  <button
-    onClick={handleWithdrawal}
-    disabled={withdrawLoading}
-    className="withdraw-btn"
-    style={{
-      padding: "10px 20px",
-      fontSize: "1rem",
-      borderRadius: "5px",
-      border: "none",
-      backgroundColor: "#4f46e5",
-      color: "#fff",
-      cursor: withdrawLoading ? "not-allowed" : "pointer",
-    }}
-  >
-    {withdrawLoading ? "Submitting..." : "Request Withdrawal"}
-  </button>
+          <button
+            onClick={handleWithdrawal}
+            disabled={withdrawLoading}
+            className="withdraw-btn"
+            style={{
+              padding: "10px 20px",
+              fontSize: "1rem",
+              borderRadius: "5px",
+              border: "none",
+              backgroundColor: "#4f46e5",
+              color: "#fff",
+              cursor: withdrawLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {withdrawLoading ? "Submitting..." : "Request Withdrawal"}
+          </button>
 
-  {/* Optional: Display message if invalid */}
-  {withdrawAmount && Number(withdrawAmount) <= 0 && (
-    <p className="error-msg" style={{ color: "red", marginTop: "5px" }}>
-      Enter a valid amount
-    </p>
-  )}
-</div>
+          {/* Optional: Display message if invalid */}
+          {withdrawAmount && Number(withdrawAmount) <= 0 && (
+            <p className="error-msg" style={{ color: "red", marginTop: "5px" }}>
+              Enter a valid amount
+            </p>
+          )}
+        </div>
 
         {/* Transactions list */}
         <div className="transactions-section">
           <h3 className="section-title">Recent Transactions</h3>
 
-         {transactions.length > 0 ? (
-  <ul className="transaction-list">
-    {transactions.map((txn, idx) => {
-      let icon, colorClass;
+          {transactions.length > 0 ? (
+            <ul className="transaction-list">
+              {transactions.map((txn, idx) => {
+                let icon, colorClass;
 
-      // Determine icon and color based on type or status
-      if (txn.status === "Accepted") {
-        icon = <FaArrowDown color="#22c55e" />; // green
-        colorClass = "accepted";
-      } else if (txn.status === "Declined") {
-        icon = <FaArrowUp color="#ef4444" />; // red
-        colorClass = "declined";
-      } else {
-        icon = txn.type === "Credit"
-          ? <FaArrowDown color="#22c55e" />
-          : <FaArrowUp color="#ef4444" />;
-        colorClass = txn.type.toLowerCase();
-      }
+                // Determine icon and color based on type or status
+                if (txn.status === "Accepted") {
+                  icon = <FaArrowDown color="#22c55e" />; // green
+                  colorClass = "accepted";
+                } else if (txn.status === "Declined") {
+                  icon = <FaArrowUp color="#ef4444" />; // red
+                  colorClass = "declined";
+                } else {
+                  icon = txn.type === "Credit"
+                    ? <FaArrowDown color="#22c55e" />
+                    : <FaArrowUp color="#ef4444" />;
+                  colorClass = txn.type.toLowerCase();
+                }
 
-      return (
-        <li key={idx} className={`txn ${colorClass}`}>
-          <span className="txn-icon">{icon}</span>
+                return (
+                  <li key={idx} className={`txn ${colorClass}`}>
+                    <span className="txn-icon">{icon}</span>
 
-          <span className="txn-details">
-            <strong>{txn.description || "No description"}</strong>
-            <br />
-            <small>Order ID: {txn.orderId || "-"}</small>
-            <br />
-            <small>
-              {new Date(txn.createdAt).toLocaleString("en-IN", {
-                dateStyle: "medium",
-                timeStyle: "short",
+                    <span className="txn-details">
+                      <strong>{txn.description || "No description"}</strong>
+                      <br />
+                      <small>Order ID: {txn.orderId || "-"}</small>
+                      <br />
+                      <small>
+                        {new Date(txn.createdAt).toLocaleString("en-IN", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </small>
+                      {/* Optional note */}
+                      {txn.Note && (
+                        <>
+                          <br />
+                          <small><strong>Note:</strong> {txn.Note}</small>
+                        </>
+                      )}
+                      {/* Optional image */}
+                      {txn.image && (
+                        <>
+                          <br />
+                          <img
+                            src={txn.image}
+                            alt="transaction"
+                            style={{ maxWidth: "120px", borderRadius: "5px", marginTop: "5px" }}
+                          />
+                        </>
+                      )}
+                    </span>
+
+                    <span className={`txn-amount ${colorClass}`}>
+                      {(txn.type === "Credit" || txn.status === "Accepted") ? "+" : "-"}₹{(txn.amount || 0).toFixed(2)}
+                    </span>
+                  </li>
+                );
               })}
-            </small>
-            {/* Optional note */}
-            {txn.Note && (
-              <>
-                <br />
-                <small><strong>Note:</strong> {txn.Note}</small>
-              </>
-            )}
-            {/* Optional image */}
-            {txn.image && (
-              <>
-                <br />
-                <img
-                  src={txn.image}
-                  alt="transaction"
-                  style={{ maxWidth: "120px", borderRadius: "5px", marginTop: "5px" }}
-                />
-              </>
-            )}
-          </span>
-
-          <span className={`txn-amount ${colorClass}`}>
-            {(txn.type === "Credit" || txn.status === "Accepted") ? "+" : "-"}₹{(txn.amount || 0).toFixed(2)}
-          </span>
-        </li>
-      );
-    })}
-  </ul>
-) : (
-  <p className="no-transactions">No transactions found</p>
-)}
+            </ul>
+          ) : (
+            <p className="no-transactions">No transactions found</p>
+          )}
 
         </div>
       </div>

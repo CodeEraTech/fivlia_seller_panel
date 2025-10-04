@@ -85,6 +85,7 @@ function StoreOrder({ isDashboard = false }) {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
+  const [variants, setVariants] = useState({});
 
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
@@ -93,23 +94,23 @@ function StoreOrder({ isDashboard = false }) {
   const [newStatus, setNewStatus] = useState("");
 
   // ✅ Fetch orders and statuses
-const STATUS_FLOW = {
-  Pending: ["Accepted", "Cancelled"],
-  Accepted: ["Going to Pickup", "Cancelled"],
-  "Going to Pickup": ["Delivered","Cancelled"],
-  Delivered: [],
-  Cancelled: []
-};
+  const STATUS_FLOW = {
+    Pending: ["Accepted", "Cancelled"],
+    Accepted: ["Going to Pickup", "Cancelled"],
+    "Going to Pickup": ["Delivered", "Cancelled"],
+    Delivered: [],
+    Cancelled: []
+  };
 
-const getAllowedStatuses = (currentStatus) => {
-  if (!currentStatus) return [];
-  const statusTitle =
-    deliveryStatuses.find(
-      (s) => s.statusCode === currentStatus || s.statusTitle === currentStatus
-    )?.statusTitle || currentStatus;
+  const getAllowedStatuses = (currentStatus) => {
+    if (!currentStatus) return [];
+    const statusTitle =
+      deliveryStatuses.find(
+        (s) => s.statusCode === currentStatus || s.statusTitle === currentStatus
+      )?.statusTitle || currentStatus;
 
-  return STATUS_FLOW[statusTitle] || [];
-};
+    return STATUS_FLOW[statusTitle] || [];
+  };
 
 
   useEffect(() => {
@@ -162,6 +163,28 @@ const getAllowedStatuses = (currentStatus) => {
     };
     return map[status] || "#666";
   };
+
+  const modalStyle = {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: "95%",           // slightly wider for small screens
+    maxWidth: 700,          // keeps large screen layout
+    bgcolor: "background.paper",
+    boxShadow: 24,
+    borderRadius: 4,
+    p: 3,
+    maxHeight: "80vh",
+    overflowY: "auto",       // vertical scroll
+    overflowX: "hidden",     // prevents horizontal scroll
+  };
+
+  const tableWrapperStyle = {
+    overflowX: "auto",      // scroll horizontally if needed
+    marginTop: 8,
+  };
+
 
   const getStatusInfo = (status) => {
     const info = deliveryStatuses.find(
@@ -289,29 +312,29 @@ const getAllowedStatuses = (currentStatus) => {
       ),
     },
 
-{
-  name: "Invoice",
-  cell: (row) => (
-    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-      {row.orderStatus?.toLowerCase() === "delivered" || row.orderStatus === "106" ? (
-        <Button
-          variant="contained"
-          style={invoiceButton}
-          onClick={() => handleDownloadInvoice(row.orderId)} // use orderId
-        >
-          Invoice
-        </Button>
-      ) : (
-        <Typography
-          variant="body2"
-          style={{ color: "#999", fontStyle: "italic" }}
-        >
-          Not available
-        </Typography>
-      )}
-    </div>
-  ),
-},
+    {
+      name: "Invoice",
+      cell: (row) => (
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {row.orderStatus?.toLowerCase() === "delivered" || row.orderStatus === "106" ? (
+            <Button
+              variant="contained"
+              style={invoiceButton}
+              onClick={() => handleDownloadInvoice(row.orderId)} // use orderId
+            >
+              Invoice
+            </Button>
+          ) : (
+            <Typography
+              variant="body2"
+              style={{ color: "#999", fontStyle: "italic" }}
+            >
+              Not available
+            </Typography>
+          )}
+        </div>
+      ),
+    },
 
 
     {
@@ -431,50 +454,113 @@ const getAllowedStatuses = (currentStatus) => {
         </div>
       </MDBox>
 
-      {/* Modals */}
       <Modal open={detailsModalOpen} onClose={closeModal}>
-        <Box sx={modalBoxStyle}>
-          <Typography variant="h6" gutterBottom>
-            Order Details
-          </Typography>
-          {selectedOrder?.items?.length ? (
-            selectedOrder.items.map((item, idx) => (
-              <Box key={idx} display="flex" alignItems="center" mb={1}>
-                <img
-                  src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
-                  alt={item.name}
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "98%",
+            maxWidth: 950,
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            borderRadius: 4,
+            p: 3,
+            maxHeight: "85vh",
+            overflowY: "auto",
+          }}
+        >
+          {selectedOrder && (
+            <>
+              <Typography variant="h6" fontWeight={700} mb={2}>
+                Order Details - {selectedOrder.orderId}
+              </Typography>
+
+              <Typography fontSize={14} mb={2}>
+                <strong>Status:</strong> {getStatusInfo(selectedOrder.orderStatus).title || "-"}
+              </Typography>
+
+              <Box sx={{ overflowX: "auto" }}>
+                <table
                   style={{
-                    width: 50,
-                    height: 50,
-                    marginRight: 12,
-                    objectFit: "cover",
-                    borderRadius: 4,
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    minWidth: 900,
                   }}
-                />
-                <Typography fontSize={14}>{item.name}</Typography>
+                >
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid #ddd", background: "#f4f4f4" }}>
+                      <th style={{ textAlign: "left", padding: "10px", width: "10%" }}>SKU</th>
+                      <th style={{ textAlign: "right", padding: "10px", width: "10%" }}>Price</th>
+                      <th style={{ textAlign: "right", padding: "10px", width: "8%" }}>Qty</th>
+                      <th style={{ textAlign: "left", padding: "10px", width: "40%" }}>Product</th>
+                      <th style={{ textAlign: "left", padding: "10px", width: "12%" }}>Variant</th>
+                      <th style={{ textAlign: "right", padding: "10px", width: "10%" }}>Price (Incl. GST)</th>
+                      <th style={{ textAlign: "right", padding: "10px", width: "10%" }}>Subtotal</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {selectedOrder.items.map((item, index) => {
+                      const price = item.price || 0;
+                      const subtotal = price * (item.quantity || 0);
+                      return (
+                        <tr key={item._id || index} style={{ borderBottom: "1px solid #eee" }}>
+                          <td style={{ padding: "10px", verticalAlign: "middle" }}>{item.sku}</td>
+                          <td style={{ padding: "10px", textAlign: "right", verticalAlign: "middle" }}>₹{price}</td>
+                          <td style={{ padding: "10px", textAlign: "right", verticalAlign: "middle" }}>{item.quantity}</td>
+
+                          {/* Product Column using CSS Grid */}
+                          <td style={{ padding: "10px", verticalAlign: "middle" }}>
+                            <div
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: "60px 1fr",
+                                alignItems: "center",
+                                gap: "12px",
+                              }}
+                            >
+                              <img
+                                src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
+                                alt={item.name}
+                                style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6 }}
+                              />
+                              <div style={{ wordBreak: "break-word" }}>{item.name}</div>
+                            </div>
+                          </td>
+
+                          <td style={{ padding: "10px", verticalAlign: "middle" }}>{item.variantName || "-"}</td>
+                          <td style={{ padding: "10px", textAlign: "right", verticalAlign: "middle" }}>₹{price}</td>
+                          <td style={{ padding: "10px", textAlign: "right", verticalAlign: "middle" }}>₹{subtotal}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </Box>
-            ))
-          ) : (
-            <Typography color="textSecondary">No items available</Typography>
+
+              <Box mt={3} display="flex" justifyContent="flex-end">
+                <Button variant="contained" onClick={closeModal}>
+                  Close
+                </Button>
+              </Box>
+            </>
           )}
-          <Box mt={2}>
-            <Button variant="contained" style={{ color: "white" }} fullWidth onClick={closeModal}>
-              Close
-            </Button>
-          </Box>
         </Box>
       </Modal>
 
+
       <Modal open={addressModalOpen} onClose={closeModal}>
-        <Box sx={modalBoxStyle}>
-          <Typography variant="h6" gutterBottom>
+        <Box sx={{ ...modalBoxStyle, maxWidth: 400 }}>
+          <Typography variant="h6" mb={2}>
             Delivery Address
           </Typography>
           <Typography fontSize={14} color="textSecondary">
             {selectedOrder?.addressId?.fullAddress || "No address available"}
           </Typography>
           <Box mt={2}>
-            <Button variant="contained" style={{ color: "white" }} fullWidth onClick={closeModal}>
+            <Button variant="contained" fullWidth onClick={closeModal}>
               Close
             </Button>
           </Box>
@@ -482,13 +568,12 @@ const getAllowedStatuses = (currentStatus) => {
       </Modal>
 
       <Modal open={editModalOpen} onClose={closeModal}>
-        <Box sx={modalBoxStyle}>
-          <Typography variant="h6" gutterBottom>
+        <Box sx={{ ...modalBoxStyle, maxWidth: 400 }}>
+          <Typography variant="h6" mb={2}>
             Edit Order Status
           </Typography>
           <FormControl fullWidth sx={{ mb: 2 }}>
             <Select
-              className="status-select"
               value={newStatus}
               onChange={(e) => setNewStatus(e.target.value)}
               displayEmpty
@@ -496,66 +581,47 @@ const getAllowedStatuses = (currentStatus) => {
                 if (!selected) return <em style={{ color: "#999" }}>Select Status</em>;
                 const statusInfo = getStatusInfo(selected);
                 return (
-                  <div className="status-display" style={{ padding: "10px 0" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     {statusInfo.image && (
                       <img
                         src={`${process.env.REACT_APP_IMAGE_LINK}${statusInfo.image}`}
                         alt={statusInfo.title}
-                        style={{
-                          width: 20,
-                          height: 20,
-                          marginRight: 6,
-                          objectFit: "contain",
-                          borderRadius: 2,
-                        }}
+                        style={{ width: 20, height: 20 }}
                       />
                     )}
                     <span>{statusInfo.title}</span>
-                  </div>
+                  </Box>
                 );
               }}
             >
               <MenuItem value="" disabled>
                 <em>Select Status</em>
               </MenuItem>
-             {deliveryStatuses.map((status) => {
-  const isAllowed = getAllowedStatuses(selectedOrder?.orderStatus).includes(status.statusTitle);
-  return (
-    <MenuItem
-      key={status._id}
-      value={status.statusCode}
-      disabled={!isAllowed}
-    >
-      <div className="status-menu-item">
-        {status.image && (
-          <img
-            src={`${process.env.REACT_APP_IMAGE_LINK}${status.image}`}
-            alt={status.statusTitle}
-            style={{
-              width: 20,
-              height: 20,
-              marginRight: 6,
-              objectFit: "contain",
-              borderRadius: 2,
-            }}
-          />
-        )}
-        <span>{status.statusTitle}</span>
-      </div>
-    </MenuItem>
-  );
-})}
-
+              {deliveryStatuses.map((status) => {
+                const isAllowed = getAllowedStatuses(selectedOrder?.orderStatus).includes(status.statusTitle);
+                return (
+                  <MenuItem key={status._id} value={status.statusCode} disabled={!isAllowed}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      {status.image && (
+                        <img
+                          src={`${process.env.REACT_APP_IMAGE_LINK}${status.image}`}
+                          alt={status.statusTitle}
+                          style={{ width: 20, height: 20 }}
+                        />
+                      )}
+                      {status.statusTitle}
+                    </Box>
+                  </MenuItem>
+                );
+              })}
             </Select>
           </FormControl>
           <Box display="flex" gap={2}>
-            <Button variant="outlined" style={{ color: "black" }} fullWidth onClick={closeModal}>
+            <Button variant="outlined" fullWidth onClick={closeModal}>
               Cancel
             </Button>
-            {/* ✅ Disabled if same status selected */}
             <Button
               variant="contained"
-              style={{ color: "white" }}
               fullWidth
               disabled={!newStatus || newStatus === selectedOrder?.orderStatus}
               onClick={handleSave}
@@ -565,6 +631,7 @@ const getAllowedStatuses = (currentStatus) => {
           </Box>
         </Box>
       </Modal>
+
     </>
   );
 }
