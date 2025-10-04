@@ -26,17 +26,16 @@ export default function Wallet() {
 
         const storeData = res.data?.storeData || [];
 
-        const latestCredit = storeData
-          .slice() // create a copy to avoid mutating original
-          .reverse() // start from latest transaction
-          .find(txn => txn.type.toLowerCase() !== "debit");
+     // ✅ Wallet Balance = currentAmount of latest transaction (any type)
+if (storeData.length > 0) {
+  const latestTxn = storeData
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
-        // ✅ Wallet Balance = currentAmount of latest transaction
-        if (storeData.length > 0) {
-          setWalletBalance(latestCredit ? latestCredit.currentAmount : 0);
-        } else {
-          setWalletBalance(0);
-        }
+  setWalletBalance(latestTxn.currentAmount || 0);
+} else {
+  setWalletBalance(0);
+}
 
         // ✅ Sort transactions (latest first)
         const sortedTxns = storeData.sort(
