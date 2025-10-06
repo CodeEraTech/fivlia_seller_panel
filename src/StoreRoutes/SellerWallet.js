@@ -246,7 +246,7 @@ if (storeData.length > 0) {
                         <>
                           <br />
                           <img
-                            src={txn.image}
+                            src={`${process.env.REACT_APP_IMAGE_LINK}${txn.image}`}
                             alt="transaction"
                             style={{ maxWidth: "120px", borderRadius: "5px", marginTop: "5px" }}
                           />
