@@ -1164,7 +1164,6 @@ export default function SellerProfile() {
             value={bankForm.bankName}
             onChange={(e) => setBankForm((p) => ({ ...p, bankName: e.target.value }))}
             variant="outlined"
-            disabled
           />
           <TextField
             label="Account Holder"
@@ -1173,7 +1172,6 @@ export default function SellerProfile() {
             value={bankForm.accountHolder}
             onChange={(e) => setBankForm((p) => ({ ...p, accountHolder: e.target.value }))}
             variant="outlined"
-            disabled
           />
           <TextField
             label="Account Number"
@@ -1182,7 +1180,6 @@ export default function SellerProfile() {
             value={bankForm.accountNumber}
             onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
             variant="outlined"
-            disabled
           />
           <TextField
             label="IFSC"
@@ -1191,7 +1188,6 @@ export default function SellerProfile() {
             value={bankForm.ifsc}
             onChange={(e) => setBankForm((p) => ({ ...p, ifsc: e.target.value }))}
             variant="outlined"
-            disabled
           />
           <TextField
             label="Branch"
@@ -1200,7 +1196,6 @@ export default function SellerProfile() {
             value={bankForm.branch}
             onChange={(e) => setBankForm((p) => ({ ...p, branch: e.target.value }))}
             variant="outlined"
-            disabled
           />
         </DialogContent>
         <DialogActions>
