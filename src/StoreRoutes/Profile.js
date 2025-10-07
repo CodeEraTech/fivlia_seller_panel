@@ -802,7 +802,10 @@ export default function SellerProfile() {
                 <Box display="flex" alignItems="center" gap={2}>
                 <TextField
                   type="file"
+                  label="Signature"
                   inputProps={{ accept: "image/*" }}
+                  InputLabelProps={{ shrink: true }}
+                  helperText="Upload Signature (100x50px)"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
