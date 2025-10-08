@@ -22,7 +22,7 @@ export default function Wallet() {
         setLoading(true);
 
         // ⚡ Replace with the seller's storeId dynamically if available
-        const res = await axios.get(`https://api.fivlia.in/getStoreTransaction/${storeId}`);
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/getStoreTransaction/${storeId}`);
 
         const storeData = res.data?.storeData || [];
 
@@ -63,7 +63,7 @@ if (storeData.length > 0) {
 
     try {
       const res = await axios.post(
-        "https://api.fivlia.in/seller/withdrawalRequest",
+        `${process.env.REACT_APP_API_URL}/seller/withdrawalRequest`,
         { storeId, amount: Number(withdrawAmount) }
       );
 
@@ -224,10 +224,14 @@ if (storeData.length > 0) {
                     <span className="txn-icon">{icon}</span>
 
                     <span className="txn-details">
-                      <strong>{txn.description || "No description"}</strong>
+                      <strong>₹{txn.amount.toFixed(2)} {txn.description || "No description"}</strong>
                       <br />
-                      <small>Order ID: {txn.orderId || "-"}</small>
+                      {txn.requestId && (
+                      <>
+                      <small>Request ID: {txn.requestId || "-"}</small>
                       <br />
+                      </>
+                      )}
                       <small>
                         {new Date(txn.createdAt).toLocaleString("en-IN", {
                           dateStyle: "medium",

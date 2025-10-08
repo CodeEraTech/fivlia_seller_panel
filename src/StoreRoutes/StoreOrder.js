@@ -134,7 +134,7 @@ function StoreOrder({ isDashboard = false }) {
 
         // ✅ Filter only Accept, Reject, Ready to Pickup
         const filteredStatuses = statusesData.Status.filter((s) =>
-          ["accepted", "cancelled", "going to pickup"].includes(s.statusTitle.toLowerCase())
+          ["accepted", "cancelled"].includes(s.statusTitle.toLowerCase())
         );
 
         setOrders(ordersData.orders);
@@ -186,12 +186,14 @@ function StoreOrder({ isDashboard = false }) {
   };
 
 
-  const getStatusInfo = (status) => {
-    const info = deliveryStatuses.find(
-      (s) => s.statusCode === status || s.statusTitle === status
-    );
-    return info ? { title: info.statusTitle, image: info.image } : { title: status || "-", image: null };
-  };
+ const getStatusInfo = (status) => {
+  const info = deliveryStatuses.find(
+    (s) => s.statusCode === status || s.statusTitle === status
+  );
+  return info ? { title: info.statusTitle, image: info.image } : { title: status || "-", image: null };
+};
+
+
 
   const truncateText = (text, max = 30) =>
     !text ? "-" : text.length > max ? `${text.slice(0, max)}...` : text;
@@ -295,6 +297,7 @@ function StoreOrder({ isDashboard = false }) {
           "-"
         );
       },
+      grow: 4
     },
     {
       name: "Address",
@@ -541,7 +544,7 @@ function StoreOrder({ isDashboard = false }) {
               </Box>
 
               <Box mt={3} display="flex" justifyContent="flex-end">
-                <Button variant="contained" onClick={closeModal}>
+                <Button variant="contained" style={{ color: "#f9f9f9ff" }} onClick={closeModal}>
                   Close
                 </Button>
               </Box>
@@ -560,7 +563,7 @@ function StoreOrder({ isDashboard = false }) {
             {selectedOrder?.addressId?.fullAddress || "No address available"}
           </Typography>
           <Box mt={2}>
-            <Button variant="contained" fullWidth onClick={closeModal}>
+            <Button variant="contained" style={{ color: "#ffffffff" }} fullWidth onClick={closeModal}>
               Close
             </Button>
           </Box>
@@ -599,17 +602,22 @@ function StoreOrder({ isDashboard = false }) {
               </MenuItem>
               {deliveryStatuses.map((status) => {
                 const isAllowed = getAllowedStatuses(selectedOrder?.orderStatus).includes(status.statusTitle);
+
+                let displayTitle = status.statusTitle;
+                if (displayTitle.toLowerCase() === "accepted") displayTitle = "Accept";
+                if (displayTitle.toLowerCase() === "cancelled") displayTitle = "Cancel";
+
                 return (
                   <MenuItem key={status._id} value={status.statusCode} disabled={!isAllowed}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       {status.image && (
                         <img
                           src={`${process.env.REACT_APP_IMAGE_LINK}${status.image}`}
-                          alt={status.statusTitle}
+                          alt={displayTitle}
                           style={{ width: 20, height: 20 }}
                         />
                       )}
-                      {status.statusTitle}
+                      {displayTitle}
                     </Box>
                   </MenuItem>
                 );
@@ -617,12 +625,13 @@ function StoreOrder({ isDashboard = false }) {
             </Select>
           </FormControl>
           <Box display="flex" gap={2}>
-            <Button variant="outlined" fullWidth onClick={closeModal}>
+            <Button variant="outlined" style={{color:"#636363ff"}} fullWidth onClick={closeModal}>
               Cancel
             </Button>
             <Button
               variant="contained"
               fullWidth
+              style={{color:"white"}}
               disabled={!newStatus || newStatus === selectedOrder?.orderStatus}
               onClick={handleSave}
             >

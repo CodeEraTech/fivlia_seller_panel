@@ -260,7 +260,15 @@ function StockManagement() {
           <span>{row.productName}</span>
         </div>
       ),
-      grow: 2,
+      grow: 4,
+    },
+    {
+      name: "SKU",
+      cell: (row) => (
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <span>{row.sku}</span>
+        </div>
+      ),
     },
     {
       name: "Variants",
