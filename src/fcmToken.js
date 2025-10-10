@@ -30,7 +30,6 @@ async function getFcmToken() {
       serviceWorkerRegistration: registration, // ✅ THIS IS REQUIRED
     });
 
-    console.log("📲 FCM Token:", token);
     return token;
   } catch (error) {
     console.error("❌ FCM Token Error:", error);
