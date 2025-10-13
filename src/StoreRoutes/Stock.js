@@ -79,7 +79,7 @@ function StockManagement() {
     setLoading(true);
     try {
       const res = await fetch(
-        `https://api.fivlia.in/getSellerProducts?sellerId=${storeId}&page=${page}&limit=${limit}&search=${searchText}`
+        `${process.env.REACT_APP_API_URL}/getSellerProducts?sellerId=${storeId}&page=${page}&limit=${limit}&search=${searchText}`
       );
       if (!res.ok) throw new Error("Fetch failed");
       const result = await res.json();
@@ -184,7 +184,7 @@ function StockManagement() {
         .filter(Boolean);
 
       try {
-        await fetch(`https://api.fivlia.in/updateStock/${productId}`, {
+        await fetch(`${process.env.REACT_APP_API_URL}/updateStock/${productId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ storeId, stock: stockPayload }),

@@ -34,7 +34,7 @@ export default function DashBoard() {
     const dashboardStats = async () => {
       try {
         const storeId = localStorage.getItem("sellerId");
-        const data = await axios.get(`https://api.fivlia.in/getStoreDashboardStats/${storeId}`);
+        const data = await axios.get(`${process.env.REACT_APP_API_URL}/getStoreDashboardStats/${storeId}`);
         setStats(data.data);
       } catch (error) {
         console.log(error);
@@ -110,7 +110,7 @@ export default function DashBoard() {
       if (!confirm) return;
 
       const response = await axios.put(
-        `https://api.fivlia.in/editSellerProfile/${storeId}`,
+        `${process.env.REACT_APP_API_URL}/editSellerProfile/${storeId}`,
         { status: newStatus }
       );
 

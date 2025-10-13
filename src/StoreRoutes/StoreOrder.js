@@ -122,8 +122,8 @@ function StoreOrder({ isDashboard = false }) {
 
         const params = `?storeId=${storeId}&page=${page}&limit=${perPage}&search=${searchTerm}`;
         const [ordersRes, statusesRes] = await Promise.all([
-          fetch(`https://api.fivlia.in/orders${params}`),
-          fetch("https://api.fivlia.in/getdeliveryStatus"),
+          fetch(`${process.env.REACT_APP_API_URL}/orders${params}`),
+          fetch(`${process.env.REACT_APP_API_URL}/getdeliveryStatus`),
         ]);
 
         const ordersData = await ordersRes.json();
@@ -227,7 +227,7 @@ function StoreOrder({ isDashboard = false }) {
     try {
       const statusInfo = deliveryStatuses.find((s) => s.statusCode === newStatus);
       const statusTitle = statusInfo?.statusTitle || newStatus;
-      const res = await fetch(`https://api.fivlia.in/orderStatus/${selectedOrder._id}`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/orderStatus/${selectedOrder._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: statusTitle }),

@@ -210,7 +210,7 @@ export default function SellerProfile() {
       const invalidFiles = [];
 
       results.forEach(({ file, width, height }) => {
-        if (width === 1500 && height === 620) {
+        if (width === 512 && height === 512) {
           validFiles.push(file);
         } else {
           invalidFiles.push(`${file.name} (${width || "?"}×${height || "?"})`);
@@ -870,7 +870,7 @@ export default function SellerProfile() {
                     InputLabelProps={{ shrink: true }}
                     inputProps={{ multiple: true, accept: "image/*,.gif" }}
                     onChange={(e) => handleAdImages(e.target.files)}
-                    helperText="Upload multiple images or GIFs for advertisements (1500×620px, max 4)"
+                    helperText="Upload multiple images or GIFs for advertisements (512x512px, max 4)"
                     variant="outlined"
                   />
                   {form.advertisementImages.length > 0 && (
