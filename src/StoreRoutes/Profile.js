@@ -220,7 +220,7 @@ export default function SellerProfile() {
       if (invalidFiles.length > 0) {
         setAlert({
           open: true,
-          message: `These images must be 1500×620: ${invalidFiles.join(", ")}`,
+          message: `These images must be 512×512: ${invalidFiles.join(", ")}`,
           severity: "error",
         });
       }
