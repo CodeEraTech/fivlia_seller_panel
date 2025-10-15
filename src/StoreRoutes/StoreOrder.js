@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button, Typography, CircularProgress, Modal, Box, FormControl, Select, MenuItem } from "@mui/material";
+import io from "socket.io-client";
 import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
@@ -76,6 +77,7 @@ function StoreOrder({ isDashboard = false }) {
   const [controller] = useMaterialUIController();
   const { miniSidenav } = controller;
 
+  const [socket, setSocket] = useState(null);
   const [orders, setOrders] = useState([]);
   const [deliveryStatuses, setDeliveryStatuses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -112,44 +114,79 @@ function StoreOrder({ isDashboard = false }) {
     return STATUS_FLOW[statusTitle] || [];
   };
 
+useEffect(() => {
+  const storeId = localStorage.getItem("sellerId");
+  if (!storeId) return;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const storeId = localStorage.getItem("sellerId");
-        if (!storeId) throw new Error("Store ID missing");
+  const newSocket = io(process.env.REACT_APP_API_URL, {
+    transports: ["websocket"],
+  });
 
-        const params = `?storeId=${storeId}&page=${page}&limit=${perPage}&search=${searchTerm}`;
-        const [ordersRes, statusesRes] = await Promise.all([
-          fetch(`${process.env.REACT_APP_API_URL}/orders${params}`),
-          fetch(`${process.env.REACT_APP_API_URL}/getdeliveryStatus`),
-        ]);
+  // ✅ Join seller room
+  newSocket.emit("joinSeller", { storeId: storeId });
 
-        const ordersData = await ordersRes.json();
-        const statusesData = await statusesRes.json();
+  // ✅ Listen for confirmation
+  newSocket.on("joinedSellerRoom", (data) => {
+    console.log("✅ Joined seller socket:", data);
+  });
 
-        if (!Array.isArray(ordersData.orders)) throw new Error("Invalid orders data");
-        if (!Array.isArray(statusesData.Status)) throw new Error("Invalid statuses data");
+  // ✅ Listen for new orders
+  newSocket.on("storeOrder", (data) => {
+    console.log("🟢 New order received via socket:", data);
+    // Re-fetch orders
+    fetchOrders(); // 👇 we'll define this function
+  });
 
-        // ✅ Filter only Accept, Reject, Ready to Pickup
-        const filteredStatuses = statusesData.Status.filter((s) =>
-          ["accepted", "cancelled"].includes(s.statusTitle.toLowerCase())
-        );
+  // ✅ Handle disconnect
+  newSocket.on("disconnect", () => {
+    console.log("⚪ Seller socket disconnected");
+  });
 
-        setOrders(ordersData.orders);
-        setTotalRows(ordersData.count || ordersData.orders.length);
-        setDeliveryStatuses(filteredStatuses);
-        setError("");
-      } catch (err) {
-        console.error(err);
-        setError(err.message || "Error loading data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [page, perPage, searchTerm]);
+  setSocket(newSocket);
+
+  return () => {
+    newSocket.disconnect();
+  };
+}, []);
+
+const fetchOrders = async () => {
+  setLoading(true);
+  try {
+    const storeId = localStorage.getItem("sellerId");
+    if (!storeId) throw new Error("Store ID missing");
+
+    const params = `?storeId=${storeId}&page=${page}&limit=${perPage}&search=${searchTerm}`;
+    const [ordersRes, statusesRes] = await Promise.all([
+      fetch(`${process.env.REACT_APP_API_URL}/orders${params}`),
+      fetch(`${process.env.REACT_APP_API_URL}/getdeliveryStatus`),
+    ]);
+
+    const ordersData = await ordersRes.json();
+    const statusesData = await statusesRes.json();
+
+    if (!Array.isArray(ordersData.orders)) throw new Error("Invalid orders data");
+    if (!Array.isArray(statusesData.Status)) throw new Error("Invalid statuses data");
+
+    const filteredStatuses = statusesData.Status.filter((s) =>
+      ["accepted", "cancelled"].includes(s.statusTitle.toLowerCase())
+    );
+
+    setOrders(ordersData.orders);
+    setTotalRows(ordersData.count || ordersData.orders.length);
+    setDeliveryStatuses(filteredStatuses);
+    setError("");
+  } catch (err) {
+    console.error(err);
+    setError(err.message || "Error loading data");
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchOrders();
+}, [page, perPage, searchTerm]);
+
 
   const statusColor = (status) => {
     const map = {
