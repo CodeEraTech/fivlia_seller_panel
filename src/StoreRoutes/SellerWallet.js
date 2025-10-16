@@ -149,7 +149,7 @@ if (storeData.length > 0) {
         <div className="withdraw-section">
           <h3>Request Withdrawal</h3>
           <p className="wallet-info">
-            Wallet Balance: ₹{walletBalance || 0} | Pending Withdrawals: ₹
+            Wallet Balance: ₹{formatAmount(walletBalance) || 0} | Pending Withdrawals: ₹
             {transactions
               .filter(txn => txn.type === "debit" && txn.status === "Pending")
               .reduce((sum, txn) => sum + (txn.amount || 0), 0)}
