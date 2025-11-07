@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import logo from "./fivlialogo.png";
 import { ENDPOINTS } from "apis/endpoints";
 import { post } from "apis/apiClient";
-import getFcmToken from "fcmToken"
+import getFcmToken from "fcmToken";
 import "./Store.css";
-import { startsWith } from "lodash";
+import { Snackbar, Alert } from "@mui/material";
 
 function SellerLogin() {
   const [loginMode, setLoginMode] = useState("email"); // "email" | "phone"
@@ -15,7 +15,47 @@ function SellerLogin() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
+
   const navigate = useNavigate();
+
+  // ✅ Handle Email Verification Status
+ // ✅ Handle Email Verification Status (true / false only)
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get("verified");
+
+  if (status) {
+    let message = "";
+    let severity = "info";
+
+    if (status === "true") {
+      message = "✅ Email verified successfully! You can now log in.";
+      severity = "success";
+    } else {
+      message = "❌ Email verification failed or link expired. Please try again.";
+      severity = "error";
+    }
+
+    setAlert({
+      open: true,
+      message,
+      severity,
+    });
+
+    // Optional: clean up URL after showing alert
+    setTimeout(() => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("verified");
+      window.history.replaceState({}, "", url.toString());
+    }, 5000);
+  }
+}, []);
+
 
   // ✅ Auto-redirect if already logged in
   useEffect(() => {
@@ -26,12 +66,12 @@ function SellerLogin() {
   }, []);
 
   useEffect(() => {
-  async function fetchToken() {
-    const token = await getFcmToken();
-    setFcmToken(token);
-  }
-  fetchToken();
-}, []);
+    async function fetchToken() {
+      const token = await getFcmToken();
+      setFcmToken(token);
+    }
+    fetchToken();
+  }, []);
 
   // =========================
   // 🔹 Send OTP
@@ -39,18 +79,27 @@ function SellerLogin() {
   const handleSendOtp = async (e) => {
     e.preventDefault();
     if (loginMode === "email" && !email) {
-      alert("Please enter your email");
+      setAlert({
+        open: true,
+        message: "Please enter your email",
+        severity: "warning",
+      });
       return;
     }
     if (loginMode === "phone" && !mobileNumber) {
-      alert("Please enter your mobile number");
+      setAlert({
+        open: true,
+        message: "Please enter your mobile number",
+        severity: "warning",
+      });
       return;
     }
+
     let formattedPhone = mobileNumber;
     if (loginMode === "phone" && !formattedPhone.startsWith("+")) {
-    formattedPhone = `+91${formattedPhone}`;
-    setMobileNumber(formattedPhone); // optional: update state for UI
-  }
+      formattedPhone = `+91${formattedPhone}`;
+      setMobileNumber(formattedPhone); // optional: update state for UI
+    }
 
     setLoading(true);
     try {
@@ -62,13 +111,25 @@ function SellerLogin() {
 
       if (res.status === 200) {
         setOtpSent(true);
-        alert("OTP sent successfully!");
+        setAlert({
+          open: true,
+          message: "OTP sent successfully!",
+          severity: "success",
+        });
       } else {
-        alert(res.data?.message || "Failed to send OTP");
+        setAlert({
+          open: true,
+          message: res.data?.message || "Failed to send OTP",
+          severity: "error",
+        });
       }
     } catch (err) {
       console.error("Send OTP Error:", err);
-      alert(err?.response?.data?.message || "Server error. Try again later.");
+      setAlert({
+        open: true,
+        message: err?.response?.data?.message || "Server error. Try again later.",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -80,37 +141,53 @@ function SellerLogin() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (!otp) {
-      alert("Please enter OTP");
+      setAlert({
+        open: true,
+        message: "Please enter OTP",
+        severity: "warning",
+      });
       return;
     }
 
     setLoading(true);
     try {
       const payload = {
-      email: loginMode === "email" ? email : undefined,
-      PhoneNumber: loginMode === "phone" ? mobileNumber : undefined,
-      otp,
-      type: "login",
-    };
-    if (fcmToken) {
-      payload.fcmToken = fcmToken;
-    }
+        email: loginMode === "email" ? email : undefined,
+        PhoneNumber: loginMode === "phone" ? mobileNumber : undefined,
+        otp,
+        type: "login",
+      };
+      if (fcmToken) {
+        payload.fcmToken = fcmToken;
+      }
 
-    const res = await post(ENDPOINTS.VERIFY_OTP, payload);
+      const res = await post(ENDPOINTS.VERIFY_OTP, payload);
 
       if (res.status === 200 && res.data?.sellerId) {
-        alert("Login successful!");
+        setAlert({
+          open: true,
+          message: "Login successful!",
+          severity: "success",
+        });
         localStorage.setItem("userType", "seller");
         localStorage.setItem("sellerId", res.data.sellerId);
         localStorage.setItem("storeName", res.data.storeName);
         localStorage.setItem("token", res.data.token);
         navigate("/dashboard1");
       } else {
-        alert(res.data?.message || "Invalid OTP");
+        setAlert({
+          open: true,
+          message: res.data?.message || "Invalid OTP",
+          severity: "error",
+        });
       }
     } catch (err) {
       console.error("Verify OTP Error:", err);
-      alert(err?.response?.data?.message || "Server error. Try again later.");
+      setAlert({
+        open: true,
+        message: err?.response?.data?.message || "Server error. Try again later.",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -224,7 +301,11 @@ function SellerLogin() {
               </button>
               <p
                 className="resend-otp"
-                style={{ cursor: "pointer", marginTop: "10px", color: "#007bff" }}
+                style={{
+                  cursor: "pointer",
+                  marginTop: "10px",
+                  color: "#007bff",
+                }}
                 onClick={() => {
                   setOtpSent(false);
                   setOtp("");
@@ -236,6 +317,23 @@ function SellerLogin() {
           )}
         </form>
       </div>
+
+      {/* 🔹 Snackbar Alert */}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={5000}
+        onClose={() => setAlert({ ...alert, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setAlert({ ...alert, open: false })}
+          severity={alert.severity}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {alert.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

@@ -38,13 +38,20 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Marker, Circle, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Circle,
+  useMapEvents,
+} from "react-leaflet";
 import MDBox from "components/MDBox";
 
 // Configure Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png",
   iconUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
 });
@@ -58,6 +65,9 @@ export default function SellerProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [emailSending, setEmailSending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
   const id = localStorage.getItem("sellerId");
 
   const [form, setForm] = useState({
@@ -100,9 +110,16 @@ export default function SellerProfile() {
   const [cityOptions, setCityOptions] = useState([]);
   const [zoneOptions, setZoneOptions] = useState([]);
   const [zoneRadius, setZoneRadius] = useState(null);
-  const [alert, setAlert] = useState({ open: false, message: "", severity: "info" });
+  const [alert, setAlert] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
   const [zoneCenter, setZoneCenter] = useState(null);
-  const [markerPosition, setMarkerPosition] = useState({ lat: 29.1492, lng: 75.7217 });
+  const [markerPosition, setMarkerPosition] = useState({
+    lat: 29.1492,
+    lng: 75.7217,
+  });
   const [message, setMessage] = useState("");
 
   // Effects
@@ -110,6 +127,25 @@ export default function SellerProfile() {
     fetchCities();
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get("verified");
+  if (status) {
+    const messages = {
+      true: "✅ Email verified successfully!",
+      expired: "⚠️ Verification link expired. Please request a new one.",
+      invalid: "❌ Invalid verification link.",
+      already: "ℹ️ Email already verified.",
+    };
+    setAlert({
+      open: true,
+      message: messages[status] || "Unknown verification status",
+      severity: status === "true" ? "success" : "warning",
+    });
+    fetchProfile(); // reload status to reflect verification
+  }
+}, []);
 
   useEffect(() => {
     if (!profile || cityOptions.length === 0) return;
@@ -120,9 +156,14 @@ export default function SellerProfile() {
     setZoneOptions(selectedCity.zones || []);
 
     if (address.zone && selectedCity.zones?.length) {
-      const selectedZone = selectedCity.zones.find((z) => z._id === address.zone);
+      const selectedZone = selectedCity.zones.find(
+        (z) => z._id === address.zone
+      );
       if (selectedZone) {
-        const newCenter = { lat: selectedZone.latitude, lng: selectedZone.longitude };
+        const newCenter = {
+          lat: selectedZone.latitude,
+          lng: selectedZone.longitude,
+        };
         setZoneRadius(selectedZone.range);
         setZoneCenter(newCenter);
         setMarkerPosition(newCenter);
@@ -130,14 +171,59 @@ export default function SellerProfile() {
     }
   }, [profile, cityOptions, address.city, address.zone]);
 
+  const sendEmailVerification = async () => {
+    if (!profile?._id) {
+      return setAlert({
+        open: true,
+        message: "Seller ID not found.",
+        severity: "error",
+      });
+    }
+
+    setEmailSending(true);
+    try {
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/sendEmailVerification?storeId=${profile._id}&apiUrl=${process.env.REACT_APP_API_URL}`
+      );
+      const data = await res.json();
+
+      if (!res.ok)
+        throw new Error(data.message || "Failed to send verification email");
+
+      setAlert({
+        open: true,
+        message: `Verification link sent to ${profile.email}`,
+        severity: "success",
+      });
+      let timer = 60;
+      setCooldown(timer);
+      const interval = setInterval(() => {
+        timer -= 1;
+        setCooldown(timer);
+        if (timer <= 0) clearInterval(interval);
+      }, 1000);
+    } catch (err) {
+      setAlert({
+        open: true,
+        message: err.message || "Email send failed",
+        severity: "error",
+      });
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
   // Fetch functions
   async function fetchProfile() {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/getSeller?id=${id}&limit=1`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/getSeller?id=${id}&limit=1`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Failed to load");
 
@@ -151,10 +237,14 @@ export default function SellerProfile() {
         gstNumber: data.gstNumber || "",
         fsiNumber: data.fsiNumber || "",
         image: data.image || "",
-        aadharCard: Array.isArray(data.aadharCard) ? data.aadharCard[0] : (data.aadharCard || ""),
+        aadharCard: Array.isArray(data.aadharCard)
+          ? data.aadharCard[0]
+          : data.aadharCard || "",
         sellerSignature: data.sellerSignature || "",
         invoicePrefix: data.invoicePrefix || "",
-        advertisementImages: Array.isArray(data.advertisementImages) ? data.advertisementImages : [],
+        advertisementImages: Array.isArray(data.advertisementImages)
+          ? data.advertisementImages
+          : [],
         openTime: data.openTime || "",
         closeTime: data.closeTime || "",
       });
@@ -200,7 +290,8 @@ export default function SellerProfile() {
     const loadImage = (file) =>
       new Promise((resolve) => {
         const img = new Image();
-        img.onload = () => resolve({ file, width: img.width, height: img.height });
+        img.onload = () =>
+          resolve({ file, width: img.width, height: img.height });
         img.onerror = () => resolve({ file, width: null, height: null });
         img.src = URL.createObjectURL(file);
       });
@@ -286,10 +377,13 @@ export default function SellerProfile() {
         }
       });
 
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`, {
-        method: "PUT",
-        body: formData,
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`,
+        {
+          method: "PUT",
+          body: formData,
+        }
+      );
 
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Save failed");
@@ -317,18 +411,25 @@ export default function SellerProfile() {
   }
 
   async function saveBankAccount() {
-    if (!bankForm.bankName || !bankForm.accountHolder || !bankForm.accountNumber) {
+    if (
+      !bankForm.bankName ||
+      !bankForm.accountHolder ||
+      !bankForm.accountNumber
+    ) {
       setMessage("Bank name, account holder, and account number are required.");
       return;
     }
 
     try {
       setSaving(true);
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bankDetails: bankForm }),
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bankDetails: bankForm }),
+        }
+      );
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Bank save failed");
 
@@ -356,11 +457,14 @@ export default function SellerProfile() {
 
     try {
       setSaving(true);
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bankDetails: {} }),
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bankDetails: {} }),
+        }
+      );
       if (!res.ok) throw new Error("Delete failed");
       setMessage("Bank account deleted successfully");
       fetchProfile();
@@ -382,7 +486,13 @@ export default function SellerProfile() {
 
   function handleAddressChange(field, value) {
     if (field === "city") {
-      setAddress((p) => ({ ...p, city: value, cityId: cityOptions.find((c) => c.city === value)?._id || "", zone: "", zoneTitle: "" }));
+      setAddress((p) => ({
+        ...p,
+        city: value,
+        cityId: cityOptions.find((c) => c.city === value)?._id || "",
+        zone: "",
+        zoneTitle: "",
+      }));
       const selectedCity = cityOptions.find((c) => c.city === value);
       setZoneOptions(selectedCity?.zones || []);
       setZoneRadius(null);
@@ -390,9 +500,16 @@ export default function SellerProfile() {
     } else if (field === "zone") {
       const selectedCity = cityOptions.find((c) => c.city === address.city);
       const selectedZone = selectedCity?.zones.find((z) => z._id === value);
-      setAddress((p) => ({ ...p, zone: value, zoneTitle: selectedZone?.zoneTitle || "" }));
+      setAddress((p) => ({
+        ...p,
+        zone: value,
+        zoneTitle: selectedZone?.zoneTitle || "",
+      }));
       if (selectedZone) {
-        const newCenter = { lat: selectedZone.latitude, lng: selectedZone.longitude };
+        const newCenter = {
+          lat: selectedZone.latitude,
+          lng: selectedZone.longitude,
+        };
         setMarkerPosition(newCenter);
         setAddress((p) => ({
           ...p,
@@ -461,7 +578,9 @@ export default function SellerProfile() {
 
     const selectedZoneId = address.zone;
     const selectedCity = cityOptions.find((c) => c.city === address.city);
-    const selectedZone = selectedCity?.zones.find((z) => z._id === selectedZoneId);
+    const selectedZone = selectedCity?.zones.find(
+      (z) => z._id === selectedZoneId
+    );
 
     if (!selectedZone) {
       setMessage("Selected zone not found. Please re-select the zone.");
@@ -517,11 +636,14 @@ export default function SellerProfile() {
         Latitude: address.lat,
         Longitude: address.lng,
       };
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Request failed");
@@ -558,12 +680,14 @@ export default function SellerProfile() {
   }
 
   return (
-    <MDBox
-      ml={miniSidenav ? "80px" : "260px"} p={2} sx={{ marginTop: "20px" }}
-    >
+    <MDBox ml={miniSidenav ? "80px" : "260px"} p={2} sx={{ marginTop: "20px" }}>
       <Typography
         variant="h4"
-        sx={{ mb: 3, fontWeight: "bold", textAlign: { xs: "center", sm: "left" } }}
+        sx={{
+          mb: 3,
+          fontWeight: "bold",
+          textAlign: { xs: "center", sm: "left" },
+        }}
       >
         Seller Profile
       </Typography>
@@ -606,7 +730,9 @@ export default function SellerProfile() {
                   value={form.ownerName}
                   fullWidth
                   margin="dense"
-                  onChange={(e) => handleFormChange("ownerName", e.target.value)}
+                  onChange={(e) =>
+                    handleFormChange("ownerName", e.target.value)
+                  }
                   variant="outlined"
                   disabled
                 />
@@ -617,7 +743,9 @@ export default function SellerProfile() {
                   value={form.invoicePrefix}
                   fullWidth
                   margin="dense"
-                  onChange={(e) => handleFormChange("invoicePrefix", e.target.value)}
+                  onChange={(e) =>
+                    handleFormChange("invoicePrefix", e.target.value)
+                  }
                   helperText="Unique prefix for invoices (e.g., INV2025). Must be unique."
                   variant="outlined"
                 />
@@ -628,7 +756,9 @@ export default function SellerProfile() {
                   value={form.storeName}
                   fullWidth
                   margin="dense"
-                  onChange={(e) => handleFormChange("storeName", e.target.value)}
+                  onChange={(e) =>
+                    handleFormChange("storeName", e.target.value)
+                  }
                   variant="outlined"
                   disabled
                 />
@@ -641,9 +771,47 @@ export default function SellerProfile() {
                   margin="dense"
                   type="email"
                   onChange={(e) => handleFormChange("email", e.target.value)}
+                  disabled={profile?.emailVerified}
                   variant="outlined"
-                  disabled
+                  InputProps={{
+                    style: {
+                      borderColor: profile?.emailVerified ? "green" : "red",
+                    },
+                  }}
+                  helperText={
+                    profile?.emailVerified
+                      ? "✅ Verified"
+                      : "Email not verified. Please verify to enable all features."
+                  }
                 />
+
+                {!profile?.emailVerified && (
+                  <Box mt={1} display="flex" alignItems="center" gap={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={sendEmailVerification}
+                      disabled={emailSending || cooldown > 0}
+                      style={{color:'white'}}
+                      sx={{ px: 3, minWidth: 200 }}
+                    >
+                      {emailSending ? (
+                        <>
+                          <CircularProgress
+                            size={18}
+                            color="inherit"
+                            sx={{ mr: 1 }}
+                          />
+                          Sending...
+                        </>
+                      ) : cooldown > 0 ? (
+                        `Wait ${cooldown}s`
+                      ) : (
+                        "Send Verification Link"
+                      )}
+                    </Button>
+                  </Box>
+                )}
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
@@ -652,7 +820,9 @@ export default function SellerProfile() {
                   fullWidth
                   margin="dense"
                   type="tel"
-                  onChange={(e) => handleFormChange("PhoneNumber", e.target.value)}
+                  onChange={(e) =>
+                    handleFormChange("PhoneNumber", e.target.value)
+                  }
                   variant="outlined"
                   disabled
                 />
@@ -663,7 +833,9 @@ export default function SellerProfile() {
                   value={form.gstNumber}
                   fullWidth
                   margin="dense"
-                  onChange={(e) => handleFormChange("gstNumber", e.target.value)}
+                  onChange={(e) =>
+                    handleFormChange("gstNumber", e.target.value)
+                  }
                   variant="outlined"
                   disabled
                 />
@@ -674,7 +846,9 @@ export default function SellerProfile() {
                   value={form.fsiNumber}
                   fullWidth
                   margin="dense"
-                  onChange={(e) => handleFormChange("fsiNumber", e.target.value)}
+                  onChange={(e) =>
+                    handleFormChange("fsiNumber", e.target.value)
+                  }
                   variant="outlined"
                   disabled
                 />
@@ -700,7 +874,9 @@ export default function SellerProfile() {
                   fullWidth
                   margin="dense"
                   InputLabelProps={{ shrink: true }}
-                  onChange={(e) => handleFormChange("closeTime", e.target.value)}
+                  onChange={(e) =>
+                    handleFormChange("closeTime", e.target.value)
+                  }
                   variant="outlined"
                   helperText="Set store closing time"
                 />
@@ -770,64 +946,64 @@ export default function SellerProfile() {
                   {form.aadharCard &&
                     typeof form.aadharCard === "string" &&
                     (form.aadharCard.toLowerCase().endsWith(".jpg") ||
-                     form.aadharCard.toLowerCase().endsWith(".jpeg") ||
-                     form.aadharCard.toLowerCase().endsWith(".png")) && (
-                    <Box
-                      sx={{
-                        width: 104,
-                        height: 84,
-                        borderRadius: 2,
-                        overflow: "hidden",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: "1px solid #ddd",
-                        backgroundColor: "#fafafa",
-                      }}
-                    >
-                      <img
-                        src={`${process.env.REACT_APP_IMAGE_LINK}${form.aadharCard}`}
-                        alt="Aadhar Card"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
+                      form.aadharCard.toLowerCase().endsWith(".jpeg") ||
+                      form.aadharCard.toLowerCase().endsWith(".png")) && (
+                      <Box
+                        sx={{
+                          width: 104,
+                          height: 84,
+                          borderRadius: 2,
+                          overflow: "hidden",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "1px solid #ddd",
+                          backgroundColor: "#fafafa",
                         }}
-                      />
-                    </Box>
-                  )}
+                      >
+                        <img
+                          src={`${process.env.REACT_APP_IMAGE_LINK}${form.aadharCard}`}
+                          alt="Aadhar Card"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </Box>
+                    )}
                 </Box>
               </Grid>
               <Grid item xs={12}>
                 <Box display="flex" alignItems="center" gap={2}>
-                <TextField
-                  type="file"
-                  label="Signature"
-                  inputProps={{ accept: "image/*" }}
-                  InputLabelProps={{ shrink: true }}
-                  helperText="Upload Signature (100x50px)"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                  
-                    if (file.size / 1024 > 500) {
-                      Swal.fire("❌ File must be less than 500KB");
-                      e.target.value = "";
-                      return;
-                    }
-                  
-                    const img = new Image();
-                    img.onload = () => {
-                      if (img.width !== 100 || img.height !== 50) {
-                        Swal.fire("❌ Image must be 100x50 px");
+                  <TextField
+                    type="file"
+                    label="Signature"
+                    inputProps={{ accept: "image/*" }}
+                    InputLabelProps={{ shrink: true }}
+                    helperText="Upload Signature (100x50px)"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      if (file.size / 1024 > 500) {
+                        Swal.fire("❌ File must be less than 500KB");
                         e.target.value = "";
-                      } else {
-                        handleFormChange("sellerSignature", file);
+                        return;
                       }
-                    };
-                    img.src = URL.createObjectURL(file);
-                  }}
-                />
+
+                      const img = new Image();
+                      img.onload = () => {
+                        if (img.width !== 100 || img.height !== 50) {
+                          Swal.fire("❌ Image must be 100x50 px");
+                          e.target.value = "";
+                        } else {
+                          handleFormChange("sellerSignature", file);
+                        }
+                      };
+                      img.src = URL.createObjectURL(file);
+                    }}
+                  />
                   {form.sellerSignature && (
                     <Box
                       sx={{
@@ -844,10 +1020,10 @@ export default function SellerProfile() {
                     >
                       <img
                         src={
-        typeof form.sellerSignature === "string"
-          ? `${process.env.REACT_APP_IMAGE_LINK}${form.sellerSignature}` // fetched from server
-          : URL.createObjectURL(form.sellerSignature) // newly selected file
-      }
+                          typeof form.sellerSignature === "string"
+                            ? `${process.env.REACT_APP_IMAGE_LINK}${form.sellerSignature}` // fetched from server
+                            : URL.createObjectURL(form.sellerSignature) // newly selected file
+                        }
                         alt="Signature"
                         style={{
                           width: "100%",
@@ -915,9 +1091,10 @@ export default function SellerProfile() {
                             onClick={() => {
                               setForm((p) => ({
                                 ...p,
-                                advertisementImages: p.advertisementImages.filter(
-                                  (_, i) => i !== index
-                                ),
+                                advertisementImages:
+                                  p.advertisementImages.filter(
+                                    (_, i) => i !== index
+                                  ),
                               }));
                             }}
                           >
@@ -931,53 +1108,62 @@ export default function SellerProfile() {
               </Grid>
               {profile?.pendingAdvertisementImages?.image?.length > 0 && (
                 <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: "medium" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ mt: 2, mb: 1, fontWeight: "medium" }}
+                  >
                     Pending Advertisement Images
                   </Typography>
                   <Box display="flex" flexWrap="wrap" gap={2}>
-                    {profile.pendingAdvertisementImages.image.map((img, index) => (
-                      <Box
-                        key={`pending-${img}-${index}`}
-                        sx={{
-                          width: 300,
-                          height: 124,
-                          borderRadius: 2,
-                          overflow: "hidden",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          border: "1px solid #ddd",
-                          backgroundColor: "#fafafa",
-                          position: "relative",
-                        }}
-                      >
-                        <img
-                          src={`${process.env.REACT_APP_IMAGE_LINK}${img}`}
-                          alt={`Pending Advertisement ${index + 1}`}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                        <Typography
-                          variant="caption"
+                    {profile.pendingAdvertisementImages.image.map(
+                      (img, index) => (
+                        <Box
+                          key={`pending-${img}-${index}`}
                           sx={{
-                            position: "absolute",
-                            bottom: 2,
-                            left: 2,
-                            bgcolor: "rgba(0, 0, 0, 0.6)",
-                            color: "white",
-                            px: 1,
-                            borderRadius: 1,
+                            width: 300,
+                            height: 124,
+                            borderRadius: 2,
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "1px solid #ddd",
+                            backgroundColor: "#fafafa",
+                            position: "relative",
                           }}
                         >
-                          Pending Approval
-                        </Typography>
-                      </Box>
-                    ))}
+                          <img
+                            src={`${process.env.REACT_APP_IMAGE_LINK}${img}`}
+                            alt={`Pending Advertisement ${index + 1}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              position: "absolute",
+                              bottom: 2,
+                              left: 2,
+                              bgcolor: "rgba(0, 0, 0, 0.6)",
+                              color: "white",
+                              px: 1,
+                              borderRadius: 1,
+                            }}
+                          >
+                            Pending Approval
+                          </Typography>
+                        </Box>
+                      )
+                    )}
                   </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1, display: "block" }}
+                  >
                     Status: {profile.pendingAdvertisementImages.status || "N/A"}
                   </Typography>
                 </Grid>
@@ -997,7 +1183,12 @@ export default function SellerProfile() {
                 </Alert>
               </Snackbar>
             </Grid>
-            <Box display="flex" gap={2} mt={3} justifyContent={{ xs: "center", sm: "flex-end" }}>
+            <Box
+              display="flex"
+              gap={2}
+              mt={3}
+              justifyContent={{ xs: "center", sm: "flex-end" }}
+            >
               <Button
                 variant="contained"
                 color="success"
@@ -1035,7 +1226,9 @@ export default function SellerProfile() {
               <RoomIcon color="action" />
               <Box>
                 <Typography variant="body1">
-                  {address.city && address.zoneTitle ? `${address.zoneTitle}, ${address.city}` : "No address set"}
+                  {address.city && address.zoneTitle
+                    ? `${address.zoneTitle}, ${address.city}`
+                    : "No address set"}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Lat: {address.lat || "N/A"}, Lng: {address.lng || "N/A"}
@@ -1046,14 +1239,21 @@ export default function SellerProfile() {
               <AccessTimeIcon color="action" />
               <Box>
                 <Typography variant="body1">
-                  Hours: {form.openTime && form.closeTime ? `${form.openTime} - ${form.closeTime}` : "Not set"}
+                  Hours:{" "}
+                  {form.openTime && form.closeTime
+                    ? `${form.openTime} - ${form.closeTime}`
+                    : "Not set"}
                 </Typography>
               </Box>
             </Box>
             <Box display="flex" flexDirection="column" gap={1}>
               <Button
                 variant="outlined"
-                sx={{ color: "grey.600", borderColor: "grey.600", alignSelf: { xs: "center", sm: "flex-start" } }}
+                sx={{
+                  color: "grey.600",
+                  borderColor: "grey.600",
+                  alignSelf: { xs: "center", sm: "flex-start" },
+                }}
                 onClick={openAddressDialog}
                 startIcon={<EditIcon />}
               >
@@ -1080,19 +1280,32 @@ export default function SellerProfile() {
                 <RoomIcon color="action" />
                 <Box>
                   <Typography variant="body1">
-                    {profile.pendingAddressUpdate.city?.name && profile.pendingAddressUpdate.zone?.[0]?.title
+                    {profile.pendingAddressUpdate.city?.name &&
+                    profile.pendingAddressUpdate.zone?.[0]?.title
                       ? `${profile.pendingAddressUpdate.zone[0].title}, ${profile.pendingAddressUpdate.city.name}`
                       : "No pending address set"}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Lat: {profile.pendingAddressUpdate.Latitude || "N/A"}, Lng: {profile.pendingAddressUpdate.Longitude || "N/A"}
+                    Lat: {profile.pendingAddressUpdate.Latitude || "N/A"}, Lng:{" "}
+                    {profile.pendingAddressUpdate.Longitude || "N/A"}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
                     Status: {profile.pendingAddressUpdate.status || "N/A"}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Requested At: {profile.pendingAddressUpdate.requestedAt
-                      ? new Date(profile.pendingAddressUpdate.requestedAt).toLocaleString()
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Requested At:{" "}
+                    {profile.pendingAddressUpdate.requestedAt
+                      ? new Date(
+                          profile.pendingAddressUpdate.requestedAt
+                        ).toLocaleString()
                       : "N/A"}
                   </Typography>
                 </Box>
@@ -1109,7 +1322,12 @@ export default function SellerProfile() {
               boxShadow: 3,
             }}
           >
-            <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mb: 2 }}
+            >
               <Typography variant="h6" sx={{ fontWeight: "medium" }}>
                 Bank Account
               </Typography>
@@ -1127,11 +1345,13 @@ export default function SellerProfile() {
                 <ListItem sx={{ borderBottom: "1px solid #eee" }}>
                   <ListItemText
                     primary={`${bankDetails.bankName} — ${bankDetails.accountHolder}`}
-                    secondary={`A/C: ${bankDetails.accountNumber} • IFSC: ${bankDetails.ifsc || "-"} • Branch: ${bankDetails.branch || "-"}`}
+                    secondary={`A/C: ${bankDetails.accountNumber} • IFSC: ${
+                      bankDetails.ifsc || "-"
+                    } • Branch: ${bankDetails.branch || "-"}`}
                   />
                   <ListItemSecondaryAction>
                     <Tooltip title="Primary account">
-                      <AccountBalanceIcon color="primary" sx={{ mr: 1}} />
+                      <AccountBalanceIcon color="primary" sx={{ mr: 1 }} />
                     </Tooltip>
                     <IconButton edge="end" onClick={openBankDialog}>
                       <EditIcon />
@@ -1158,14 +1378,20 @@ export default function SellerProfile() {
         fullWidth
         fullScreen={window.innerWidth < 600}
       >
-        <DialogTitle>{Object.keys(bankDetails).length > 0 ? "Edit Bank Account" : "Add Bank Account"}</DialogTitle>
+        <DialogTitle>
+          {Object.keys(bankDetails).length > 0
+            ? "Edit Bank Account"
+            : "Add Bank Account"}
+        </DialogTitle>
         <DialogContent>
           <TextField
             label="Bank Name"
             fullWidth
             margin="dense"
             value={bankForm.bankName}
-            onChange={(e) => setBankForm((p) => ({ ...p, bankName: e.target.value }))}
+            onChange={(e) =>
+              setBankForm((p) => ({ ...p, bankName: e.target.value }))
+            }
             variant="outlined"
           />
           <TextField
@@ -1173,7 +1399,9 @@ export default function SellerProfile() {
             fullWidth
             margin="dense"
             value={bankForm.accountHolder}
-            onChange={(e) => setBankForm((p) => ({ ...p, accountHolder: e.target.value }))}
+            onChange={(e) =>
+              setBankForm((p) => ({ ...p, accountHolder: e.target.value }))
+            }
             variant="outlined"
           />
           <TextField
@@ -1181,7 +1409,9 @@ export default function SellerProfile() {
             fullWidth
             margin="dense"
             value={bankForm.accountNumber}
-            onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
+            onChange={(e) =>
+              setBankForm((p) => ({ ...p, accountNumber: e.target.value }))
+            }
             variant="outlined"
           />
           <TextField
@@ -1189,7 +1419,9 @@ export default function SellerProfile() {
             fullWidth
             margin="dense"
             value={bankForm.ifsc}
-            onChange={(e) => setBankForm((p) => ({ ...p, ifsc: e.target.value }))}
+            onChange={(e) =>
+              setBankForm((p) => ({ ...p, ifsc: e.target.value }))
+            }
             variant="outlined"
           />
           <TextField
@@ -1197,7 +1429,9 @@ export default function SellerProfile() {
             fullWidth
             margin="dense"
             value={bankForm.branch}
-            onChange={(e) => setBankForm((p) => ({ ...p, branch: e.target.value }))}
+            onChange={(e) =>
+              setBankForm((p) => ({ ...p, branch: e.target.value }))
+            }
             variant="outlined"
           />
         </DialogContent>
@@ -1223,7 +1457,9 @@ export default function SellerProfile() {
         fullWidth
         fullScreen={window.innerWidth < 600}
       >
-        <DialogTitle>Update Address & Location (Pending Admin Approval)</DialogTitle>
+        <DialogTitle>
+          Update Address & Location (Pending Admin Approval)
+        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
@@ -1270,7 +1506,10 @@ export default function SellerProfile() {
                     fullWidth
                     onChange={(e) => {
                       setAddress((p) => ({ ...p, lat: e.target.value }));
-                      setMarkerPosition((p) => ({ ...p, lat: parseFloat(e.target.value) || 0 }));
+                      setMarkerPosition((p) => ({
+                        ...p,
+                        lat: parseFloat(e.target.value) || 0,
+                      }));
                     }}
                     variant="outlined"
                   />
@@ -1280,13 +1519,21 @@ export default function SellerProfile() {
                     fullWidth
                     onChange={(e) => {
                       setAddress((p) => ({ ...p, lng: e.target.value }));
-                      setMarkerPosition((p) => ({ ...p, lng: parseFloat(e.target.value) || 0 }));
+                      setMarkerPosition((p) => ({
+                        ...p,
+                        lng: parseFloat(e.target.value) || 0,
+                      }));
                     }}
                     variant="outlined"
                   />
                 </Box>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                  Tip: Click on the map to set coordinates or enter them manually.
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mt: 1 }}
+                >
+                  Tip: Click on the map to set coordinates or enter them
+                  manually.
                 </Typography>
               </Box>
             </Grid>
@@ -1326,7 +1573,12 @@ export default function SellerProfile() {
                   <MapUpdater />
                 </MapContainer>
               </Box>
-              <Box mt={2} display="flex" gap={2} justifyContent={{ xs: "center", sm: "flex-start" }}>
+              <Box
+                mt={2}
+                display="flex"
+                gap={2}
+                justifyContent={{ xs: "center", sm: "flex-start" }}
+              >
                 <Button
                   variant="outlined"
                   sx={{ color: "grey.600", borderColor: "grey.600" }}
