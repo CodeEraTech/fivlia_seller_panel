@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation,useNavigate, NavLink } from "react-router-dom";
+import { useLocation, useNavigate, NavLink } from "react-router-dom";
 import List from "@mui/material/List";
 import Divider from "@mui/material/Divider";
 import Icon from "@mui/material/Icon";
@@ -15,6 +15,7 @@ import {
 } from "context";
 
 import StoreRoutes from "route"; // Update this path if needed
+import { logoutSeller } from "utils/logoutSeller";
 
 function StoreSidenav() {
   const storeName = localStorage.getItem("storeName") || "Fivlia";
@@ -29,12 +30,15 @@ function StoreSidenav() {
     if (type === "collapse") {
       if (key === "logout") {
         return (
-          <MDBox key={key} sx={{ cursor: "pointer" }} onClick={() => {
-            if (window.confirm("Log out?")) {
-              localStorage.clear();
-            // Then in logout:
-            navigate("/storeLogin");
-
+          <MDBox key={key} sx={{ cursor: "pointer" }} onClick={async() => {
+            if (window.confirm("Are you sure you want to log out?")) {
+              try {
+                await logoutSeller(); // ✅ calls backend + clears storage + redirects to "/"
+              } catch (err) {
+                console.error("Logout error:", err);
+                localStorage.clear();
+                navigate("/storeLogin");
+              }
             }
           }}>
             <SidenavCollapse name={name} icon={icon} active={false} />

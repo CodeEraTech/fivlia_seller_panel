@@ -21,5 +21,6 @@ export const ENDPOINTS = {
   DELETE_CATEGORY: "/removeCategory",
   DELETE_PRODUCT: "/removeProduct",
   GET_UNAPPROVED_PRODUCTS: "/getUnapprovedProducts",
-  UPDATE_BRAND_DOCUMENT: "/saveBrandApprovelDocument"
+  UPDATE_BRAND_DOCUMENT: "/saveBrandApprovelDocument",
+  LOGOUT:"/logoutSeller"
 }; 

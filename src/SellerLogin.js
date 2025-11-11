@@ -6,7 +6,7 @@ import { post } from "apis/apiClient";
 import getFcmToken from "fcmToken";
 import "./Store.css";
 import { Snackbar, Alert } from "@mui/material";
-
+import { getDeviceInfo } from "utils/getDeviceInfo";
 function SellerLogin() {
   const [loginMode, setLoginMode] = useState("email"); // "email" | "phone"
   const [email, setEmail] = useState("");
@@ -151,15 +151,16 @@ useEffect(() => {
 
     setLoading(true);
     try {
+      const { deviceId, deviceType } = await getDeviceInfo();
       const payload = {
         email: loginMode === "email" ? email : undefined,
         PhoneNumber: loginMode === "phone" ? mobileNumber : undefined,
         otp,
+        deviceId,
+        deviceType,
         type: "login",
+        token: fcmToken, 
       };
-      if (fcmToken) {
-        payload.fcmToken = fcmToken;
-      }
 
       const res = await post(ENDPOINTS.VERIFY_OTP, payload);
 
@@ -169,6 +170,7 @@ useEffect(() => {
           message: "Login successful!",
           severity: "success",
         });
+        localStorage.setItem("deviceId", deviceId);
         localStorage.setItem("userType", "seller");
         localStorage.setItem("sellerId", res.data.sellerId);
         localStorage.setItem("storeName", res.data.storeName);
