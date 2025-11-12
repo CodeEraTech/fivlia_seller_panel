@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import logo from "./fivlialogo.png";
 import { ENDPOINTS } from "apis/endpoints";
 import { post } from "apis/apiClient";
@@ -7,8 +7,9 @@ import getFcmToken from "fcmToken";
 import "./Store.css";
 import { Snackbar, Alert } from "@mui/material";
 import { getDeviceInfo } from "utils/getDeviceInfo";
+
 function SellerLogin() {
-  const [loginMode, setLoginMode] = useState("email"); // "email" | "phone"
+  const [loginMode, setLoginMode] = useState("email");
   const [email, setEmail] = useState("");
   const [fcmToken, setFcmToken] = useState(null);
   const [mobileNumber, setMobileNumber] = useState("");
@@ -23,39 +24,94 @@ function SellerLogin() {
 
   const navigate = useNavigate();
 
-  // ✅ Handle Email Verification Status
- // ✅ Handle Email Verification Status (true / false only)
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const status = params.get("verified");
+  // ✅ Detect Admin Login from URL
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const storeId = url.searchParams.get("slr"); // extract storeId from /storeId path
+    const type = url.searchParams.get("t");
+    const accessKey = url.searchParams.get("k");
 
-  if (status) {
-    let message = "";
-    let severity = "info";
 
-    if (status === "true") {
-      message = "✅ Email verified successfully! You can now log in.";
-      severity = "success";
-    } else {
-      message = "❌ Email verification failed or link expired. Please try again.";
-      severity = "error";
+    if (type === "adm" && storeId && accessKey) {
+      handleAdminLogin(storeId, accessKey);
     }
+  }, []);
 
-    setAlert({
-      open: true,
-      message,
-      severity,
-    });
+  // ✅ Admin Login Logic
+  const handleAdminLogin = async (storeId, accessKey) => {
+    try {
+      setLoading(true);
+      setAlert({
+        open: true,
+        severity: "info",
+        message: "Authenticating admin access...",
+      });
 
-    // Optional: clean up URL after showing alert
-    setTimeout(() => {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("verified");
-      window.history.replaceState({}, "", url.toString());
-    }, 5000);
-  }
-}, []);
+      const res = await post(ENDPOINTS.VERIFY_OTP, {
+        type: "admin",
+        storeId,
+        accessKey,
+      });
+      if (res.status === 200 && res.data?.token) {
+        localStorage.setItem("userType", "admin");
+        localStorage.setItem("sellerId", res.data.sellerId);
+        localStorage.setItem("storeName", res.data.storeName);
+        localStorage.setItem("token", res.data.token);
 
+        setAlert({
+          open: true,
+          severity: "success",
+          message: "Admin login successful!",
+        });
+
+        setTimeout(() => {
+          navigate("/dashboard1", { replace: true });
+        }, 500);
+      } else {
+        setAlert({
+          open: true,
+          severity: "error",
+          message: res.data?.message || "Admin authentication failed.",
+        });
+      }
+    } catch (err) {
+      console.error("Admin Login Error:", err);
+      setAlert({
+        open: true,
+        severity: "error",
+        message:
+          err?.response?.data?.message || "Server error during admin login.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Handle Email Verification Status (already in your code)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("verified");
+    if (status) {
+      let message = "";
+      let severity = "info";
+      if (status === "true") {
+        message = "✅ Email verified successfully! You can now log in.";
+        severity = "success";
+      } else {
+        message = "❌ Email verification failed or link expired.";
+        severity = "error";
+      }
+      setAlert({ open: true, message, severity });
+      setTimeout(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("verified");
+        window.history.replaceState({}, "", url.toString());
+      }, 5000);
+    }
+  }, []);
+
+  // ✅ Existing OTP login logic continues...
+  // (no change below this point)
 
   // ✅ Auto-redirect if already logged in
   useEffect(() => {
@@ -127,7 +183,8 @@ useEffect(() => {
       console.error("Send OTP Error:", err);
       setAlert({
         open: true,
-        message: err?.response?.data?.message || "Server error. Try again later.",
+        message:
+          err?.response?.data?.message || "Server error. Try again later.",
         severity: "error",
       });
     } finally {
@@ -159,7 +216,7 @@ useEffect(() => {
         deviceId,
         deviceType,
         type: "login",
-        token: fcmToken, 
+        token: fcmToken,
       };
 
       const res = await post(ENDPOINTS.VERIFY_OTP, payload);
@@ -187,7 +244,8 @@ useEffect(() => {
       console.error("Verify OTP Error:", err);
       setAlert({
         open: true,
-        message: err?.response?.data?.message || "Server error. Try again later.",
+        message:
+          err?.response?.data?.message || "Server error. Try again later.",
         severity: "error",
       });
     } finally {
