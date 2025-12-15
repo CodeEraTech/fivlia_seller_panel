@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import "./Wallet.css";
 import { FaArrowUp, FaArrowDown, FaWallet } from "react-icons/fa";
 import MDBox from "components/MDBox";
 import axios from "axios";
 import { useMaterialUIController } from "../context";
+import { get, post } from "apis/apiClient";
+import { ENDPOINTS } from "apis/endpoints";
 
 export default function Wallet() {
   const [walletBalance, setWalletBalance] = useState(0);
@@ -16,13 +18,12 @@ export default function Wallet() {
 
   const storeId = localStorage.getItem("sellerId");
 
-  useEffect(() => {
-    const fetchWalletData = async () => {
+    const fetchWalletData = useCallback(async () => {
       try {
         setLoading(true);
 
         // ⚡ Replace with the seller's storeId dynamically if available
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/getStoreTransaction/${storeId}`);
+        const res = await get(`${ENDPOINTS.GET_STORE_TRANSACTION}/${storeId}`);
 
         const storeData = res.data?.storeData || [];
 
@@ -48,10 +49,10 @@ if (storeData.length > 0) {
       } finally {
         setLoading(false);
       }
-    };
-
+    },[]);
+useEffect(() => {
     fetchWalletData();
-  }, []);
+  }, [fetchWalletData]);
 
   const handleWithdrawal = async () => {
     if (!withdrawAmount || isNaN(withdrawAmount) || Number(withdrawAmount) <= 0) {
@@ -62,8 +63,8 @@ if (storeData.length > 0) {
     setWithdrawLoading(true);
 
     try {
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/seller/withdrawalRequest`,
+      const res = await post(
+        `${ENDPOINTS.SELLER_WITHDRAWAL_REQUEST}`,
         { storeId, amount: Number(withdrawAmount) }
       );
 
@@ -72,6 +73,7 @@ if (storeData.length > 0) {
       setTransactions(prev => [res.data.pendingWithdrawal, ...prev]);
 
       setWithdrawAmount(""); // Reset input
+      await fetchWalletData()
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.message || "Withdrawal request failed");

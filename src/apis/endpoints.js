@@ -22,5 +22,7 @@ export const ENDPOINTS = {
   DELETE_PRODUCT: "/removeProduct",
   GET_UNAPPROVED_PRODUCTS: "/getUnapprovedProducts",
   UPDATE_BRAND_DOCUMENT: "/saveBrandApprovelDocument",
-  LOGOUT:"/logoutSeller"
+  LOGOUT:"/logoutSeller",
+  GET_STORE_TRANSACTION:"getStoreTransaction",
+  SELLER_WITHDRAWAL_REQUEST: "seller/withdrawalRequest"
 }; 
