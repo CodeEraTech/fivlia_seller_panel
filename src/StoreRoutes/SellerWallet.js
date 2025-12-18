@@ -18,44 +18,48 @@ export default function Wallet() {
 
   const storeId = localStorage.getItem("sellerId");
 
-    const fetchWalletData = useCallback(async () => {
-      try {
-        setLoading(true);
+  const fetchWalletData = useCallback(async () => {
+    try {
+      setLoading(true);
 
-        // ⚡ Replace with the seller's storeId dynamically if available
-        const res = await get(`${ENDPOINTS.GET_STORE_TRANSACTION}/${storeId}`);
+      // ⚡ Replace with the seller's storeId dynamically if available
+      const res = await get(`${ENDPOINTS.GET_STORE_TRANSACTION}/${storeId}`);
 
-        const storeData = res.data?.storeData || [];
+      const storeData = res.data?.storeData || [];
 
-     // ✅ Wallet Balance = currentAmount of latest transaction (any type)
-if (storeData.length > 0) {
-  const latestTxn = storeData
-    .slice()
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+      // ✅ Wallet Balance = currentAmount of latest transaction (any type)
+      if (storeData.length > 0) {
+        const latestTxn = storeData
+          .slice()
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
-  setWalletBalance(latestTxn.currentAmount || 0);
-} else {
-  setWalletBalance(0);
-}
-
-        // ✅ Sort transactions (latest first)
-        const sortedTxns = storeData.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
-
-        setTransactions(sortedTxns);
-      } catch (error) {
-        console.error("Failed to fetch wallet transactions:", error);
-      } finally {
-        setLoading(false);
+        setWalletBalance(latestTxn.currentAmount || 0);
+      } else {
+        setWalletBalance(0);
       }
-    },[]);
-useEffect(() => {
+
+      // ✅ Sort transactions (latest first)
+      const sortedTxns = storeData.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      setTransactions(sortedTxns);
+    } catch (error) {
+      console.error("Failed to fetch wallet transactions:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
     fetchWalletData();
   }, [fetchWalletData]);
 
   const handleWithdrawal = async () => {
-    if (!withdrawAmount || isNaN(withdrawAmount) || Number(withdrawAmount) <= 0) {
+    if (
+      !withdrawAmount ||
+      isNaN(withdrawAmount) ||
+      Number(withdrawAmount) <= 0
+    ) {
       alert("Enter a valid amount");
       return;
     }
@@ -63,17 +67,17 @@ useEffect(() => {
     setWithdrawLoading(true);
 
     try {
-      const res = await post(
-        `${ENDPOINTS.SELLER_WITHDRAWAL_REQUEST}`,
-        { storeId, amount: Number(withdrawAmount) }
-      );
+      const res = await post(`${ENDPOINTS.SELLER_WITHDRAWAL_REQUEST}`, {
+        storeId,
+        amount: Number(withdrawAmount),
+      });
 
       alert(res.data.message);
 
-      setTransactions(prev => [res.data.pendingWithdrawal, ...prev]);
+      setTransactions((prev) => [res.data.pendingWithdrawal, ...prev]);
 
       setWithdrawAmount(""); // Reset input
-      await fetchWalletData()
+      await fetchWalletData();
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.message || "Withdrawal request failed");
@@ -81,7 +85,6 @@ useEffect(() => {
       setWithdrawLoading(false);
     }
   };
-
 
   if (loading) {
     return <p className="loading-text">Loading wallet...</p>;
@@ -119,7 +122,9 @@ useEffect(() => {
         <div className="card-grid">
           <div className="card green">
             <div className="card-header">
-              <div className="icon"><FaWallet /></div>
+              <div className="icon">
+                <FaWallet />
+              </div>
               <div>
                 <div className="card-title">Wallet Balance</div>
                 <div className="card-value">₹{formatAmount(walletBalance)}</div>
@@ -129,7 +134,9 @@ useEffect(() => {
 
           <div className="card blue">
             <div className="card-header">
-              <div className="icon"><FaArrowDown /></div>
+              <div className="icon">
+                <FaArrowDown />
+              </div>
               <div>
                 <div className="card-title">Total Credits</div>
                 <div className="card-value">₹{totalCredits.toFixed(2)}</div>
@@ -139,7 +146,9 @@ useEffect(() => {
 
           <div className="card red">
             <div className="card-header">
-              <div className="icon"><FaArrowUp /></div>
+              <div className="icon">
+                <FaArrowUp />
+              </div>
               <div>
                 <div className="card-title">Total Debits</div>
                 <div className="card-value">₹{totalDebits.toFixed(2)}</div>
@@ -151,9 +160,10 @@ useEffect(() => {
         <div className="withdraw-section">
           <h3>Request Withdrawal</h3>
           <p className="wallet-info">
-            Wallet Balance: ₹{formatAmount(walletBalance) || 0} | Pending Withdrawals: ₹
+            Wallet Balance: ₹{formatAmount(walletBalance) || 0} | Pending
+            Withdrawals: ₹
             {transactions
-              .filter(txn => txn.type === "debit" && txn.status === "Pending")
+              .filter((txn) => txn.type === "debit" && txn.status === "Pending")
               .reduce((sum, txn) => sum + (txn.amount || 0), 0)}
           </p>
 
@@ -169,7 +179,7 @@ useEffect(() => {
               width: "200px",
               marginRight: "10px",
               borderRadius: "5px",
-              border: "1px solid #ccc"
+              border: "1px solid #ccc",
             }}
           />
 
@@ -215,9 +225,12 @@ useEffect(() => {
                   icon = <FaArrowUp color="#ef4444" />; // red
                   colorClass = "declined";
                 } else {
-                  icon = txn.type === "Credit"
-                    ? <FaArrowDown color="#22c55e" />
-                    : <FaArrowUp color="#ef4444" />;
+                  icon =
+                    txn.type === "Credit" ? (
+                      <FaArrowDown color="#22c55e" />
+                    ) : (
+                      <FaArrowUp color="#ef4444" />
+                    );
                   colorClass = txn.type.toLowerCase();
                 }
 
@@ -226,14 +239,23 @@ useEffect(() => {
                     <span className="txn-icon">{icon}</span>
 
                     <span className="txn-details">
-                      <strong>₹{txn.amount.toFixed(2)} {txn.description || "No description"}</strong>
+                      <strong>
+                        ₹{txn.amount.toFixed(2)}{" "}
+                        {txn.description || "No description"}
+                      </strong>
                       <br />
-                      {txn.requestId && (
-                      <>
-                      <small>Request ID: {txn.requestId || "-"}</small>
-                      <br />
-                      </>
+                      {txn.requestId ? (
+                        <>
+                          <small>Request ID: {txn.requestId || "-"}</small>
+                          <br />
+                        </>
+                      ) : (
+                        <>
+                          <small>Order ID: {txn.orderId || "-"}</small>
+                          <br />
+                        </>
                       )}
+
                       <small>
                         {new Date(txn.createdAt).toLocaleString("en-IN", {
                           dateStyle: "medium",
@@ -244,7 +266,9 @@ useEffect(() => {
                       {txn.Note && (
                         <>
                           <br />
-                          <small><strong>Note:</strong> {txn.Note}</small>
+                          <small>
+                            <strong>Note:</strong> {txn.Note}
+                          </small>
                         </>
                       )}
                       {/* Optional image */}
@@ -254,14 +278,21 @@ useEffect(() => {
                           <img
                             src={`${process.env.REACT_APP_IMAGE_LINK}${txn.image}`}
                             alt="transaction"
-                            style={{ maxWidth: "120px", borderRadius: "5px", marginTop: "5px" }}
+                            style={{
+                              maxWidth: "120px",
+                              borderRadius: "5px",
+                              marginTop: "5px",
+                            }}
                           />
                         </>
                       )}
                     </span>
 
                     <span className={`txn-amount ${colorClass}`}>
-                      {(txn.type === "Credit" || txn.status === "Accepted") ? "+" : "-"}₹{(txn.amount || 0).toFixed(2)}
+                      {txn.type === "Credit" || txn.status === "Accepted"
+                        ? "+"
+                        : "-"}
+                      ₹{(txn.amount || 0).toFixed(2)}
                     </span>
                   </li>
                 );
@@ -270,7 +301,6 @@ useEffect(() => {
           ) : (
             <p className="no-transactions">No transactions found</p>
           )}
-
         </div>
       </div>
     </MDBox>
