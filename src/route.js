@@ -12,7 +12,9 @@ import StoreCategories from './StoreRoutes/Categories';
 import SellerProduct from './StoreRoutes/SellerProduct';
 import Stock from './StoreRoutes/Stock';
 import Profile from './StoreRoutes/Profile';
+import CouponManagement from './StoreRoutes/coupon';
 import StoreOrder from './StoreRoutes/StoreOrder';
+import DiscountIcon from "@mui/icons-material/Discount";
 
 const StoreRoutes = [
   {
@@ -22,6 +24,14 @@ const StoreRoutes = [
     icon: <DashboardIcon />,
     route: "/dashboard1",
     component: <DashBoard />,
+  },
+  {
+    type: "collapse",
+    name: "Profile",
+    key: "profile",
+    icon: <AccountCircle />,
+    route: "/profile",
+    component: <Profile />,
   },
     {
     type: "collapse",
@@ -63,13 +73,13 @@ const StoreRoutes = [
     route: "/store-orders",
     component: <StoreOrder />,
   },
-  {
+    {
     type: "collapse",
-    name: "Profile",
-    key: "profile",
-    icon: <AccountCircle />,
-    route: "/profile",
-    component: <Profile />,
+    name: "Offer Coupons",
+    key: "coupons",
+    icon: <DiscountIcon />,
+    route: "/coupons",
+    component: <CouponManagement />,
   },
   {
     type: "collapse",

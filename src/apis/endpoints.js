@@ -1,5 +1,5 @@
-export const API_BASE_URL = "https://api.fivlia.in";
-//  export const API_BASE_URL = "https://api.fivlia.co.in";
+// export const API_BASE_URL = "https://api.fivlia.in";
+ export const API_BASE_URL = "https://api.fivlia.co.in";
 // export const API_BASE_URL = "http://127.0.0.1:8080";
 // export const API_BASE_URL = "http://localhost:8080";
 
@@ -24,5 +24,8 @@ export const ENDPOINTS = {
   UPDATE_BRAND_DOCUMENT: "/saveBrandApprovelDocument",
   LOGOUT:"/logoutSeller",
   GET_STORE_TRANSACTION:"getStoreTransaction",
-  SELLER_WITHDRAWAL_REQUEST: "seller/withdrawalRequest"
+  SELLER_WITHDRAWAL_REQUEST: "seller/withdrawalRequest",
+  CREATE_COUPON: "/seller/create-seller-coupon",
+  GET_COUPONS: "/seller/get-coupons",
+  EDIT_COUPON: "/seller/edit-seller-coupon"
 }; 

@@ -13,6 +13,7 @@ import StoreSidenav from "./components/Sidenav/Sidenav";
 import AddSellerProduct from "./StoreRoutes/addProduct";
 import SearchProduct from "./StoreRoutes/SearchProduct";
 import Profile from './StoreRoutes/Profile';
+import CouponManagement from './StoreRoutes/coupon';
 import UnapprovedProducts from "StoreRoutes/UnapprovedProducts";
 import { getMessaging, onMessage } from "firebase/messaging";
 import firebaseApp from "./firebaseConfig";
@@ -61,6 +62,7 @@ function App() {
         <Route path="/add-seller-product" element={<PrivateRoute element={<AddSellerProduct />}/>} />
         <Route path="/stock" element={<PrivateRoute element={<Stock />}/>} />
         <Route path="/Profile" element={<PrivateRoute element={<Profile />}/>} />
+        <Route path="/coupons" element={<PrivateRoute element={<CouponManagement />}/>} />
         <Route path="/addstorecat" element={<PrivateRoute element={<AddStoreCat />}/>} />
         <Route path="/store-orders" element={<PrivateRoute element={<StoreOrder />}/>} />
         <Route path="/search-products" element={<PrivateRoute element={<SearchProduct />}/>} />
