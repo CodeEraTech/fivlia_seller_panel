@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  MenuItem,
 } from "@mui/material";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
@@ -17,32 +18,51 @@ import { useMaterialUIController } from "../context";
 import { get, post } from "apis/apiClient";
 import { ENDPOINTS } from "apis/endpoints";
 
-// 🔵 Button style
+/* ================= BUTTON STYLE ================= */
 const btnStyle = {
+  height: "44px",
+  minWidth: "150px",
   backgroundColor: "#1976d2",
-  color: "white",
-  border: "none",
-  padding: "8px 16px",
-  borderRadius: "6px",
-  cursor: "pointer",
+  color: "#ffffff",
   fontSize: "14px",
+  fontWeight: 600,
+  borderRadius: "6px",
+  marginLeft:"16px",
+  textTransform: "none",
+  boxShadow: "none",
+  "&:hover": {
+    backgroundColor: "#125ea2",
+    boxShadow: "none",
+  },
+  "&:disabled": {
+    backgroundColor: "#b0c4de",
+    color: "#ffffff",
+  },
 };
 
-// 🔵 DataTable styles
+/* ================= TABLE STYLES ================= */
 const customStyles = {
   headCells: {
     style: {
-      fontSize: "14px",
-      fontWeight: "bold",
-      backgroundColor: "#3c95ef",
-      color: "white",
+      fontSize: "13px",
+      fontWeight: 600,
+      backgroundColor: "#f5f7fa",
+      color: "#344767",
+      paddingTop: "10px",
+      paddingBottom: "10px",
     },
   },
   cells: {
     style: {
-      fontSize: "14px",
-      paddingTop: "14px",
-      paddingBottom: "14px",
+      fontSize: "13px",
+      paddingTop: "10px",
+      paddingBottom: "10px",
+      alignItems: "center",
+    },
+  },
+  rows: {
+    style: {
+      minHeight: "48px",
     },
   },
 };
@@ -57,20 +77,25 @@ function CouponManagement() {
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // create form
+  /* ================= FORM ================= */
   const [form, setForm] = useState({
     title: "",
     offer: "",
     limit: "",
-    expireDate: "",
+    fromDate: "",
+    validDays: "",
   });
 
-  // edit modal
+  /* ================= IMAGES ================= */
+  const [images, setImages] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  /* ================= EDIT MODAL ================= */
   const [editOpen, setEditOpen] = useState(false);
   const [editingCouponId, setEditingCouponId] = useState(null);
   const [editCoupon, setEditCoupon] = useState(null);
 
-  // 🧠 Fetch coupons
+  /* ================= FETCH ================= */
   const fetchCoupons = async () => {
     if (!storeId) return;
     setLoading(true);
@@ -89,155 +114,223 @@ function CouponManagement() {
     fetchCoupons();
   }, [storeId]);
 
-  // 🧨 Create coupon
+  /* ================= IMAGE VALIDATION ================= */
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+
+    img.onload = () => {
+      if (img.width !== 1280 || img.height !== 540) {
+        Swal.fire("Invalid Image", "Image must be 1280 × 540", "error");
+        return;
+      }
+
+      setImages(file);
+      setImagePreview(img.src);
+    };
+  };
+
+  /* ================= CREATE ================= */
   const handleCreateCoupon = async () => {
-    if (!form.title || !form.offer || !form.limit || !form.expireDate) {
+    if (
+      !form.title ||
+      !form.offer ||
+      !form.limit ||
+      !form.fromDate ||
+      !form.validDays
+    ) {
       Swal.fire("Missing Fields", "Fill all fields", "warning");
       return;
     }
 
-    if (Number(form.offer) <= 0 || Number(form.offer) > 100) {
-      Swal.fire("Invalid Offer", "Offer must be 1–100%", "warning");
-      return;
-    }
+    const start = new Date(form.fromDate);
+    const expireDate = new Date(start);
+    expireDate.setDate(start.getDate() + Number(form.validDays));
 
-    if (Number(form.limit) <= 0) {
-      Swal.fire("Invalid Limit", "Limit must be > 0", "warning");
-      return;
-    }
-
-    if (new Date(form.expireDate) <= new Date()) {
+    if (expireDate <= new Date()) {
       Swal.fire("Invalid Date", "Expiry must be future", "warning");
       return;
     }
 
     try {
       setCreating(true);
-      await post(ENDPOINTS.CREATE_COUPON, {
-        storeId,
-        title: form.title,
-        offer: Number(form.offer),
-        limit: Number(form.limit),
-        expireDate: form.expireDate,
-      });
+      const data = new FormData();
+
+      data.append("storeId", storeId);
+      data.append("title", form.title);
+      data.append("offer", Number(form.offer));
+      data.append("limit", Number(form.limit));
+      data.append("fromTo", form.fromDate);
+      data.append("validDays", form.validDays);
+      data.append("expireDate", expireDate.toISOString());
+
+      if (images) {
+        data.append("image", images);
+      }
+
+      await post(ENDPOINTS.CREATE_COUPON, data);
 
       Swal.fire("Success", "Coupon created", "success");
-      setForm({ title: "", offer: "", limit: "", expireDate: "" });
+      setForm({ title: "", offer: "", limit: "", fromDate: "", validDays: "" });
+      setImages(null);
+      setImagePreview(null);
       fetchCoupons();
-    } catch (err) {
+    } catch {
       Swal.fire("Error", "Server error", "error");
     } finally {
       setCreating(false);
     }
   };
 
-  // 🔁 Toggle status
+  /* ================= TOGGLE ================= */
   const handleToggleStatus = async (coupon) => {
     if (new Date(coupon.expireDate) <= new Date() && !coupon.status) {
       Swal.fire("Expired", "Cannot activate expired coupon", "warning");
       return;
     }
 
-    try {
-      await post(`${ENDPOINTS.EDIT_COUPON}/${coupon._id}`, {
-        status: !coupon.status,
-      });
-
-      fetchCoupons();
-    } catch (err) {
-      Swal.fire("Error", "Failed to update status", "error");
-    }
+    await post(`${ENDPOINTS.EDIT_COUPON}/${coupon._id}`, {
+      status: !coupon.status,
+    });
+    fetchCoupons();
   };
 
-  // ✏️ Open edit modal
+  /* ================= EDIT ================= */
   const openEditModal = (coupon) => {
-    setEditingCouponId(coupon._id); // ID kept separately
-
+    setEditingCouponId(coupon._id);
     setEditCoupon({
       title: coupon.title,
       offer: coupon.offer,
       limit: coupon.limit,
+      fromTo: coupon.fromTo?.split("T")[0],
+      validDays: coupon.validDays,
       expireDate: coupon.expireDate?.split("T")[0],
     });
     setEditOpen(true);
   };
 
-  // 💾 Save edit
   const handleEditSave = async () => {
-    try {
-      await post(`${ENDPOINTS.EDIT_COUPON}/${editingCouponId}`, editCoupon);
-
-      Swal.fire("Updated", "Coupon updated", "success");
-      setEditOpen(false);
-      fetchCoupons();
-    } catch (err) {
-      setEditOpen(false);
-      Swal.fire("Error", "Update failed", "error");
-    }
+    await post(`${ENDPOINTS.EDIT_COUPON}/${editingCouponId}`, editCoupon);
+    setEditOpen(false);
+    fetchCoupons();
   };
 
-  // 🧱 Table columns
+  /* ================= TABLE COLUMNS ================= */
   const columns = [
+    { name: "Sr", selector: (_, i) => i + 1, width: "60px", center: true },
+    { name: "Title", selector: (r) => r.title, grow: 2, wrap: true },
     {
-      name: "Sr",
-      selector: (_, i) => i + 1,
-      width: "70px",
+      name: "Offer",
+      selector: (r) => `${r.offer}%`,
+      width: "90px",
       center: true,
     },
-    { name: "Title", selector: (r) => r.title, grow: 2 },
-    { name: "Offer", selector: (r) => `${r.offer}%`, center: true },
-    { name: "Limit", selector: (r) => r.limit, center: true },
+    { name: "Limit", selector: (r) => r.limit, width: "90px", center: true },
+    {
+      name: "From",
+      selector: (r) =>
+        r.fromTo ? new Date(r.fromTo).toLocaleDateString() : "-",
+      width: "120px",
+      center: true,
+    },
+    {
+      name: "Days",
+      selector: (r) => r.validDays || "-",
+      width: "80px",
+      center: true,
+    },
+    {
+      name: "Image",
+      width: "110px",
+      center: true,
+      cell: (r) =>
+        r.image ? (
+          <img
+            src={`${process.env.REACT_APP_IMAGE_LINK}${r.image}`}
+            alt=""
+            style={{
+              width: 72,
+              height: 36,
+              objectFit: "cover",
+              borderRadius: 4,
+              border: "1px solid #ddd",
+            }}
+          />
+        ) : (
+          "-"
+        ),
+    },
+    {
+      name: "Approval",
+      width: "110px",
+      center: true,
+      cell: (row) => {
+        let color = "#999";
+
+        if (row.approvalStatus === "approved") color = "#2e7d32";
+        if (row.approvalStatus === "rejected") color = "#d32f2f";
+        if (row.approvalStatus === "pending") color = "#ed6c02";
+
+        return (
+          <span style={{ fontWeight: 600, color }}>{row.approvalStatus}</span>
+        );
+      },
+    },
+
     {
       name: "Expiry",
       selector: (r) => new Date(r.expireDate).toLocaleDateString(),
+      width: "120px",
       center: true,
     },
     {
       name: "Status",
+      width: "90px",
       center: true,
       cell: (row) => (
-        <Switch
-          checked={row.status}
-          onChange={() => handleToggleStatus(row)}
-          disabled={new Date(row.expireDate) <= new Date() && !row.status}
-        />
+        <Switch checked={row.status} onChange={() => handleToggleStatus(row)} />
       ),
     },
     {
       name: "Action",
+      width: "90px",
       center: true,
       cell: (row) => (
-        <Button size="small" onClick={() => openEditModal(row)}>
+        <Button
+          size="small"
+          disabled={row.approvalStatus === "approved"}
+          onClick={() => openEditModal(row)}
+        >
           Edit
         </Button>
       ),
     },
   ];
 
+  /* ================= RENDER ================= */
   return (
     <MDBox
       p={2}
-      style={{
-        marginLeft: miniSidenav ? "100px" : "270px",
-        transition: "0.3s",
+      sx={{
+        marginLeft: miniSidenav ? "80px" : "260px",
+        marginRight: "20px",
       }}
     >
-      {/* Header */}
-      <div style={{ padding: 15, background: "#f4f6f8", borderRadius: 10 }}>
-        <h2>Seller Coupon Management</h2>
-        <span>Create, edit & toggle coupons</span>
-      </div>
+      <h2>Seller Coupon Management</h2>
 
-      {/* Create */}
-      <div
-        style={{
-          background: "white",
-          padding: 20,
-          borderRadius: 10,
-          margin: "20px 0",
+      {/* CREATE FORM */}
+      <Box
+        sx={{
+          background: "#fff",
+          p: 2,
+          borderRadius: 2,
           display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          gap: 15,
+          gridTemplateColumns: "2fr 1fr 1fr 1.5fr 1fr 1.5fr",
+          gap: 2,
+          alignItems: "center",
         }}
       >
         <TextField
@@ -258,40 +351,107 @@ function CouponManagement() {
           onChange={(e) => setForm({ ...form, limit: e.target.value })}
         />
         <TextField
-          label="Expiry"
           type="date"
+          label="From Date"
           InputLabelProps={{ shrink: true }}
-          value={form.expireDate}
-          onChange={(e) => setForm({ ...form, expireDate: e.target.value })}
+          value={form.fromDate}
+          onChange={(e) => setForm({ ...form, fromDate: e.target.value })}
         />
-        <Button
-          style={btnStyle}
-          disabled={creating}
-          onClick={handleCreateCoupon}
+        <TextField
+          select
+          label="Valid Days"
+          value={form.validDays}
+          InputProps={{
+            sx: {
+              height: 44,
+              alignItems: "center",
+            },
+          }}
+          onChange={(e) => setForm({ ...form, validDays: e.target.value })}
         >
-          {creating ? "Creating..." : "Create"}
-        </Button>
-      </div>
-
-      {/* Table */}
-      <div style={{ background: "white", borderRadius: 10, padding: 10 }}>
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={coupons}
-            customStyles={customStyles}
-            pagination
-            striped
-            highlightOnHover
+          <MenuItem value={1}>1 Day</MenuItem>
+          <MenuItem value={3}>3 Days</MenuItem>
+          <MenuItem value={7}>7 Days</MenuItem>
+        </TextField>
+        <Button
+          component="label"
+          variant="outlined"
+          sx={{
+            height: "44px",
+            borderColor: "#1976d2",
+            color: "#1976d2",
+            fontWeight: 600,
+            textTransform: "none",
+            "&:hover": {
+              borderColor: "#125ea2",
+              backgroundColor: "rgba(25,118,210,0.04)",
+            },
+          }}
+        >
+          Upload Images
+          <input
+            hidden
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
           />
-        )}
-      </div>
+        </Button>
+      </Box>
 
-      {/* Edit Modal */}
+      <Button
+        sx={{ ...btnStyle, mt: 2 }}
+        disabled={creating}
+        onClick={handleCreateCoupon}
+      >
+        {creating ? "Creating..." : "Create"}
+      </Button>
+
+      {imagePreview && (
+        <Box
+          sx={{
+            mt: 2,
+            display: "flex",
+            gap: 2,
+            flexWrap: "wrap",
+          }}
+        >
+          {imagePreview && (
+            <Box
+              sx={{
+                width: 128,
+                height: 72,
+                border: "1px solid #ddd",
+                borderRadius: 1,
+                overflow: "hidden",
+              }}
+            >
+              <img
+                src={imagePreview}
+                alt="preview"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            </Box>
+          )}
+        </Box>
+      )}
+
+      {/* TABLE */}
+      <Box sx={{ background: "#fff", mt: 3, p: 2, borderRadius: 2 }}>
+        <DataTable
+          columns={columns}
+          data={coupons}
+          customStyles={customStyles}
+          pagination
+          striped
+          dense
+        />
+      </Box>
+
+      {/* EDIT MODAL */}
       <Dialog
         open={editOpen}
         onClose={() => setEditOpen(false)}
@@ -299,7 +459,14 @@ function CouponManagement() {
         fullWidth
       >
         <DialogTitle>Edit Coupon</DialogTitle>
-        <DialogContent sx={{ display: "grid", gap: 2, mt: 1 }}>
+
+        <DialogContent
+          sx={{
+            display: "grid",
+            gap: 2,
+            mt: 1,
+          }}
+        >
           <TextField
             label="Title"
             value={editCoupon?.title || ""}
@@ -307,6 +474,7 @@ function CouponManagement() {
               setEditCoupon({ ...editCoupon, title: e.target.value })
             }
           />
+
           <TextField
             label="Offer (%)"
             type="number"
@@ -315,6 +483,7 @@ function CouponManagement() {
               setEditCoupon({ ...editCoupon, offer: e.target.value })
             }
           />
+
           <TextField
             label="Limit"
             type="number"
@@ -323,19 +492,46 @@ function CouponManagement() {
               setEditCoupon({ ...editCoupon, limit: e.target.value })
             }
           />
+
+          {/* FROM DATE */}
           <TextField
-            label="Expiry"
             type="date"
+            label="From Date"
             InputLabelProps={{ shrink: true }}
-            value={editCoupon?.expireDate || ""}
+            value={editCoupon?.fromTo || ""}
             onChange={(e) =>
-              setEditCoupon({ ...editCoupon, expireDate: e.target.value })
+              setEditCoupon({ ...editCoupon, fromTo: e.target.value })
             }
           />
+
+          {/* VALID DAYS */}
+          <TextField
+            select
+            label="Valid Days"
+            value={editCoupon?.validDays || ""}
+            InputProps={{
+              sx: { height: 44 },
+            }}
+            onChange={(e) =>
+              setEditCoupon({ ...editCoupon, validDays: e.target.value })
+            }
+          >
+            <MenuItem value={1}>1 Day</MenuItem>
+            <MenuItem value={3}>3 Days</MenuItem>
+            <MenuItem value={7}>7 Days</MenuItem>
+          </TextField>
         </DialogContent>
+
         <DialogActions>
           <Button onClick={() => setEditOpen(false)}>Cancel</Button>
-          <Button onClick={handleEditSave}>Save</Button>
+          <Button
+            variant="contained"
+            sx={{ textTransform: "none" }}
+            style={{ color: "white" }}
+            onClick={handleEditSave}
+          >
+            Save
+          </Button>
         </DialogActions>
       </Dialog>
     </MDBox>
