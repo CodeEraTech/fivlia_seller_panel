@@ -27,7 +27,7 @@ const btnStyle = {
   fontSize: "14px",
   fontWeight: 600,
   borderRadius: "6px",
-  marginLeft:"16px",
+  marginLeft: "16px",
   textTransform: "none",
   boxShadow: "none",
   "&:hover": {
@@ -90,6 +90,9 @@ function CouponManagement() {
   const [images, setImages] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
+  const [sliderImage, setSliderImage] = useState(null);
+  const [sliderImagePreview, setSliderImagePreview] = useState(null);
+
   /* ================= EDIT MODAL ================= */
   const [editOpen, setEditOpen] = useState(false);
   const [editingCouponId, setEditingCouponId] = useState(null);
@@ -133,6 +136,26 @@ function CouponManagement() {
     };
   };
 
+  /* ================= SLIDER IMAGE (512x512) ================= */
+  const handleSliderImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+
+    img.onload = () => {
+      if (img.width !== 512 || img.height !== 512) {
+        Swal.fire("Invalid Image", "Slider image must be 512 × 512", "error");
+        return;
+      }
+
+      setSliderImage(file);
+      setSliderImagePreview(img.src);
+    };
+  };
+
+
   /* ================= CREATE ================= */
   const handleCreateCoupon = async () => {
     if (
@@ -171,12 +194,18 @@ function CouponManagement() {
         data.append("image", images);
       }
 
+      if (sliderImage) {
+        data.append("file", sliderImage); // slider (512x512)
+      }
+
       await post(ENDPOINTS.CREATE_COUPON, data);
 
       Swal.fire("Success", "Coupon created", "success");
       setForm({ title: "", offer: "", limit: "", fromDate: "", validDays: "" });
       setImages(null);
       setImagePreview(null);
+      setSliderImage(null);
+      setSliderImagePreview(null);
       fetchCoupons();
     } catch {
       Swal.fire("Error", "Server error", "error");
@@ -250,6 +279,27 @@ function CouponManagement() {
         r.image ? (
           <img
             src={`${process.env.REACT_APP_IMAGE_LINK}${r.image}`}
+            alt=""
+            style={{
+              width: 72,
+              height: 36,
+              objectFit: "cover",
+              borderRadius: 4,
+              border: "1px solid #ddd",
+            }}
+          />
+        ) : (
+          "-"
+        ),
+    },
+        {
+      name: "Slider Image",
+      width: "110px",
+      center: true,
+      cell: (r) =>
+        r.image ? (
+          <img
+            src={`${process.env.REACT_APP_IMAGE_LINK}${r.sliderImage}`}
             alt=""
             style={{
               width: 72,
@@ -396,6 +446,31 @@ function CouponManagement() {
             onChange={handleImageChange}
           />
         </Button>
+
+        <Button
+          component="label"
+          variant="outlined"
+          sx={{
+            height: "44px",
+            borderColor: "#1976d2",
+            color: "#1976d2",
+            fontWeight: 600,
+            textTransform: "none",
+            "&:hover": {
+              borderColor: "#125ea2",
+              backgroundColor: "rgba(25,118,210,0.04)",
+            },
+          }}
+        >
+          Upload Slider Image (512×512)
+          <input
+            hidden
+            type="file"
+            accept="image/*"
+            onChange={handleSliderImageChange}
+          />
+        </Button>
+
       </Box>
 
       <Button
@@ -436,6 +511,27 @@ function CouponManagement() {
               />
             </Box>
           )}
+        </Box>
+      )}
+      {sliderImagePreview && (
+        <Box
+          sx={{
+            width: 72,
+            height: 72,
+            border: "1px solid #ddd",
+            borderRadius: 1,
+            overflow: "hidden",
+          }}
+        >
+          <img
+            src={sliderImagePreview}
+            alt="slider-preview"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
         </Box>
       )}
 
