@@ -3,7 +3,6 @@ import {
   Button,
   Box,
   TextField,
-  CircularProgress,
   Switch,
   Dialog,
   DialogTitle,
@@ -15,8 +14,11 @@ import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
-import { get, post } from "apis/apiClient";
+import { get, post, del } from "apis/apiClient";
 import { ENDPOINTS } from "apis/endpoints";
+
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 /* ================= BUTTON STYLE ================= */
 const btnStyle = {
@@ -155,7 +157,6 @@ function CouponManagement() {
     };
   };
 
-
   /* ================= CREATE ================= */
   const handleCreateCoupon = async () => {
     if (
@@ -214,6 +215,27 @@ function CouponManagement() {
     }
   };
 
+  const handleDeleteCoupon = async (id) => {
+    const confirm = await Swal.fire({
+      title: "Delete Coupon?",
+      text: "This cannot be undone",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d32f2f",
+      confirmButtonText: "Delete",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await del(`${ENDPOINTS.DELETE_COUPON}/${id}`); // or use delete() if you have it
+      Swal.fire("Deleted", "Coupon removed", "success");
+      fetchCoupons();
+    } catch {
+      Swal.fire("Error", "Delete failed", "error");
+    }
+  };
+
   /* ================= TOGGLE ================= */
   const handleToggleStatus = async (coupon) => {
     if (new Date(coupon.expireDate) <= new Date() && !coupon.status) {
@@ -229,6 +251,15 @@ function CouponManagement() {
 
   /* ================= EDIT ================= */
   const openEditModal = (coupon) => {
+    const locked =
+      coupon.approvalStatus === "approved" &&
+      new Date(coupon.expireDate) > new Date();
+
+    if (locked) {
+      Swal.fire("Locked", "Approved active coupon cannot be edited", "warning");
+      return;
+    }
+
     setEditingCouponId(coupon._id);
     setEditCoupon({
       title: coupon.title,
@@ -246,6 +277,8 @@ function CouponManagement() {
     setEditOpen(false);
     fetchCoupons();
   };
+
+  const isExpired = (row) => new Date(row.expireDate) <= new Date();
 
   /* ================= TABLE COLUMNS ================= */
   const columns = [
@@ -292,7 +325,7 @@ function CouponManagement() {
           "-"
         ),
     },
-        {
+    {
       name: "Slider Image",
       width: "110px",
       center: true,
@@ -338,25 +371,57 @@ function CouponManagement() {
     },
     {
       name: "Status",
-      width: "90px",
+      width: "120px",
       center: true,
-      cell: (row) => (
-        <Switch checked={row.status} onChange={() => handleToggleStatus(row)} />
-      ),
+      cell: (row) => {
+        const expired = isExpired(row);
+
+        if (expired) {
+          return (
+            <span style={{ color: "#d32f2f", fontWeight: 600 }}>Expired</span>
+          );
+        }
+
+        return (
+          <Switch
+            checked={row.status}
+            onChange={() => handleToggleStatus(row)}
+          />
+        );
+      },
     },
+
     {
       name: "Action",
-      width: "90px",
+      width: "110px",
       center: true,
-      cell: (row) => (
-        <Button
-          size="small"
-          disabled={row.approvalStatus === "approved"}
-          onClick={() => openEditModal(row)}
-        >
-          Edit
-        </Button>
-      ),
+      cell: (row) => {
+        const locked =
+          row.approvalStatus === "approved" &&
+          new Date(row.expireDate) > new Date();
+
+        return (
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              size="small"
+              disabled={locked}
+              sx={{ minWidth: 36 }}
+              onClick={() => openEditModal(row)}
+            >
+              <EditIcon fontSize="small" />
+            </Button>
+
+            <Button
+              size="small"
+              color="error"
+              sx={{ minWidth: 36 }}
+              onClick={() => handleDeleteCoupon(row._id)}
+            >
+              <DeleteIcon fontSize="small" />
+            </Button>
+          </Box>
+        );
+      },
     },
   ];
 
@@ -470,7 +535,6 @@ function CouponManagement() {
             onChange={handleSliderImageChange}
           />
         </Button>
-
       </Box>
 
       <Button
@@ -544,6 +608,12 @@ function CouponManagement() {
           pagination
           striped
           dense
+          conditionalRowStyles={[
+            {
+              when: (row) => isExpired(row),
+              style: { opacity: 0.6 },
+            },
+          ]}
         />
       </Box>
 
