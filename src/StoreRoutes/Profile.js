@@ -77,6 +77,7 @@ export default function SellerProfile() {
     PhoneNumber: "",
     gstNumber: "",
     fsiNumber: "",
+    enrollmentId: "",
     image: "",
     aadharCard: "",
     sellerSignature: "",
@@ -129,23 +130,23 @@ export default function SellerProfile() {
   }, []);
 
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const status = params.get("verified");
-  if (status) {
-    const messages = {
-      true: "✅ Email verified successfully!",
-      expired: "⚠️ Verification link expired. Please request a new one.",
-      invalid: "❌ Invalid verification link.",
-      already: "ℹ️ Email already verified.",
-    };
-    setAlert({
-      open: true,
-      message: messages[status] || "Unknown verification status",
-      severity: status === "true" ? "success" : "warning",
-    });
-    fetchProfile(); // reload status to reflect verification
-  }
-}, []);
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("verified");
+    if (status) {
+      const messages = {
+        true: "✅ Email verified successfully!",
+        expired: "⚠️ Verification link expired. Please request a new one.",
+        invalid: "❌ Invalid verification link.",
+        already: "ℹ️ Email already verified.",
+      };
+      setAlert({
+        open: true,
+        message: messages[status] || "Unknown verification status",
+        severity: status === "true" ? "success" : "warning",
+      });
+      fetchProfile(); // reload status to reflect verification
+    }
+  }, []);
 
   useEffect(() => {
     if (!profile || cityOptions.length === 0) return;
@@ -157,7 +158,7 @@ export default function SellerProfile() {
 
     if (address.zone && selectedCity.zones?.length) {
       const selectedZone = selectedCity.zones.find(
-        (z) => z._id === address.zone
+        (z) => z._id === address.zone,
       );
       if (selectedZone) {
         const newCenter = {
@@ -183,7 +184,7 @@ export default function SellerProfile() {
     setEmailSending(true);
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/sendEmailVerification?storeId=${profile._id}&apiUrl=${process.env.REACT_APP_API_URL}`
+        `${process.env.REACT_APP_API_URL}/sendEmailVerification?storeId=${profile._id}&apiUrl=${process.env.REACT_APP_API_URL}`,
       );
       const data = await res.json();
 
@@ -222,7 +223,7 @@ export default function SellerProfile() {
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Failed to load");
@@ -236,6 +237,7 @@ export default function SellerProfile() {
         PhoneNumber: data.PhoneNumber || "",
         gstNumber: data.gstNumber || "",
         fsiNumber: data.fsiNumber || "",
+        enrollmentId: data.enrollmentId || "",
         image: data.image || "",
         aadharCard: Array.isArray(data.aadharCard)
           ? data.aadharCard[0]
@@ -358,6 +360,7 @@ export default function SellerProfile() {
       formData.append("storeName", form.storeName);
       formData.append("email", form.email);
       formData.append("PhoneNumber", form.PhoneNumber);
+      formData.append("enrollmentId", form.enrollmentId);
       formData.append("gstNumber", form.gstNumber);
       formData.append("invoicePrefix", form.invoicePrefix);
       formData.append("openTime", form.openTime);
@@ -382,7 +385,7 @@ export default function SellerProfile() {
         {
           method: "PUT",
           body: formData,
-        }
+        },
       );
 
       const json = await res.json();
@@ -428,7 +431,7 @@ export default function SellerProfile() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ bankDetails: bankForm }),
-        }
+        },
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Bank save failed");
@@ -463,7 +466,7 @@ export default function SellerProfile() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ bankDetails: {} }),
-        }
+        },
       );
       if (!res.ok) throw new Error("Delete failed");
       setMessage("Bank account deleted successfully");
@@ -546,7 +549,7 @@ export default function SellerProfile() {
         const clickedLat = e.latlng.lat;
         const clickedLon = e.latlng.lng;
         const distance = L.latLng(zoneCenter.lat, zoneCenter.lng).distanceTo(
-          L.latLng(clickedLat, clickedLon)
+          L.latLng(clickedLat, clickedLon),
         );
 
         if (distance > zoneRadius) {
@@ -579,7 +582,7 @@ export default function SellerProfile() {
     const selectedZoneId = address.zone;
     const selectedCity = cityOptions.find((c) => c.city === address.city);
     const selectedZone = selectedCity?.zones.find(
-      (z) => z._id === selectedZoneId
+      (z) => z._id === selectedZoneId,
     );
 
     if (!selectedZone) {
@@ -602,7 +605,7 @@ export default function SellerProfile() {
     }
 
     const distanceMeters = L.latLng(zoneLat, zoneLng).distanceTo(
-      L.latLng(submitLat, submitLng)
+      L.latLng(submitLat, submitLng),
     );
 
     const MAX_DISTANCE_METERS = Number(selectedZone.range);
@@ -642,7 +645,7 @@ export default function SellerProfile() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       const json = await res.json();
@@ -792,7 +795,7 @@ export default function SellerProfile() {
                       color="primary"
                       onClick={sendEmailVerification}
                       disabled={emailSending || cooldown > 0}
-                      style={{color:'white'}}
+                      style={{ color: "white" }}
                       sx={{ px: 3, minWidth: 200 }}
                     >
                       {emailSending ? (
@@ -851,6 +854,19 @@ export default function SellerProfile() {
                   }
                   variant="outlined"
                   disabled
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Enrollment ID"
+                  value={form.enrollmentId}
+                  fullWidth
+                  margin="dense"
+                  onChange={(e) =>
+                    handleFormChange("enrollmentId", e.target.value)
+                  }
+                  variant="outlined"
+                  disabled={form.businessType === "GST"}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -1093,7 +1109,7 @@ export default function SellerProfile() {
                                 ...p,
                                 advertisementImages:
                                   p.advertisementImages.filter(
-                                    (_, i) => i !== index
+                                    (_, i) => i !== index,
                                   ),
                               }));
                             }}
@@ -1156,7 +1172,7 @@ export default function SellerProfile() {
                             Pending Approval
                           </Typography>
                         </Box>
-                      )
+                      ),
                     )}
                   </Box>
                   <Typography
@@ -1304,7 +1320,7 @@ export default function SellerProfile() {
                     Requested At:{" "}
                     {profile.pendingAddressUpdate.requestedAt
                       ? new Date(
-                          profile.pendingAddressUpdate.requestedAt
+                          profile.pendingAddressUpdate.requestedAt,
                         ).toLocaleString()
                       : "N/A"}
                   </Typography>
