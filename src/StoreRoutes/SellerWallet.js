@@ -94,8 +94,11 @@ export default function Wallet() {
     if (typeof amount !== "number") amount = Number(amount);
     if (isNaN(amount)) return "0.00";
 
-    return (Math.round(amount * 100) / 100).toFixed(2);
+      // ✅ floor instead of round
+
+    return (Math.floor(amount * 100) / 100).toFixed(2);
   };
+
   // ✅ Calculate total credits & debits
   const totalCredits = transactions
     .filter((txn) => txn.type === "Credit")

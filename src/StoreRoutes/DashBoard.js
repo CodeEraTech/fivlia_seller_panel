@@ -48,7 +48,7 @@ export default function DashBoard() {
   if (typeof amount !== "number") amount = Number(amount);
   if (isNaN(amount)) return "0.00";
 
-  return (Math.round(amount * 100) / 100).toFixed(2);
+  return (Math.floor(amount * 100) / 100).toFixed(2);
 };
 
 
