@@ -6,8 +6,8 @@ export const USE_FIREBASE = true;
 
 // const DEFAULT_API_BASE_URL = "https://api.fivlia.in";
 
-// const DEFAULT_API_BASE_URL = "https://api.fivlia.com";
-const DEFAULT_API_BASE_URL = "https://api.fivlia.co.in";
+const DEFAULT_API_BASE_URL = "https://api.fivlia.com";
+// const DEFAULT_API_BASE_URL = "https://api.fivlia.co.in";
 // const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080";
 // const DEFAULT_API_BASE_URL = "http://localhost:8080";
 
