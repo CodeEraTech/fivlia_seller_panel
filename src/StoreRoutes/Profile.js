@@ -46,6 +46,8 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import MDBox from "components/MDBox";
+import { get, post, put } from "apis/apiClient";
+import { ENDPOINTS } from "apis/endpoints";
 
 // Configure Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -85,6 +87,8 @@ export default function SellerProfile() {
     advertisementImages: [],
     openTime: "",
     closeTime: "",
+    sellerFreeDeliveryEnabled: false,
+    sellerFreeDeliveryLimit: "",
   });
 
   const [bankDetails, setBankDetails] = useState({});
@@ -218,15 +222,10 @@ export default function SellerProfile() {
   async function fetchProfile() {
     setLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/getSeller?id=${id}&limit=1`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Failed to load");
+      const res = await get(`${ENDPOINTS.GET_SELLER}?id=${id}&limit=1`);
+
+      const json = res.data;
+      if (res.status !== 200) throw new Error(json.message || "Failed to load");
 
       const data = json.store || json;
       setProfile(data);
@@ -249,6 +248,9 @@ export default function SellerProfile() {
           : [],
         openTime: data.openTime || "",
         closeTime: data.closeTime || "",
+
+        sellerFreeDeliveryEnabled: data.sellerFreeDeliveryEnabled || false,
+        sellerFreeDeliveryLimit: data.sellerFreeDeliveryLimit || "",
       });
       setBankDetails(data.bankDetails || {});
       setAddress({
@@ -365,6 +367,13 @@ export default function SellerProfile() {
       formData.append("invoicePrefix", form.invoicePrefix);
       formData.append("openTime", form.openTime);
       formData.append("closeTime", form.closeTime);
+      formData.append(
+        "sellerFreeDeliveryEnabled",
+        form.sellerFreeDeliveryEnabled,
+      );
+
+      formData.append("sellerFreeDeliveryLimit", form.sellerFreeDeliveryLimit);
+
       if (form.image instanceof File) {
         formData.append("image", form.image);
       }
@@ -380,16 +389,10 @@ export default function SellerProfile() {
         }
       });
 
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`,
-        {
-          method: "PUT",
-          body: formData,
-        },
-      );
+      const res = await put(`${ENDPOINTS.EDIT_SELLER_PROFILE}/${id}`, formData);
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Save failed");
+      const json = res.data;
+      if (res.status !== 200) throw new Error(json.message || "Save failed");
 
       setMessage("Profile saved successfully");
       fetchProfile();
@@ -425,16 +428,13 @@ export default function SellerProfile() {
 
     try {
       setSaving(true);
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bankDetails: bankForm }),
-        },
-      );
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Bank save failed");
+      const res = await put(`${ENDPOINTS.EDIT_SELLER_PROFILE}/${id}`, {
+        bankDetails: bankForm,
+      });
+
+      const json = res.data;
+      if (res.status !== 200)
+        throw new Error(json.message || "Bank save failed");
 
       setBankDialogOpen(false);
       setMessage("Bank details saved successfully");
@@ -460,15 +460,12 @@ export default function SellerProfile() {
 
     try {
       setSaving(true);
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bankDetails: {} }),
-        },
-      );
-      if (!res.ok) throw new Error("Delete failed");
+      const res = await put(`${ENDPOINTS.EDIT_SELLER_PROFILE}/${id}`, {
+        bankDetails: {},
+      });
+      const json = res.data;
+      if (res.status !== 200) throw new Error(json.message || "Delete failed");
+
       setMessage("Bank account deleted successfully");
       fetchProfile();
     } catch (err) {
@@ -639,17 +636,11 @@ export default function SellerProfile() {
         Latitude: address.lat,
         Longitude: address.lng,
       };
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/editSellerProfile/${id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Request failed");
+      const res = await put(`${ENDPOINTS.EDIT_SELLER_PROFILE}/${id}`, payload);
+
+      const json = res.data;
+      if (res.status !== 200) throw new Error(json.message || "Request failed");
 
       setAddress((p) => ({ ...p, status: "pending" }));
       setMessage("Address update submitted — pending admin approval.");
@@ -896,6 +887,90 @@ export default function SellerProfile() {
                   variant="outlined"
                   helperText="Set store closing time"
                 />
+              </Grid>
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: 2,
+                    px: 1,
+                    py: 1.5,
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 2,
+                  }}
+                >
+                  {/* Left */}
+                  <Box>
+                    <Typography
+                      variant="outlined"
+                      sx={{
+                        fontWeight: 600,
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      Free Delivery
+                    </Typography>
+
+                    <Typography variant="body2" color="text.secondary">
+                      Enable free delivery above minimum cart value
+                    </Typography>
+                  </Box>
+
+                  {/* Right */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                    }}
+                  >
+                    <Switch
+                      checked={form.sellerFreeDeliveryEnabled}
+                      onChange={(e) => {
+                        const enabled = e.target.checked;
+
+                        handleFormChange("sellerFreeDeliveryEnabled", enabled);
+
+                        if (enabled && !form.sellerFreeDeliveryLimit) {
+                          handleFormChange("sellerFreeDeliveryLimit", 500);
+                        }
+                      }}
+                    />
+
+                    <TextField
+                      size="small"
+                      type="number"
+                      label="Amount"
+                      disabled={!form.sellerFreeDeliveryEnabled}
+                      value={form.sellerFreeDeliveryLimit || 500}
+                      onChange={(e) =>
+                        handleFormChange(
+                          "sellerFreeDeliveryLimit",
+                          e.target.value,
+                        )
+                      }
+                      sx={{
+                        width: 130,
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <Typography
+                            sx={{
+                              mr: 1,
+                              fontWeight: 600,
+                              color: "text.secondary",
+                            }}
+                          >
+                            ₹
+                          </Typography>
+                        ),
+                      }}
+                    />
+                  </Box>
+                </Box>
               </Grid>
               <Grid item xs={12}>
                 <Box display="flex" alignItems="center" gap={2}>

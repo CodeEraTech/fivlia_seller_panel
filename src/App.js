@@ -4,6 +4,8 @@ import SellerLogin from "./SellerLogin";
 import { Navigate } from "react-router-dom";
 import DashBoard from "./StoreRoutes/DashBoard";
 import StoreCategories from "./StoreRoutes/Categories";
+import FoodCategory from "./StoreRoutes/FoodCategory/FoodCategory";
+import AddStoreFoodCategory from "./StoreRoutes/FoodCategory/AddStoreFoodCategory";
 import SellerProduct from "./StoreRoutes/SellerProduct";
 import Stock from "./StoreRoutes/Stock";
 import AddStoreCat from "./StoreRoutes/AddCatStore";
@@ -58,6 +60,8 @@ function App() {
         <Route path="/dashboard1" element={<PrivateRoute element={<DashBoard />} />} />
         <Route path="/Wallet" element={<PrivateRoute element={<Wallet />} />} />
         <Route path="/storecat" element={<PrivateRoute element={<StoreCategories />} />} />
+        <Route path="/food-category" element={<PrivateRoute element={<FoodCategory />} />} />
+        <Route path="/add-food-category" element={<PrivateRoute element={<AddStoreFoodCategory />} />} />
         <Route path="/sellerProduct" element={<PrivateRoute element={<SellerProduct />} />} />
         <Route path="/add-seller-product" element={<PrivateRoute element={<AddSellerProduct />}/>} />
         <Route path="/stock" element={<PrivateRoute element={<Stock />}/>} />

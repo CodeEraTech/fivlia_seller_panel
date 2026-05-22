@@ -53,8 +53,11 @@ function SellerLogin() {
         accessKey,
       });
       if (res.status === 200 && res.data?.token) {
+
         localStorage.setItem("userType", "admin");
         localStorage.setItem("sellerId", res.data.sellerId);
+        localStorage.setItem("sellFood", res.data.sellFood);
+        localStorage.setItem("businessType", res.data.businessType);
         localStorage.setItem("storeName", res.data.storeName);
         localStorage.setItem("token", res.data.token);
 
@@ -227,6 +230,11 @@ function SellerLogin() {
           message: "Login successful!",
           severity: "success",
         });
+
+        console.log("logindata",res.data)
+
+        localStorage.setItem("sellFood", res.data.sellFood);
+        localStorage.setItem("businessType", res.data.businessType);
         localStorage.setItem("deviceId", deviceId);
         localStorage.setItem("userType", "seller");
         localStorage.setItem("sellerId", res.data.sellerId);

@@ -2,12 +2,12 @@ import db from "./firebaseDb.js";
 import { doc, getDoc } from "firebase/firestore";
 
 // `false` = current REST API flow, `true` = Firebase/Firestore flow.
-export const USE_FIREBASE = true;
+export const USE_FIREBASE = false;
 
 // const DEFAULT_API_BASE_URL = "https://api.fivlia.in";
 
-const DEFAULT_API_BASE_URL = "https://api.fivlia.com";
-// const DEFAULT_API_BASE_URL = "https://api.fivlia.co.in";
+// const DEFAULT_API_BASE_URL = "https://api.fivlia.com";
+const DEFAULT_API_BASE_URL = "https://api.fivlia.co.in";
 // const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080";
 // const DEFAULT_API_BASE_URL = "http://localhost:8080";
 
@@ -41,6 +41,7 @@ export const ENDPOINTS = {
   LOGIN: "/storeLogin",
   SEND_OTP: "/sendOtp",
   VERIFY_OTP: "/seller/verifyOtp",
+  GET_SELLER: "/getSeller",
   CATEGORIES: "/categories",
   GET_PRODUCTS: "/getCategoryProduct",
   UPDATE_PRODUCT: "/addCategoryInSeller",
@@ -62,4 +63,10 @@ export const ENDPOINTS = {
   GET_COUPONS: "/seller/get-coupons",
   EDIT_COUPON: "/seller/edit-seller-coupon",
   DELETE_COUPON: "/seller/delete-coupons",
+
+  EDIT_SELLER_PROFILE:"/editSellerProfile",
+
+  ADD_FOOD_SELLER:"/food/add-food-to-seller",
+  GET_FOOD:"/food/get-active-food",
+  REMOVE_FOOD_SELLER:"/food/remove-food-from-seller",
 };

@@ -6,16 +6,24 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AssignmentIcon from "@mui/icons-material/Assignment";
-import Wallet from "./StoreRoutes/SellerWallet"
-import DashBoard from './StoreRoutes/DashBoard';
-import StoreCategories from './StoreRoutes/Categories';
-import SellerProduct from './StoreRoutes/SellerProduct';
-import Stock from './StoreRoutes/Stock';
-import Profile from './StoreRoutes/Profile';
-import CouponManagement from './StoreRoutes/coupon';
-import StoreOrder from './StoreRoutes/StoreOrder';
+import Wallet from "./StoreRoutes/SellerWallet";
+import DashBoard from "./StoreRoutes/DashBoard";
+import StoreCategories from "./StoreRoutes/Categories";
+import FoodCategory from "./StoreRoutes/FoodCategory/FoodCategory";
+import SellerProduct from "./StoreRoutes/SellerProduct";
+import Stock from "./StoreRoutes/Stock";
+import Profile from "./StoreRoutes/Profile";
+import CouponManagement from "./StoreRoutes/coupon";
+import StoreOrder from "./StoreRoutes/StoreOrder";
 import DiscountIcon from "@mui/icons-material/Discount";
 
+const sellFood = localStorage.getItem("sellFood")
+const businessType = localStorage.getItem("businessType")
+
+const isFoodSeller =
+  sellFood === "true" ||
+  businessType === "FSSAI";
+console.log("Seller Data:", sellFood, businessType);
 const StoreRoutes = [
   {
     type: "collapse",
@@ -33,7 +41,7 @@ const StoreRoutes = [
     route: "/profile",
     component: <Profile />,
   },
-    {
+  {
     type: "collapse",
     name: "Wallet",
     key: "Wallet",
@@ -46,8 +54,17 @@ const StoreRoutes = [
     name: "Categories",
     key: "categories",
     icon: <CategoryIcon />,
-    route: "/storecat",
-    component: <StoreCategories />,
+
+    route: isFoodSeller
+    ? "/food-category"
+    : "/storecat",
+
+    component:
+      isFoodSeller ? (
+        <FoodCategory />
+      ) : (
+        <StoreCategories />
+      ),
   },
   {
     type: "collapse",
@@ -73,7 +90,7 @@ const StoreRoutes = [
     route: "/store-orders",
     component: <StoreOrder />,
   },
-    {
+  {
     type: "collapse",
     name: "Offer Coupons",
     key: "coupons",
