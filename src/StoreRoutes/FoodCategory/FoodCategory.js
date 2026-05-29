@@ -1,13 +1,6 @@
-import React, {
-  useEffect,
-  useState,
-} from "react";
+import React, { useEffect, useState } from "react";
 
-import {
-  TextField,
-  CircularProgress,
-  Box,
-} from "@mui/material";
+import { TextField, CircularProgress, Box } from "@mui/material";
 
 import DataTable from "react-data-table-component";
 
@@ -35,25 +28,19 @@ const customStyles = {
 function FoodCategory() {
   const navigate = useNavigate();
 
-  const [controller] =
-    useMaterialUIController();
+  const [controller] = useMaterialUIController();
 
   const { miniSidenav } = controller;
 
-  const [foods, setFoods] =
-    useState([]);
+  const [foods, setFoods] = useState([]);
 
-  const [sellerFoods, setSellerFoods] =
-    useState([]);
+  const [sellerFoods, setSellerFoods] = useState([]);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [searchText, setSearchText] =
-    useState("");
+  const [searchText, setSearchText] = useState("");
 
-  const sellerId =
-    localStorage.getItem("sellerId");
+  const sellerId = localStorage.getItem("sellerId");
 
   // ================= GET ALL FOODS =================
 
@@ -61,9 +48,7 @@ function FoodCategory() {
     try {
       setLoading(true);
 
-      const response = await get(
-        ENDPOINTS.GET_FOOD
-      );
+      const response = await get(ENDPOINTS.GET_FOOD);
 
       setFoods(response.data || []);
     } catch (error) {
@@ -73,59 +58,20 @@ function FoodCategory() {
     }
   };
 
-  // ================= GET SELLER FOODS =================
-
-  const fetchSellerFoods =
-    async () => {
-      try {
-        const response = await get(
-          `${ENDPOINTS.GET_SELLER_PROFILE}/${sellerId}`
-        );
-
-        const seller =
-          response.data?.seller ||
-          response.data;
-
-        const foodIds =
-          seller?.foodTypes?.map(
-            (item) =>
-              typeof item ===
-              "object"
-                ? item._id
-                : item
-          ) || [];
-
-        setSellerFoods(foodIds);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
   useEffect(() => {
     fetchFoods();
-
-    fetchSellerFoods();
   }, []);
 
   // ================= REMOVE =================
 
-  const removeFood = async (
-    foodId
-  ) => {
+  const removeFood = async (foodId) => {
     try {
-      await post(
-        ENDPOINTS.REMOVE_FOOD_SELLER,
-        {
-          sellerId,
-          foodId,
-        }
-      );
+      await post(ENDPOINTS.REMOVE_FOOD_SELLER, {
+        sellerId,
+        foodId,
+      });
 
-      setSellerFoods((prev) =>
-        prev.filter(
-          (id) => id !== foodId
-        )
-      );
+      setSellerFoods((prev) => prev.filter((id) => id !== foodId));
     } catch (error) {
       console.log(error);
     }
@@ -133,19 +79,9 @@ function FoodCategory() {
 
   // ================= FILTER ONLY SELECTED =================
 
-  const selectedFoods =
-    foods.filter((food) =>
-      sellerFoods.includes(food._id)
-    );
-
-  const filteredFoods =
-    selectedFoods.filter((item) =>
-      item.name
-        ?.toLowerCase()
-        .includes(
-          searchText.toLowerCase()
-        )
-    );
+  const filteredFoods = foods.filter((item) =>
+    item.name?.toLowerCase().includes(searchText.toLowerCase()),
+  );
 
   // ================= TABLE =================
 
@@ -188,8 +124,7 @@ function FoodCategory() {
     {
       name: "Products",
 
-      selector: (row) =>
-        row.productsCount || 0,
+      selector: (row) => row.productsCount || 0,
 
       center: true,
     },
@@ -199,15 +134,12 @@ function FoodCategory() {
 
       cell: (row) => (
         <button
-          onClick={() =>
-            removeFood(row._id)
-          }
+          onClick={() => removeFood(row._id)}
           style={{
             background: "#ef4444",
             border: "none",
             color: "white",
-            padding:
-              "10px 20px",
+            padding: "10px 20px",
             borderRadius: "8px",
             cursor: "pointer",
             fontWeight: "600",
@@ -223,9 +155,7 @@ function FoodCategory() {
     <MDBox
       p={2}
       style={{
-        marginLeft: miniSidenav
-          ? "100px"
-          : "270px",
+        marginLeft: miniSidenav ? "100px" : "270px",
       }}
     >
       {/* HEADER */}
@@ -233,8 +163,7 @@ function FoodCategory() {
       <div
         style={{
           display: "flex",
-          justifyContent:
-            "space-between",
+          justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 20,
           padding: "20px",
@@ -256,8 +185,7 @@ function FoodCategory() {
               margin: 0,
             }}
           >
-            View and manage all
-            Categories
+            View and manage all Categories
           </p>
         </div>
 
@@ -271,28 +199,17 @@ function FoodCategory() {
             placeholder="Search categories..."
             size="small"
             value={searchText}
-            onChange={(e) =>
-              setSearchText(
-                e.target.value
-              )
-            }
+            onChange={(e) => setSearchText(e.target.value)}
           />
 
           <button
-            onClick={() =>
-              navigate(
-                "/add-food-category"
-              )
-            }
+            onClick={() => navigate("/add-food-category")}
             style={{
-              background:
-                "#00c853",
+              background: "#00c853",
               border: "none",
               color: "white",
-              padding:
-                "12px 25px",
-              borderRadius:
-                "10px",
+              padding: "12px 25px",
+              borderRadius: "10px",
               fontWeight: "700",
               cursor: "pointer",
             }}
@@ -314,11 +231,7 @@ function FoodCategory() {
         }}
       >
         {loading ? (
-          <Box
-            display="flex"
-            justifyContent="center"
-            p={5}
-          >
+          <Box display="flex" justifyContent="center" p={5}>
             <CircularProgress />
           </Box>
         ) : (
@@ -328,9 +241,7 @@ function FoodCategory() {
             pagination
             responsive
             striped
-            customStyles={
-              customStyles
-            }
+            customStyles={customStyles}
           />
         )}
       </div>
