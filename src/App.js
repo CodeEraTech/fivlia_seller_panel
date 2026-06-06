@@ -20,10 +20,22 @@ import UnapprovedProducts from "StoreRoutes/UnapprovedProducts";
 import { getMessaging, onMessage } from "firebase/messaging";
 import firebaseApp from "./firebaseConfig";
 import { toast } from "react-toastify";
+import { isFoodSellerFromStorage } from "utils/sellerType";
 
 function PrivateRoute({ element }) {
   const token = localStorage.getItem("token");
   return token ? element : <Navigate to="/seller-login" replace />;
+}
+
+function SellerTypeRoute({ element, foodOnly }) {
+  const token = localStorage.getItem("token");
+  if (!token) return <Navigate to="/seller-login" replace />;
+
+  const isFoodSeller = isFoodSellerFromStorage();
+  if (foodOnly && !isFoodSeller) return <Navigate to="/storecat" replace />;
+  if (foodOnly === false && isFoodSeller) return <Navigate to="/food-category" replace />;
+
+  return element;
 }
 
 
@@ -59,15 +71,15 @@ function App() {
         <Route path="/seller-login" element={<SellerLogin />} />
         <Route path="/dashboard1" element={<PrivateRoute element={<DashBoard />} />} />
         <Route path="/Wallet" element={<PrivateRoute element={<Wallet />} />} />
-        <Route path="/storecat" element={<PrivateRoute element={<StoreCategories />} />} />
-        <Route path="/food-category" element={<PrivateRoute element={<FoodCategory />} />} />
-        <Route path="/add-food-category" element={<PrivateRoute element={<AddStoreFoodCategory />} />} />
+        <Route path="/storecat" element={<SellerTypeRoute foodOnly={false} element={<StoreCategories />} />} />
+        <Route path="/food-category" element={<SellerTypeRoute foodOnly element={<FoodCategory />} />} />
+        <Route path="/add-food-category" element={<SellerTypeRoute foodOnly element={<AddStoreFoodCategory />} />} />
         <Route path="/sellerProduct" element={<PrivateRoute element={<SellerProduct />} />} />
         <Route path="/add-seller-product" element={<PrivateRoute element={<AddSellerProduct />}/>} />
         <Route path="/stock" element={<PrivateRoute element={<Stock />}/>} />
         <Route path="/Profile" element={<PrivateRoute element={<Profile />}/>} />
         <Route path="/coupons" element={<PrivateRoute element={<CouponManagement />}/>} />
-        <Route path="/addstorecat" element={<PrivateRoute element={<AddStoreCat />}/>} />
+        <Route path="/addstorecat" element={<SellerTypeRoute foodOnly={false} element={<AddStoreCat />}/>} />
         <Route path="/store-orders" element={<PrivateRoute element={<StoreOrder />}/>} />
         <Route path="/search-products" element={<PrivateRoute element={<SearchProduct />}/>} />
         <Route path="/unapproved-products" element={<PrivateRoute element={<UnapprovedProducts />}/>} />

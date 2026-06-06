@@ -16,6 +16,7 @@ import {
 
 import StoreRoutes from "route"; // Update this path if needed
 import { logoutSeller } from "utils/logoutSeller";
+import { isFoodSellerFromStorage } from "utils/sellerType";
 
 function StoreSidenav() {
   const storeName = localStorage.getItem("storeName") || "Fivlia";
@@ -25,7 +26,7 @@ function StoreSidenav() {
   const navigate = useNavigate();
   const closeSidenav = () => setMiniSidenav(dispatch, true);
 
-  const renderRoutes = StoreRoutes.map(({ type, name, key, icon, route }) => {
+  const renderRoutes = StoreRoutes(isFoodSellerFromStorage()).map(({ type, name, key, icon, route }) => {
     const active = location.pathname === route;
     if (type === "collapse") {
       if (key === "logout") {

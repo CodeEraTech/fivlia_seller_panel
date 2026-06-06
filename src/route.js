@@ -16,15 +16,9 @@ import Profile from "./StoreRoutes/Profile";
 import CouponManagement from "./StoreRoutes/coupon";
 import StoreOrder from "./StoreRoutes/StoreOrder";
 import DiscountIcon from "@mui/icons-material/Discount";
+import { isFoodSellerFromStorage } from "utils/sellerType";
 
-const sellFood = localStorage.getItem("sellFood")
-const businessType = localStorage.getItem("businessType")
-
-const isFoodSeller =
-  sellFood === "true" ||
-  businessType === "FSSAI";
-console.log("Seller Data:", sellFood, businessType);
-const StoreRoutes = [
+const StoreRoutes = (isFoodSeller = isFoodSellerFromStorage()) => [
   {
     type: "collapse",
     name: "Dashboard",

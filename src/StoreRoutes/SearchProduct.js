@@ -89,7 +89,7 @@ const SearchProduct = () => {
     setHasSearched(true);
     try {
       const res = await get(
-        `${ENDPOINTS.GET_EXISTING_PRODUCT_LIST}?q=${query}&page=${page}&limit=${limit}`
+        `${ENDPOINTS.GET_EXISTING_PRODUCT_LIST}?q=${query}&page=${page}&limit=${limit}&sellerId=${storeId}`
       );
       setProductResults(res.data?.products || []);
       setTotalRows(res.data?.totalCount || 0);

@@ -42,24 +42,38 @@ function FoodCategory() {
 
   const sellerId = localStorage.getItem("sellerId");
 
-  // ================= GET ALL FOODS =================
+  const getSellerFoodIds = (seller) =>
+    seller?.foodTypes?.map((item) => (typeof item === "object" ? item._id : item)) || [];
 
-  const fetchFoods = async () => {
+  // ================= GET SELLER FOODS =================
+
+  const fetchSellerFoods = async () => {
     try {
       setLoading(true);
 
-      const response = await get(ENDPOINTS.GET_FOOD);
+      const [foodsResponse, sellerResponse] = await Promise.all([
+        get(ENDPOINTS.GET_FOOD),
+        get(`${ENDPOINTS.GET_SELLER}?id=${sellerId}`),
+      ]);
 
-      setFoods(response.data || []);
+      const seller =
+        sellerResponse.data?.store ||
+        sellerResponse.data?.seller ||
+        sellerResponse.data;
+
+      setFoods(foodsResponse.data || []);
+      setSellerFoods(getSellerFoodIds(seller));
     } catch (error) {
       console.log(error);
+      setFoods([]);
+      setSellerFoods([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchFoods();
+    if (sellerId) fetchSellerFoods();
   }, []);
 
   // ================= REMOVE =================
@@ -79,8 +93,10 @@ function FoodCategory() {
 
   // ================= FILTER ONLY SELECTED =================
 
-  const filteredFoods = foods.filter((item) =>
-    item.name?.toLowerCase().includes(searchText.toLowerCase()),
+  const filteredFoods = foods.filter(
+    (item) =>
+      sellerFoods.includes(item._id) &&
+      item.name?.toLowerCase().includes(searchText.toLowerCase()),
   );
 
   // ================= TABLE =================

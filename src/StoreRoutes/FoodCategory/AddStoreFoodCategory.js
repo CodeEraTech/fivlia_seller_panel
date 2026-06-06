@@ -76,11 +76,14 @@ function AddFoodCategory() {
   const fetchSellerFoods =
     async () => {
       try {
+        if (!sellerId) return;
+
         const response = await get(
-          `${ENDPOINTS.GET_SELLER_PROFILE}/${sellerId}`
+          `${ENDPOINTS.GET_SELLER}?id=${sellerId}`
         );
 
         const seller =
+          response.data?.store ||
           response.data?.seller ||
           response.data;
 

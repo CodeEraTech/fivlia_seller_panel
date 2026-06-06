@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import "./Product.css";
 import ColorNamer from "color-namer";
 import { Button, Switch } from "@mui/material";
+import { isFoodSellerFromStorage } from "utils/sellerType";
 
 function AddSellerProduct() {
   const [controller] = useMaterialUIController();
@@ -93,9 +94,12 @@ function AddSellerProduct() {
   const [variantImages, setVariantImages] = useState({});
   const [addFilterValue, setAddFilterValue] = useState("");
   const [newfiltertype, setNewfilterType] = useState([]);
-  const [isFood, setIsFood] = useState(false);
+  const isFoodSeller = isFoodSellerFromStorage();
+  const [isFood, setIsFood] = useState(isFoodSeller);
   const [isVeg, setIsVeg] = useState(false);
   const [isNonVeg, setIsNonVeg] = useState(false);
+  const [foodTypes, setFoodTypes] = useState([]);
+  const [foodTypeId, setFoodTypeId] = useState("");
 
   const maxSize = 500 * 1024; // 500KB
 
@@ -125,6 +129,37 @@ function AddSellerProduct() {
       }
     };
     getCategory();
+
+    const fetchSellerFoodTypes = async () => {
+      if (!isFoodSeller) return;
+
+      const sellerId = localStorage.getItem("sellerId");
+      if (!sellerId) return;
+
+      try {
+        const [sellerResult, foodsResult] = await Promise.all([
+          fetch(`${process.env.REACT_APP_API_URL}/getSeller?id=${sellerId}`),
+          fetch(`${process.env.REACT_APP_API_URL}/food/get-active-food`),
+        ]);
+
+        const sellerData = await sellerResult.json();
+        const foodsData = await foodsResult.json();
+        const seller = sellerData.store || sellerData.seller || sellerData;
+        const sellerFoodIds =
+          seller?.foodTypes?.map((item) =>
+            typeof item === "object" ? item._id : item
+          ) || [];
+        const allowedFoods = (Array.isArray(foodsData) ? foodsData : []).filter((food) =>
+          sellerFoodIds.includes(food._id)
+        );
+
+        setFoodTypes(allowedFoods);
+        if (allowedFoods.length === 1) setFoodTypeId(allowedFoods[0]._id);
+      } catch (err) {
+        console.error("Error fetching seller food types:", err);
+      }
+    };
+    fetchSellerFoodTypes();
 
     const fetchBrands = async () => {
       try {
@@ -837,6 +872,19 @@ function AddSellerProduct() {
     }
     const sellerid = localStorage.getItem("sellerId");
     if (!sellerid) return navigate("/seller-login");
+
+    if (isFood) {
+      if (!foodTypeId) {
+        alert("Please select a food category.");
+        return;
+      }
+
+      if (!isVeg && !isNonVeg) {
+        alert("Please select Veg or Non-Veg.");
+        return;
+      }
+    }
+
     const formData = new FormData();
     formData.append("productName", name);
     formData.append("description", description);
@@ -846,6 +894,7 @@ function AddSellerProduct() {
     formData.append("sellerId", sellerid);
 
     if (isFood) {
+      formData.append("foodTypeId", foodTypeId);
       if (isVeg) {
         formData.append("isVeg", 1); // Send 1 if Veg is selected
       }
@@ -989,12 +1038,36 @@ function AddSellerProduct() {
               <label>
                 Is this a food product? <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
               </label>
-              <Switch checked={isFood} onChange={() => setIsFood(!isFood)} color="primary" />
+              <Switch
+                checked={isFood}
+                disabled
+                onChange={() => setIsFood(!isFood)}
+                color="primary"
+              />
             </div>
             <div className="row-section">
               <div className="background">
                 {isFood && (
                   <div className="row-section">
+                    {isFoodSeller && (
+                      <div className="input-container">
+                        <label>
+                          Food Category <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                        </label>
+                        <select
+                          className="input-field"
+                          value={foodTypeId}
+                          onChange={(e) => setFoodTypeId(e.target.value)}
+                        >
+                          <option value="">--Select Food Category--</option>
+                          {foodTypes.map((food) => (
+                            <option key={food._id} value={food._id}>
+                              {food.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div className="input-container">
                       <label>
                         Select Type <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
@@ -1003,7 +1076,10 @@ function AddSellerProduct() {
                         <input
                           type="checkbox"
                           checked={isVeg}
-                          onChange={() => setIsVeg(!isVeg)}
+                          onChange={() => {
+                            setIsVeg(!isVeg);
+                            if (!isVeg) setIsNonVeg(false);
+                          }}
                         />
                         Veg
                       </label>
@@ -1011,7 +1087,10 @@ function AddSellerProduct() {
                         <input
                           type="checkbox"
                           checked={isNonVeg}
-                          onChange={() => setIsNonVeg(!isNonVeg)}
+                          onChange={() => {
+                            setIsNonVeg(!isNonVeg);
+                            if (!isNonVeg) setIsVeg(false);
+                          }}
                         />
                         Non-Veg
                       </label>

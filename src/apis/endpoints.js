@@ -2,14 +2,14 @@ import db from "./firebaseDb.js";
 import { doc, getDoc } from "firebase/firestore";
 
 // `false` = current REST API flow, `true` = Firebase/Firestore flow.
-export const USE_FIREBASE = true;
+export const USE_FIREBASE = false;
 
 // const DEFAULT_API_BASE_URL = "https://api.fivlia.in";
 
-const DEFAULT_API_BASE_URL = "https://api.fivlia.com";
+// const DEFAULT_API_BASE_URL = "https://api.fivlia.com";
 // const DEFAULT_API_BASE_URL = "https://api.fivlia.co.in";
 // const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080";
-// const DEFAULT_API_BASE_URL = "http://localhost:8080";
+const DEFAULT_API_BASE_URL = "http://localhost:8080";
 
 
 let cachedUrl = null;
