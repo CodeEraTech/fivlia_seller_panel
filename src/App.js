@@ -78,6 +78,7 @@ function App() {
         <Route path="/add-seller-product" element={<PrivateRoute element={<AddSellerProduct />}/>} />
         <Route path="/stock" element={<PrivateRoute element={<Stock />}/>} />
         <Route path="/Profile" element={<PrivateRoute element={<Profile />}/>} />
+        <Route path="/offers" element={<PrivateRoute element={<CouponManagement />}/>} />
         <Route path="/coupons" element={<PrivateRoute element={<CouponManagement />}/>} />
         <Route path="/addstorecat" element={<SellerTypeRoute foodOnly={false} element={<AddStoreCat />}/>} />
         <Route path="/store-orders" element={<PrivateRoute element={<StoreOrder />}/>} />

@@ -63,6 +63,10 @@ export const ENDPOINTS = {
   GET_COUPONS: "/seller/get-coupons",
   EDIT_COUPON: "/seller/edit-seller-coupon",
   DELETE_COUPON: "/seller/delete-coupons",
+  CREATE_OFFER: "/seller/create-seller-coupon",
+  GET_OFFERS: "/seller/get-coupons",
+  EDIT_OFFER: "/seller/edit-seller-coupon",
+  DELETE_OFFER: "/seller/delete-coupons",
 
   EDIT_SELLER_PROFILE:"/editSellerProfile",
 

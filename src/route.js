@@ -86,10 +86,10 @@ const StoreRoutes = (isFoodSeller = isFoodSellerFromStorage()) => [
   },
   {
     type: "collapse",
-    name: "Offer Coupons",
-    key: "coupons",
+    name: "Offers",
+    key: "offers",
     icon: <DiscountIcon />,
-    route: "/coupons",
+    route: "/offers",
     component: <CouponManagement />,
   },
   {

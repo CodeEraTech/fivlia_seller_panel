@@ -1,704 +1,1228 @@
 import React, { useEffect, useState } from "react";
 import {
-  Button,
+  Alert,
+  Autocomplete,
   Box,
-  TextField,
-  Switch,
+  Button,
+  Card,
+  CardContent,
+  Chip,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  Grid,
+  IconButton,
   MenuItem,
+  Paper,
+  Stack,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import PreviewIcon from "@mui/icons-material/Preview";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import DataTable from "react-data-table-component";
-import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 import MDBox from "../components/MDBox";
 import { useMaterialUIController } from "../context";
-import { get, post, del } from "apis/apiClient";
+import { del, get, post } from "apis/apiClient";
 import { ENDPOINTS } from "apis/endpoints";
+import Swal from "sweetalert2";
 
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+const INITIAL_FORM = {
+  title: "",
+  offerType: "free_product",
+  limit: "",
+  basePercent: "",
+  selectedProducts: [],
+  freeProduct: null,
+  freeProductQuantity: "1",
+  discountScope: "entire_cart",
+  fromTo: "",
+  validDays: "7",
+  status: true,
+};
 
-/* ================= BUTTON STYLE ================= */
-const btnStyle = {
-  height: "44px",
-  minWidth: "150px",
-  backgroundColor: "#1976d2",
-  color: "#ffffff",
-  fontSize: "14px",
-  fontWeight: 600,
-  borderRadius: "6px",
-  marginLeft: "16px",
-  textTransform: "none",
-  boxShadow: "none",
-  "&:hover": {
-    backgroundColor: "#125ea2",
-    boxShadow: "none",
+const GUIDE_COPY = {
+  en: {
+    intro:
+      "Offers are applied automatically at checkout after approval. Customers do not need to enter a coupon code.",
+    points: [
+      "Free Product Offer: set a minimum order amount and choose the product customers will receive free.",
+      "Cart Discount Offer: set a discount percentage for the full cart or only for selected products.",
+      "Selected Products: choose the exact catalog products that should receive the discount.",
+      "Each new or edited offer is sent for approval before it becomes visible to customers.",
+    ],
   },
-  "&:disabled": {
-    backgroundColor: "#b0c4de",
-    color: "#ffffff",
+  hi: {
+    intro:
+      "मंजूरी के बाद ऑफर checkout पर अपने आप लग जाएगा। ग्राहक को coupon code डालने की जरूरत नहीं है।",
+    points: [
+      "Free Product Offer: minimum order amount डालें और free मिलने वाला product चुनें।",
+      "Entire cart discount: पूरे cart पर discount देने के लिए minimum amount जरूरी है।",
+      "Selected products discount: सिर्फ चुने हुए products पर discount लगेगा, minimum amount नहीं पूछेगा।",
+      "नया या edit किया हुआ offer पहले approval के लिए जाएगा।",
+    ],
   },
 };
 
-/* ================= TABLE STYLES ================= */
-const customStyles = {
+const TABLE_STYLES = {
   headCells: {
     style: {
-      fontSize: "13px",
-      fontWeight: 600,
-      backgroundColor: "#f5f7fa",
-      color: "#344767",
-      paddingTop: "10px",
-      paddingBottom: "10px",
+      fontSize: "14px",
+      fontWeight: "bold",
+      backgroundColor: "#3c95ef",
+      color: "white",
+      minHeight: "50px",
     },
   },
   cells: {
     style: {
-      fontSize: "13px",
-      paddingTop: "10px",
-      paddingBottom: "10px",
-      alignItems: "center",
-    },
-  },
-  rows: {
-    style: {
-      minHeight: "48px",
+      fontSize: "14px",
+      paddingTop: "14px",
+      paddingBottom: "14px",
     },
   },
 };
 
-function CouponManagement() {
-  const [controller] = useMaterialUIController();
-  const { miniSidenav } = controller;
+const formatMoney = (value) =>
+  new Intl.NumberFormat("en-IN").format(Number(value || 0));
 
-  const storeId = localStorage.getItem("sellerId");
+const getProductId = (product) =>
+  typeof product === "string" || typeof product === "number"
+    ? String(product)
+    : product?._id?.toString?.() ||
+      product?.productId?.toString?.() ||
+      product?.id?.toString?.() ||
+      "";
 
-  const [coupons, setCoupons] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
+const getProductLabel = (product) =>
+  product?.productName ||
+  product?.name ||
+  product?.title ||
+  product?.productTitle ||
+  "Product";
 
-  /* ================= FORM ================= */
-  const [form, setForm] = useState({
-    title: "",
-    offer: "",
-    limit: "",
-    fromDate: "",
-    validDays: "",
+const toDateInput = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+};
+
+const getApprovalColor = (status) => {
+  if (status === "approved") return "success";
+  if (status === "rejected") return "error";
+  return "warning";
+};
+
+const normalizeTier = (tier) => {
+  const minAmount = Number(tier?.minAmount);
+  const percent = Number(tier?.percent);
+
+  if (!Number.isFinite(minAmount) || minAmount <= 0) return null;
+  if (!Number.isFinite(percent) || percent <= 0) return null;
+
+  return { minAmount, percent };
+};
+
+const getValidTiers = (tiers = []) =>
+  tiers
+    .map(normalizeTier)
+    .filter(Boolean)
+    .sort((a, b) => a.minAmount - b.minAmount);
+
+const getSelectedProducts = (entry) => {
+  if (Array.isArray(entry?.selectedProducts)) return entry.selectedProducts;
+  if (Array.isArray(entry?.productId)) return entry.productId;
+  return [];
+};
+
+const getFreeProduct = (entry) => entry?.freeProduct || entry?.freeProductId || null;
+
+const matchProductOption = (value, options = []) => {
+  const id = getProductId(value);
+  if (!id) return null;
+
+  return (
+    options.find((option) => getProductId(option) === id) ||
+    (typeof value === "object" && value !== null
+      ? { ...value, _id: id, productName: getProductLabel(value) }
+      : { _id: id, productName: "Product" })
+  );
+};
+
+const getOfferTiers = (entry) => {
+  if (entry && Object.prototype.hasOwnProperty.call(entry, "basePercent")) {
+    const baseTier = normalizeTier({
+      minAmount: entry.limit,
+      percent: entry.basePercent,
+    });
+    const extraTiers = getValidTiers(Array.isArray(entry.tiers) ? entry.tiers : []);
+    return [baseTier, ...extraTiers]
+      .filter(Boolean)
+      .sort((a, b) => a.minAmount - b.minAmount);
+  }
+
+  const existingTiers = getValidTiers(Array.isArray(entry?.tiers) ? entry.tiers : []);
+  if (existingTiers.length) return existingTiers;
+
+  const fallbackTier = normalizeTier({
+    minAmount: entry?.limit,
+    percent: entry?.offer ?? entry?.discountPercent,
   });
 
-  /* ================= IMAGES ================= */
-  const [images, setImages] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  return fallbackTier ? [fallbackTier] : [];
+};
 
-  const [sliderImage, setSliderImage] = useState(null);
-  const [sliderImagePreview, setSliderImagePreview] = useState(null);
+const buildOfferPreviewText = (entry) => {
+  if (!entry) return "Offer preview";
 
-  /* ================= EDIT MODAL ================= */
-  const [editOpen, setEditOpen] = useState(false);
-  const [editingCouponId, setEditingCouponId] = useState(null);
-  const [editCoupon, setEditCoupon] = useState(null);
+  const minimumAmount = Number(entry.limit || 0);
+  const hasMinimum = Number.isFinite(minimumAmount) && minimumAmount > 0;
+  const minimum = formatMoney(minimumAmount);
+  const freeProduct = getFreeProduct(entry);
+  const freeQuantity = Number(entry.freeProductQuantity || 1) || 1;
+  const selectedProducts = getSelectedProducts(entry);
+  const selectedNames = selectedProducts.map(getProductLabel).filter(Boolean);
 
-  /* ================= FETCH ================= */
-  const fetchCoupons = async () => {
+  if (entry.offerType === "free_product") {
+    return `Spend ₹${minimum} and get ${freeQuantity} ${getProductLabel(
+      freeProduct,
+    )} free`;
+  }
+
+  const scopeLabel =
+    entry.discountScope === "selected_products"
+      ? selectedNames.length
+        ? `on ${selectedNames.slice(0, 2).join(", ")}${
+            selectedNames.length > 2
+              ? ` +${selectedNames.length - 2} more`
+              : ""
+          }`
+        : "on selected products"
+      : "on entire cart";
+  const tiers = getOfferTiers(entry);
+  const minimumText =
+    entry.discountScope === "entire_cart" && hasMinimum
+      ? ` above ₹${minimum}`
+      : "";
+
+  if (tiers.length > 1) {
+    const topTier = tiers[tiers.length - 1];
+    return `Get up to ${topTier.percent}% off ${scopeLabel}${minimumText}`;
+  }
+
+  const percent =
+    tiers[0]?.percent ||
+    Number(entry.basePercent || entry.offer || entry.discountPercent || 0);
+
+  return `Get ${percent}% off ${scopeLabel}${minimumText}`;
+};
+
+const normalizeOfferToForm = (offer, productOptions = []) => {
+  const tiers = getOfferTiers(offer);
+  const baseTier = tiers[0] || null;
+  const selectedProducts = getSelectedProducts(offer)
+    .map((item) => matchProductOption(item, productOptions))
+    .filter(Boolean);
+  const freeProduct = getFreeProduct(offer)
+    ? matchProductOption(getFreeProduct(offer), productOptions)
+    : null;
+
+  return {
+    ...INITIAL_FORM,
+    title: offer?.title || "",
+    offerType:
+      offer?.offerType || (getFreeProduct(offer) ? "free_product" : "cart_discount"),
+    limit: offer?.limit != null ? String(offer.limit) : "",
+    basePercent: baseTier ? String(baseTier.percent) : String(offer?.offer ?? ""),
+    selectedProducts,
+    freeProduct,
+    freeProductQuantity:
+      offer?.freeProductQuantity != null ? String(offer.freeProductQuantity) : "1",
+    discountScope:
+      offer?.discountScope ||
+      (selectedProducts.length ? "selected_products" : "entire_cart"),
+    fromTo: toDateInput(offer?.fromTo),
+    validDays: offer?.validDays != null ? String(offer.validDays) : "7",
+    status: offer?.status ?? true,
+  };
+};
+
+function CouponManagement() {
+  const navigate = useNavigate();
+  const [controller] = useMaterialUIController();
+  const { miniSidenav } = controller;
+  const storeId = localStorage.getItem("sellerId");
+
+  const [guideLanguage, setGuideLanguage] = useState("en");
+  const [modalPanel, setModalPanel] = useState("preview");
+  const [offers, setOffers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [offersLoading, setOffersLoading] = useState(false);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editingOfferId, setEditingOfferId] = useState(null);
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [previewOffer, setPreviewOffer] = useState(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const productOptions = products.map((product) => ({
+    ...product,
+    _id: getProductId(product),
+    productName: getProductLabel(product),
+  }));
+
+  const shouldAskMinimumAmount =
+    form.offerType === "free_product" ||
+    (form.offerType === "cart_discount" &&
+      form.discountScope === "entire_cart");
+
+  const offerMetrics = {
+    total: offers.length,
+    active: offers.filter((offer) => offer.status).length,
+    pending: offers.filter((offer) => offer.approvalStatus === "pending").length,
+  };
+
+  useEffect(() => {
+    if (!storeId) {
+      navigate("/seller-login", { replace: true });
+    }
+  }, [navigate, storeId]);
+
+  const fetchProducts = async () => {
     if (!storeId) return;
-    setLoading(true);
+
+    setProductsLoading(true);
     try {
-      const res = await get(`${ENDPOINTS.GET_COUPONS}/${storeId}`);
-      setCoupons(res.data.coupons || []);
-    } catch (err) {
-      console.error(err);
-      setCoupons([]);
+      const params = new URLSearchParams({
+        sellerId: storeId,
+        page: 1,
+        limit: 500,
+        search: "",
+      });
+      const response = await get(
+        `${ENDPOINTS.GET_SELLER_PRODUCTS}?${params.toString()}`,
+        { authRequired: true },
+      );
+      setProducts(response.data.products || []);
+    } catch (error) {
+      console.error("Failed to fetch seller products", error);
+      setProducts([]);
     } finally {
-      setLoading(false);
+      setProductsLoading(false);
+    }
+  };
+
+  const fetchOffers = async () => {
+    if (!storeId) return;
+
+    setOffersLoading(true);
+    try {
+      const response = await get(`${ENDPOINTS.GET_COUPONS}/${storeId}`, {
+        authRequired: true,
+      });
+      setOffers(response.data.coupons || response.data.offers || []);
+    } catch (error) {
+      console.error("Failed to fetch offers", error);
+      setOffers([]);
+      Swal.fire(
+        "Load failed",
+        error.response?.data?.message || "Could not load offers right now.",
+        "error",
+      );
+    } finally {
+      setOffersLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCoupons();
+    if (!storeId) return;
+    fetchProducts();
+    fetchOffers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
-  /* ================= IMAGE VALIDATION ================= */
-  const handleImageChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-
-    img.onload = () => {
-      if (img.width !== 1280 || img.height !== 540) {
-        Swal.fire("Invalid Image", "Image must be 1280 × 540", "error");
-        return;
-      }
-
-      setImages(file);
-      setImagePreview(img.src);
-    };
+  const openAddModal = () => {
+    setEditingOfferId(null);
+    setForm(INITIAL_FORM);
+    setModalPanel("preview");
+    setOfferModalOpen(true);
   };
 
-  /* ================= SLIDER IMAGE (512x512) ================= */
-  const handleSliderImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-
-    img.onload = () => {
-      if (img.width !== 512 || img.height !== 512) {
-        Swal.fire("Invalid Image", "Slider image must be 512 × 512", "error");
-        return;
-      }
-
-      setSliderImage(file);
-      setSliderImagePreview(img.src);
-    };
+  const closeOfferModal = () => {
+    if (saving) return;
+    setOfferModalOpen(false);
+    setEditingOfferId(null);
+    setForm(INITIAL_FORM);
   };
 
-  /* ================= CREATE ================= */
-  const handleCreateCoupon = async () => {
+  const handleEdit = (offer) => {
+    setEditingOfferId(offer._id);
+    setForm(normalizeOfferToForm(offer, productOptions));
+    setModalPanel("preview");
+    setOfferModalOpen(true);
+  };
+
+  const handleOfferTypeChange = (offerType) => {
+    setForm((prev) => ({
+      ...prev,
+      offerType,
+    }));
+  };
+
+  const handleDiscountScopeChange = (discountScope) => {
+    setForm((prev) => ({
+      ...prev,
+      discountScope,
+      selectedProducts:
+        discountScope === "selected_products" ? prev.selectedProducts : [],
+    }));
+  };
+
+  const validateForm = () => {
+    if (!form.fromTo) {
+      Swal.fire("Missing field", "Please choose a start date.", "warning");
+      return false;
+    }
+
+    if (!form.validDays || Number(form.validDays) <= 0) {
+      Swal.fire("Missing field", "Please enter valid days.", "warning");
+      return false;
+    }
+
+    if (form.offerType === "free_product") {
+      if (!form.limit || Number(form.limit) <= 0) {
+        Swal.fire("Missing field", "Please enter a valid minimum order amount.", "warning");
+        return false;
+      }
+
+      if (!form.freeProduct) {
+        Swal.fire("Missing field", "Please choose the free product.", "warning");
+        return false;
+      }
+
+      if (!form.freeProductQuantity || Number(form.freeProductQuantity) <= 0) {
+        Swal.fire("Missing field", "Please enter a valid free quantity.", "warning");
+        return false;
+      }
+
+      return true;
+    }
+
     if (
-      !form.title ||
-      !form.offer ||
-      !form.limit ||
-      !form.fromDate ||
-      !form.validDays
+      form.discountScope === "entire_cart" &&
+      (!form.limit || Number(form.limit) <= 0)
     ) {
-      Swal.fire("Missing Fields", "Fill all fields", "warning");
-      return;
+      Swal.fire("Missing field", "Please enter a valid minimum order amount.", "warning");
+      return false;
     }
 
-    const start = new Date(form.fromDate);
-    const expireDate = new Date(start);
-    expireDate.setDate(start.getDate() + Number(form.validDays));
-
-    if (expireDate <= new Date()) {
-      Swal.fire("Invalid Date", "Expiry must be future", "warning");
-      return;
+    if (!form.basePercent || Number(form.basePercent) <= 0) {
+      Swal.fire("Missing field", "Please enter a valid discount percentage.", "warning");
+      return false;
     }
 
+    if (
+      form.discountScope === "selected_products" &&
+      !form.selectedProducts.length
+    ) {
+      Swal.fire(
+        "Missing field",
+        "Please select at least one product for selected product offers.",
+        "warning",
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const buildPayload = () => {
+    const selectedIds = form.selectedProducts.map(getProductId).filter(Boolean);
+    const offerValue = Number(form.basePercent) || 0;
+
+    return {
+      storeId,
+      title: form.title.trim() || buildOfferPreviewText(form),
+      offerType: form.offerType,
+      discountScope:
+        form.offerType === "free_product" ? "entire_cart" : form.discountScope,
+      offer: form.offerType === "free_product" ? 0 : offerValue,
+      limit:
+        form.offerType === "free_product" ||
+        form.discountScope === "entire_cart"
+          ? Number(form.limit) || 0
+          : 0,
+      tiers: [],
+      productId:
+        form.offerType === "free_product" ||
+        form.discountScope !== "selected_products"
+          ? []
+          : selectedIds,
+      freeProductId:
+        form.offerType === "free_product" ? getProductId(form.freeProduct) : null,
+      freeProductQuantity:
+        form.offerType === "free_product"
+          ? Number(form.freeProductQuantity) || 1
+          : 1,
+      fromTo: form.fromTo,
+      validDays: Number(form.validDays) || 0,
+      status: Boolean(form.status),
+    };
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) return;
+
+    const payload = buildPayload();
+    const wasEditing = Boolean(editingOfferId);
+
+    setSaving(true);
     try {
-      setCreating(true);
-      const data = new FormData();
+      const endpoint = editingOfferId
+        ? `${ENDPOINTS.EDIT_OFFER}/${editingOfferId}`
+        : ENDPOINTS.CREATE_OFFER;
 
-      data.append("storeId", storeId);
-      data.append("title", form.title);
-      data.append("offer", Number(form.offer));
-      data.append("limit", Number(form.limit));
-      data.append("fromTo", form.fromDate);
-      data.append("validDays", form.validDays);
-      data.append("expireDate", expireDate.toISOString());
-
-      if (images) {
-        data.append("image", images);
-      }
-
-      if (sliderImage) {
-        data.append("file", sliderImage); // slider (512x512)
-      }
-
-      await post(ENDPOINTS.CREATE_COUPON, data);
-
-      Swal.fire("Success", "Coupon created", "success");
-      setForm({ title: "", offer: "", limit: "", fromDate: "", validDays: "" });
-      setImages(null);
-      setImagePreview(null);
-      setSliderImage(null);
-      setSliderImagePreview(null);
-      fetchCoupons();
-    } catch {
-      Swal.fire("Error", "Server error", "error");
+      await post(endpoint, payload, { authRequired: true });
+      await fetchOffers();
+      closeOfferModal();
+      Swal.fire(
+        "Success",
+        wasEditing ? "Offer updated successfully." : "Offer created successfully.",
+        "success",
+      );
+    } catch (error) {
+      console.error("Failed to save offer", error);
+      Swal.fire("Error", error.response?.data?.message || "Save failed", "error");
     } finally {
-      setCreating(false);
+      setSaving(false);
     }
   };
 
-  const handleDeleteCoupon = async (id) => {
+  const handleDelete = async (offerId) => {
     const confirm = await Swal.fire({
-      title: "Delete Coupon?",
-      text: "This cannot be undone",
+      title: "Delete offer?",
+      text: "This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d32f2f",
       confirmButtonText: "Delete",
+      confirmButtonColor: "#d32f2f",
     });
 
     if (!confirm.isConfirmed) return;
 
     try {
-      await del(`${ENDPOINTS.DELETE_COUPON}/${id}`); // or use delete() if you have it
-      Swal.fire("Deleted", "Coupon removed", "success");
-      fetchCoupons();
-    } catch {
+      await del(`${ENDPOINTS.DELETE_OFFER}/${offerId}`, { authRequired: true });
+      await fetchOffers();
+      Swal.fire("Deleted", "Offer removed.", "success");
+    } catch (error) {
+      console.error("Failed to delete offer", error);
       Swal.fire("Error", "Delete failed", "error");
     }
   };
 
-  /* ================= TOGGLE ================= */
-  const handleToggleStatus = async (coupon) => {
-    if (new Date(coupon.expireDate) <= new Date() && !coupon.status) {
-      Swal.fire("Expired", "Cannot activate expired coupon", "warning");
+  const handleToggleStatus = async (offer) => {
+    const expireDate = offer?.expireDate ? new Date(offer.expireDate) : null;
+    if (expireDate && expireDate <= new Date() && !offer.status) {
+      Swal.fire("Expired", "You cannot re-enable an expired offer.", "warning");
       return;
     }
 
-    await post(`${ENDPOINTS.EDIT_COUPON}/${coupon._id}`, {
-      status: !coupon.status,
-    });
-    fetchCoupons();
-  };
-
-  /* ================= EDIT ================= */
-  const openEditModal = (coupon) => {
-    const locked =
-      coupon.approvalStatus === "approved" &&
-      new Date(coupon.expireDate) > new Date();
-
-    if (locked) {
-      Swal.fire("Locked", "Approved active coupon cannot be edited", "warning");
-      return;
+    try {
+      await post(
+        `${ENDPOINTS.EDIT_OFFER}/${offer._id}`,
+        { status: !offer.status },
+        { authRequired: true },
+      );
+      await fetchOffers();
+    } catch (error) {
+      console.error("Failed to toggle status", error);
+      Swal.fire("Error", "Status update failed", "error");
     }
-
-    setEditingCouponId(coupon._id);
-    setEditCoupon({
-      title: coupon.title,
-      offer: coupon.offer,
-      limit: coupon.limit,
-      fromTo: coupon.fromTo?.split("T")[0],
-      validDays: coupon.validDays,
-      expireDate: coupon.expireDate?.split("T")[0],
-    });
-    setEditOpen(true);
   };
 
-  const handleEditSave = async () => {
-    await post(`${ENDPOINTS.EDIT_COUPON}/${editingCouponId}`, editCoupon);
-    setEditOpen(false);
-    fetchCoupons();
+  const renderOfferTypeCard = (value, title, description, icon) => {
+    const active = form.offerType === value;
+
+    return (
+      <Card
+        onClick={() => handleOfferTypeChange(value)}
+        sx={{
+          cursor: "pointer",
+          borderRadius: 2,
+          border: "1px solid",
+          borderColor: active ? "#3c95ef" : "divider",
+          boxShadow: active ? "0 4px 14px rgba(60, 149, 239, 0.18)" : "none",
+        }}
+      >
+        <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Box
+              sx={{
+                width: 42,
+                height: 42,
+                borderRadius: 1.5,
+                display: "grid",
+                placeItems: "center",
+                bgcolor: active ? "#3c95ef" : "grey.100",
+                color: active ? "white" : "text.secondary",
+              }}
+            >
+              {icon}
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={800}>
+                {title}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {description}
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+    );
   };
 
-  const isExpired = (row) => new Date(row.expireDate) <= new Date();
+  const renderPreviewPanel = (entry = form) => {
+    const previewText = buildOfferPreviewText(entry);
+    const tiers = getOfferTiers(entry);
+    const freeProduct = getFreeProduct(entry);
+    const selectedProducts = getSelectedProducts(entry);
+    const showMinimumChip =
+      entry.offerType === "free_product" ||
+      (entry.offerType === "cart_discount" &&
+        entry.discountScope === "entire_cart" &&
+        Number(entry.limit || 0) > 0);
 
-  /* ================= TABLE COLUMNS ================= */
-  const columns = [
-    { name: "Sr", selector: (_, i) => i + 1, width: "60px", center: true },
-    { name: "Title", selector: (r) => r.title, grow: 2, wrap: true },
+    return (
+      <Stack spacing={1.5}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "divider",
+            bgcolor: "#f8fbff",
+          }}
+        >
+          <Typography variant="caption" color="text.secondary">
+            Customer preview
+          </Typography>
+          <Typography variant="subtitle1" fontWeight={800} mt={0.5}>
+            {entry.title || previewText}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mt={0.75}>
+            {previewText}
+          </Typography>
+        </Paper>
+
+        <Grid container spacing={1}>
+          {showMinimumChip && (
+            <Grid item xs={6}>
+              <Chip
+                label={`Min ₹${formatMoney(entry.limit)}`}
+                variant="outlined"
+                sx={{ width: "100%", justifyContent: "center" }}
+              />
+            </Grid>
+          )}
+          <Grid item xs={showMinimumChip ? 6 : 12}>
+            <Chip
+              label={
+                entry.offerType === "free_product"
+                  ? `${entry.freeProductQuantity || 1} free`
+                  : `${tiers[0]?.percent || entry.basePercent || entry.offer || 0}% off`
+              }
+              variant="outlined"
+              sx={{ width: "100%", justifyContent: "center" }}
+            />
+          </Grid>
+        </Grid>
+
+        {entry.offerType === "free_product" ? (
+          <Alert severity="success">
+            Free item: {entry.freeProductQuantity || 1} x {getProductLabel(freeProduct)}
+          </Alert>
+        ) : (
+          <Alert severity="info">
+            Applies to{" "}
+            {entry.discountScope === "selected_products"
+              ? `${selectedProducts.length || 0} selected product(s)`
+              : "the entire cart"}
+          </Alert>
+        )}
+      </Stack>
+    );
+  };
+
+  const renderHowItWorksPanel = () => {
+    const guide = GUIDE_COPY[guideLanguage];
+
+    return (
+      <Stack spacing={1.5}>
+        <Stack direction="row" spacing={1}>
+          <Button
+            size="small"
+            style={guideLanguage === "hi" ? {color: "black"} : {color: "white"}}
+            variant={guideLanguage === "en" ? "contained" : "outlined"}
+            onClick={() => setGuideLanguage("en")}
+          >
+            English
+          </Button>
+          <Button
+            size="small"
+            style={guideLanguage === "hi" ? {color: "white"} : {color: "black"}}
+            variant={guideLanguage === "hi" ? "contained" : "outlined"}
+            onClick={() => setGuideLanguage("hi")}
+          >
+            Hindi
+          </Button>
+        </Stack>
+
+        <Alert severity="info">{guide.intro}</Alert>
+
+        {guide.points.map((point) => (
+          <Typography key={point} variant="body2" color="text.secondary">
+            {point}
+          </Typography>
+        ))}
+      </Stack>
+    );
+  };
+
+  const offerColumns = [
     {
       name: "Offer",
-      selector: (r) => `${r.offer}%`,
-      width: "90px",
-      center: true,
-    },
-    { name: "Limit", selector: (r) => r.limit, width: "90px", center: true },
-    {
-      name: "From",
-      selector: (r) =>
-        r.fromTo ? new Date(r.fromTo).toLocaleDateString() : "-",
-      width: "120px",
-      center: true,
-    },
-    {
-      name: "Days",
-      selector: (r) => r.validDays || "-",
-      width: "80px",
-      center: true,
-    },
-    {
-      name: "Image",
-      width: "110px",
-      center: true,
-      cell: (r) =>
-        r.image ? (
-          <img
-            src={`${process.env.REACT_APP_IMAGE_LINK}${r.image}`}
-            alt=""
-            style={{
-              width: 72,
-              height: 36,
-              objectFit: "cover",
-              borderRadius: 4,
-              border: "1px solid #ddd",
-            }}
-          />
-        ) : (
-          "-"
-        ),
-    },
-    {
-      name: "Slider Image",
-      width: "110px",
-      center: true,
-      cell: (r) =>
-        r.image ? (
-          <img
-            src={`${process.env.REACT_APP_IMAGE_LINK}${r.sliderImage}`}
-            alt=""
-            style={{
-              width: 72,
-              height: 36,
-              objectFit: "cover",
-              borderRadius: 4,
-              border: "1px solid #ddd",
-            }}
-          />
-        ) : (
-          "-"
-        ),
-    },
-    {
-      name: "Approval",
-      width: "110px",
-      center: true,
+      grow: 2.5,
       cell: (row) => {
-        let color = "#999";
-
-        if (row.approvalStatus === "approved") color = "#2e7d32";
-        if (row.approvalStatus === "rejected") color = "#d32f2f";
-        if (row.approvalStatus === "pending") color = "#ed6c02";
+        const isFreeProduct = row.offerType === "free_product";
+        const benefit = buildOfferPreviewText(row);
 
         return (
-          <span style={{ fontWeight: 600, color }}>{row.approvalStatus}</span>
-        );
-      },
-    },
-
-    {
-      name: "Expiry",
-      selector: (r) => new Date(r.expireDate).toLocaleDateString(),
-      width: "120px",
-      center: true,
-    },
-    {
-      name: "Status",
-      width: "120px",
-      center: true,
-      cell: (row) => {
-        const expired = isExpired(row);
-
-        if (expired) {
-          return (
-            <span style={{ color: "#d32f2f", fontWeight: 600 }}>Expired</span>
-          );
-        }
-
-        return (
-          <Switch
-            checked={row.status}
-            onChange={() => handleToggleStatus(row)}
-          />
-        );
-      },
-    },
-
-    {
-      name: "Action",
-      width: "110px",
-      center: true,
-      cell: (row) => {
-        const locked =
-          row.approvalStatus === "approved" &&
-          new Date(row.expireDate) > new Date();
-
-        return (
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button
-              size="small"
-              disabled={locked}
-              sx={{ minWidth: 36 }}
-              onClick={() => openEditModal(row)}
-            >
-              <EditIcon fontSize="small" />
-            </Button>
-
-            <Button
-              size="small"
-              color="error"
-              sx={{ minWidth: 36 }}
-              onClick={() => handleDeleteCoupon(row._id)}
-            >
-              <DeleteIcon fontSize="small" />
-            </Button>
+          <Box py={1}>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+              <Typography variant="subtitle2" fontWeight={800}>
+                {row.title || benefit}
+              </Typography>
+              <Chip
+                size="small"
+                label={isFreeProduct ? "Free Product" : "Cart Discount"}
+                color={isFreeProduct ? "info" : "primary"}
+                variant="outlined"
+              />
+            </Stack>
+            <Typography variant="body2" color="text.secondary" mt={0.5}>
+              {benefit}
+            </Typography>
           </Box>
         );
       },
     },
+    {
+      name: "Minimum",
+      width: "130px",
+      selector: (row) =>
+        row.discountScope === "selected_products" || Number(row.limit || 0) <= 0
+          ? "No minimum"
+          : `₹${formatMoney(row.limit)}`,
+    },
+    {
+      name: "Status",
+      width: "160px",
+      cell: (row) => (
+        <Stack spacing={0.75}>
+          <Chip
+            size="small"
+            label={row.approvalStatus || "pending"}
+            color={getApprovalColor(row.approvalStatus)}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={Boolean(row.status)}
+                onChange={() => handleToggleStatus(row)}
+              />
+            }
+            label={row.status ? "Active" : "Inactive"}
+          />
+        </Stack>
+      ),
+    },
+    {
+      name: "Actions",
+      width: "170px",
+      right: true,
+      cell: (row) => (
+        <Stack direction="row" spacing={0.75} justifyContent="flex-end">
+          <Tooltip title="Preview">
+            <IconButton
+              size="small"
+              color="info"
+              onClick={() => setPreviewOffer(row)}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit">
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => handleEdit(row)}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => handleDelete(row._id)}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
   ];
 
-  /* ================= RENDER ================= */
   return (
-    <MDBox
-      p={2}
-      sx={{
-        marginLeft: miniSidenav ? "80px" : "260px",
-        marginRight: "20px",
-      }}
-    >
-      <h2>Seller Coupon Management</h2>
-
-      {/* CREATE FORM */}
-      <Box
-        sx={{
-          background: "#fff",
-          p: 2,
-          borderRadius: 2,
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr 1fr 1.5fr 1fr 1.5fr",
-          gap: 2,
-          alignItems: "center",
-        }}
-      >
-        <TextField
-          label="Title"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-        />
-        <TextField
-          label="Offer (%)"
-          type="number"
-          value={form.offer}
-          onChange={(e) => setForm({ ...form, offer: e.target.value })}
-        />
-        <TextField
-          label="Limit"
-          type="number"
-          value={form.limit}
-          onChange={(e) => setForm({ ...form, limit: e.target.value })}
-        />
-        <TextField
-          type="date"
-          label="From Date"
-          InputLabelProps={{ shrink: true }}
-          value={form.fromDate}
-          onChange={(e) => setForm({ ...form, fromDate: e.target.value })}
-        />
-        <TextField
-          select
-          label="Valid Days"
-          value={form.validDays}
-          InputProps={{
-            sx: {
-              height: 44,
-              alignItems: "center",
-            },
-          }}
-          onChange={(e) => setForm({ ...form, validDays: e.target.value })}
-        >
-          <MenuItem value={1}>1 Day</MenuItem>
-          <MenuItem value={3}>3 Days</MenuItem>
-          <MenuItem value={7}>7 Days</MenuItem>
-        </TextField>
-        <Button
-          component="label"
-          variant="outlined"
-          sx={{
-            height: "44px",
-            borderColor: "#1976d2",
-            color: "#1976d2",
-            fontWeight: 600,
-            textTransform: "none",
-            "&:hover": {
-              borderColor: "#125ea2",
-              backgroundColor: "rgba(25,118,210,0.04)",
-            },
+     <MDBox
+          p={2}
+          pt={ { xs: 2, xl: 3 } }
+          style={{
+            marginLeft: miniSidenav ? "100px" : "270px",
+            transition: "margin-left 0.3s ease",
+            position: "relative",
           }}
         >
-          Upload Images
-          <input
-            hidden
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-          />
-        </Button>
-
-        <Button
-          component="label"
-          variant="outlined"
-          sx={{
-            height: "44px",
-            borderColor: "#1976d2",
-            color: "#1976d2",
-            fontWeight: 600,
-            textTransform: "none",
-            "&:hover": {
-              borderColor: "#125ea2",
-              backgroundColor: "rgba(25,118,210,0.04)",
-            },
-          }}
+      <Stack spacing={2.5}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "stretch", sm: "center" }}
+          spacing={2}
         >
-          Upload Slider Image (512×512)
-          <input
-            hidden
-            type="file"
-            accept="image/*"
-            onChange={handleSliderImageChange}
-          />
-        </Button>
-      </Box>
+          <Box>
+            <Typography variant="h4" fontWeight={800}>
+              Offers
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Manage automatic free product and cart discount offers.
+            </Typography>
+          </Box>
 
-      <Button
-        sx={{ ...btnStyle, mt: 2 }}
-        disabled={creating}
-        onClick={handleCreateCoupon}
-      >
-        {creating ? "Creating..." : "Create"}
-      </Button>
-
-      {imagePreview && (
-        <Box
-          sx={{
-            mt: 2,
-            display: "flex",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          {imagePreview && (
-            <Box
-              sx={{
-                width: 128,
-                height: 72,
-                border: "1px solid #ddd",
-                borderRadius: 1,
-                overflow: "hidden",
-              }}
+          <Stack direction="row" spacing={1} justifyContent={{ xs: "flex-start", sm: "flex-end" }}>
+            <Button
+              variant="outlined"
+              style={{color: "black"}}
+              startIcon={<HelpOutlineIcon />}
+              onClick={() => setHelpOpen(true)}
             >
-              <img
-                src={imagePreview}
-                alt="preview"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-            </Box>
-          )}
-        </Box>
-      )}
-      {sliderImagePreview && (
-        <Box
+              How it works
+            </Button>
+            <Button variant="contained" style={{color: "white"}} startIcon={<AddIcon />} onClick={openAddModal}>
+              Add offer
+            </Button>
+          </Stack>
+        </Stack>
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={4}>
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
+              <Typography variant="caption" color="text.secondary">
+                Total offers
+              </Typography>
+              <Typography variant="h5" fontWeight={800}>
+                {offerMetrics.total}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
+              <Typography variant="caption" color="text.secondary">
+                Active
+              </Typography>
+              <Typography variant="h5" fontWeight={800}>
+                {offerMetrics.active}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
+              <Typography variant="caption" color="text.secondary">
+                Pending approval
+              </Typography>
+              <Typography variant="h5" fontWeight={800}>
+                {offerMetrics.pending}
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        <Paper
+          elevation={0}
           sx={{
-            width: 72,
-            height: 72,
-            border: "1px solid #ddd",
-            borderRadius: 1,
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "divider",
             overflow: "hidden",
           }}
         >
-          <img
-            src={sliderImagePreview}
-            alt="slider-preview"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
+          <Box
+            sx={{
+              px: 2,
+              py: 1.5,
+              bgcolor: "#f8f9fa",
+              borderBottom: "1px solid",
+              borderColor: "divider",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 2,
+              flexWrap: "wrap",
             }}
-          />
-        </Box>
-      )}
-
-      {/* TABLE */}
-      <Box sx={{ background: "#fff", mt: 3, p: 2, borderRadius: 2 }}>
-        <DataTable
-          columns={columns}
-          data={coupons}
-          customStyles={customStyles}
-          pagination
-          striped
-          dense
-          conditionalRowStyles={[
-            {
-              when: (row) => isExpired(row),
-              style: { opacity: 0.6 },
-            },
-          ]}
-        />
-      </Box>
-
-      {/* EDIT MODAL */}
-      <Dialog
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Edit Coupon</DialogTitle>
-
-        <DialogContent
-          sx={{
-            display: "grid",
-            gap: 2,
-            mt: 1,
-          }}
-        >
-          <TextField
-            label="Title"
-            value={editCoupon?.title || ""}
-            onChange={(e) =>
-              setEditCoupon({ ...editCoupon, title: e.target.value })
-            }
-          />
-
-          <TextField
-            label="Offer (%)"
-            type="number"
-            value={editCoupon?.offer || ""}
-            onChange={(e) =>
-              setEditCoupon({ ...editCoupon, offer: e.target.value })
-            }
-          />
-
-          <TextField
-            label="Limit"
-            type="number"
-            value={editCoupon?.limit || ""}
-            onChange={(e) =>
-              setEditCoupon({ ...editCoupon, limit: e.target.value })
-            }
-          />
-
-          {/* FROM DATE */}
-          <TextField
-            type="date"
-            label="From Date"
-            InputLabelProps={{ shrink: true }}
-            value={editCoupon?.fromTo || ""}
-            onChange={(e) =>
-              setEditCoupon({ ...editCoupon, fromTo: e.target.value })
-            }
-          />
-
-          {/* VALID DAYS */}
-          <TextField
-            select
-            label="Valid Days"
-            value={editCoupon?.validDays || ""}
-            InputProps={{
-              sx: { height: 44 },
-            }}
-            onChange={(e) =>
-              setEditCoupon({ ...editCoupon, validDays: e.target.value })
-            }
           >
-            <MenuItem value={1}>1 Day</MenuItem>
-            <MenuItem value={3}>3 Days</MenuItem>
-            <MenuItem value={7}>7 Days</MenuItem>
-          </TextField>
+            <Typography variant="h6" fontWeight={800}>
+              Offer list
+            </Typography>
+            <Button size="small" variant="contained" style={{color: "white"}} startIcon={<AddIcon />} onClick={openAddModal}>
+              Add offer
+            </Button>
+          </Box>
+
+          <Box sx={{ p: 1.5 }}>
+            {offersLoading ? (
+              <Alert severity="info">Loading offers...</Alert>
+            ) : (
+              <DataTable
+                columns={offerColumns}
+                data={offers}
+                keyField="_id"
+                customStyles={TABLE_STYLES}
+                noHeader
+                responsive
+                highlightOnHover
+                pagination
+                paginationPerPage={10}
+                paginationRowsPerPageOptions={[10, 25, 50]}
+                noDataComponent={<Alert severity="info">No offers yet.</Alert>}
+              />
+            )}
+          </Box>
+        </Paper>
+      </Stack>
+
+      <Dialog
+        open={offerModalOpen}
+        onClose={closeOfferModal}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Box>
+              <Typography variant="h5" fontWeight={800}>
+                {editingOfferId ? "Edit offer" : "Add offer"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Simple setup for automatic checkout offers.
+              </Typography>
+            </Box>
+            <IconButton onClick={closeOfferModal} disabled={saving}>
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          <Grid container spacing={2.5}>
+            <Grid item xs={12} md={8}>
+              <Stack spacing={2.25}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    {renderOfferTypeCard(
+                      "free_product",
+                      "Free Product Offer",
+                      "Set a spend amount and choose a free product.",
+                      <AutoAwesomeIcon />,
+                    )}
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    {renderOfferTypeCard(
+                      "cart_discount",
+                      "Cart Discount Offer",
+                      "Discount the full cart or selected products.",
+                      <LocalOfferIcon />,
+                    )}
+                  </Grid>
+                </Grid>
+
+                <TextField
+                  label="Offer name"
+                  value={form.title}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  helperText="This name is visible to customers."
+                  fullWidth
+                />
+
+                <Grid container spacing={2}>
+                  {shouldAskMinimumAmount && (
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="Minimum order amount"
+                        type="number"
+                        value={form.limit}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, limit: e.target.value }))
+                        }
+                        fullWidth
+                      />
+                    </Grid>
+                  )}
+                  <Grid item xs={12} md={shouldAskMinimumAmount ? 4 : 6}>
+                    <TextField
+                      label="Starts on"
+                      type="date"
+                      InputLabelProps={{ shrink: true }}
+                      value={form.fromTo}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, fromTo: e.target.value }))
+                      }
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={shouldAskMinimumAmount ? 4 : 6}>
+                    <TextField
+                      label="Valid days"
+                      type="number"
+                      value={form.validDays}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, validDays: e.target.value }))
+                      }
+                      fullWidth
+                    />
+                  </Grid>
+                </Grid>
+
+                {form.offerType === "free_product" ? (
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={8}>
+                      <Autocomplete
+                        options={productOptions}
+                        loading={productsLoading}
+                        value={form.freeProduct}
+                        onChange={(_, value) =>
+                          setForm((prev) => ({ ...prev, freeProduct: value }))
+                        }
+                        isOptionEqualToValue={(option, value) =>
+                          getProductId(option) === getProductId(value)
+                        }
+                        getOptionLabel={getProductLabel}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Free product"
+                            helperText="Product added free when condition is met."
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="Free quantity"
+                        type="number"
+                        value={form.freeProductQuantity}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            freeProductQuantity: e.target.value,
+                          }))
+                        }
+                        fullWidth
+                      />
+                    </Grid>
+                  </Grid>
+                ) : (
+                  <Stack spacing={2}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={4}>
+                        <TextField
+                          label="Discount %"
+                          type="number"
+                          value={form.basePercent}
+                          onChange={(e) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              basePercent: e.target.value,
+                            }))
+                          }
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={5}>
+                        <TextField
+                          select
+                          label="Apply to"
+                          value={form.discountScope}
+                          onChange={(e) =>
+                            handleDiscountScopeChange(e.target.value)
+                          }
+                          fullWidth
+                        >
+                          <MenuItem value="entire_cart">Entire cart</MenuItem>
+                          <MenuItem value="selected_products">
+                            Selected products
+                          </MenuItem>
+                        </TextField>
+                      </Grid>
+                    </Grid>
+
+                    {form.discountScope === "selected_products" && (
+                      <Autocomplete
+                        multiple
+                        options={productOptions}
+                        loading={productsLoading}
+                        value={form.selectedProducts}
+                        onChange={(_, value) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            selectedProducts: value,
+                          }))
+                        }
+                        isOptionEqualToValue={(option, value) =>
+                          getProductId(option) === getProductId(value)
+                        }
+                        getOptionLabel={getProductLabel}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Selected products"
+                            helperText="Only these products receive discount."
+                          />
+                        )}
+                      />
+                    )}
+                  </Stack>
+                )}
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={Boolean(form.status)}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          status: e.target.checked,
+                        }))
+                      }
+                    />
+                  }
+                  label="Active"
+                />
+              </Stack>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Paper
+                elevation={0}
+                sx={{ p: 2, borderRadius: 2, border: "1px solid", borderColor: "divider" }}
+              >
+                <Stack direction="row" spacing={1} mb={2}>
+                  <Button
+                    size="small"
+                    style={{color: "white"}}
+                    variant={modalPanel === "preview" ? "contained" : "outlined"}
+                    startIcon={<PreviewIcon />}
+                    onClick={() => setModalPanel("preview")}
+                  >
+                    Preview
+                  </Button>
+                  <Button
+                    size="small"
+                    variant={modalPanel === "help" ? "contained" : "outlined"}
+                    startIcon={<HelpOutlineIcon />}
+                    style={{color: "black"}}
+                    onClick={() => setModalPanel("help")}
+                  >
+                    How it works
+                  </Button>
+                </Stack>
+                {modalPanel === "preview" ? renderPreviewPanel() : renderHowItWorksPanel()}
+              </Paper>
+            </Grid>
+          </Grid>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={() => setEditOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            sx={{ textTransform: "none" }}
-            style={{ color: "white" }}
-            onClick={handleEditSave}
-          >
-            Save
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={closeOfferModal} disabled={saving}>
+            Cancel
+          </Button>
+          <Button variant="contained" style={{color: "white"}} onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : editingOfferId ? "Update offer" : "Create offer"}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(previewOffer)}
+        onClose={() => setPreviewOffer(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography variant="h6" fontWeight={800}>
+              Offer preview
+            </Typography>
+            <IconButton onClick={() => setPreviewOffer(null)}>
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent dividers>
+          {previewOffer && renderPreviewPanel(previewOffer)}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography variant="h6" fontWeight={800}>
+              How it works
+            </Typography>
+            <IconButton onClick={() => setHelpOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent dividers>{renderHowItWorksPanel()}</DialogContent>
       </Dialog>
     </MDBox>
   );
