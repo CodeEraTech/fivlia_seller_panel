@@ -3,6 +3,5 @@ export const isFoodSellerValue = (sellFood, businessType) =>
 
 export const isFoodSellerFromStorage = () =>
   isFoodSellerValue(
-    localStorage.getItem("sellFood"),
-    localStorage.getItem("businessType")
+    localStorage.getItem("typeId") === "69cf8a31ad92aee54ecb1e72",
   );

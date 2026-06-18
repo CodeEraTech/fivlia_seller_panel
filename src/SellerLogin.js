@@ -60,6 +60,7 @@ function SellerLogin() {
         localStorage.setItem("businessType", res.data.businessType);
         localStorage.setItem("storeName", res.data.storeName);
         localStorage.setItem("token", res.data.token);
+        localStorage.setItem("typeId", res.data.typeId || "");
 
         setAlert({
           open: true,
@@ -240,6 +241,7 @@ function SellerLogin() {
         localStorage.setItem("sellerId", res.data.sellerId);
         localStorage.setItem("storeName", res.data.storeName);
         localStorage.setItem("token", res.data.token);
+        localStorage.setItem("typeId", res.data.typeId || "");
         navigate("/dashboard1");
       } else {
         setAlert({
