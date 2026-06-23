@@ -24,7 +24,6 @@ import {
   Snackbar,
   Alert,
   Fade,
-  Switch,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -46,7 +45,7 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import MDBox from "components/MDBox";
-import { get, post, put } from "apis/apiClient";
+import { get, put } from "apis/apiClient";
 import { ENDPOINTS } from "apis/endpoints";
 
 // Configure Leaflet marker icons
@@ -87,8 +86,6 @@ export default function SellerProfile() {
     advertisementImages: [],
     openTime: "",
     closeTime: "",
-    sellerFreeDeliveryEnabled: false,
-    sellerFreeDeliveryLimit: "",
   });
 
   const [bankDetails, setBankDetails] = useState({});
@@ -248,9 +245,6 @@ export default function SellerProfile() {
           : [],
         openTime: data.openTime || "",
         closeTime: data.closeTime || "",
-
-        sellerFreeDeliveryEnabled: data.sellerFreeDeliveryEnabled || false,
-        sellerFreeDeliveryLimit: data.sellerFreeDeliveryLimit || "",
       });
       setBankDetails(data.bankDetails || {});
       setAddress({
@@ -367,12 +361,6 @@ export default function SellerProfile() {
       formData.append("invoicePrefix", form.invoicePrefix);
       formData.append("openTime", form.openTime);
       formData.append("closeTime", form.closeTime);
-      formData.append(
-        "sellerFreeDeliveryEnabled",
-        form.sellerFreeDeliveryEnabled,
-      );
-
-      formData.append("sellerFreeDeliveryLimit", form.sellerFreeDeliveryLimit);
 
       if (form.image instanceof File) {
         formData.append("image", form.image);
@@ -887,90 +875,6 @@ export default function SellerProfile() {
                   variant="outlined"
                   helperText="Set store closing time"
                 />
-              </Grid>
-              <Grid item xs={12}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    flexWrap: "wrap",
-                    gap: 2,
-                    px: 1,
-                    py: 1.5,
-                    border: "1px solid #e0e0e0",
-                    borderRadius: 2,
-                  }}
-                >
-                  {/* Left */}
-                  <Box>
-                    <Typography
-                      variant="outlined"
-                      sx={{
-                        fontWeight: 600,
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      Free Delivery
-                    </Typography>
-
-                    <Typography variant="body2" color="text.secondary">
-                      Enable free delivery above minimum cart value
-                    </Typography>
-                  </Box>
-
-                  {/* Right */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                    }}
-                  >
-                    <Switch
-                      checked={form.sellerFreeDeliveryEnabled}
-                      onChange={(e) => {
-                        const enabled = e.target.checked;
-
-                        handleFormChange("sellerFreeDeliveryEnabled", enabled);
-
-                        if (enabled && !form.sellerFreeDeliveryLimit) {
-                          handleFormChange("sellerFreeDeliveryLimit", 500);
-                        }
-                      }}
-                    />
-
-                    <TextField
-                      size="small"
-                      type="number"
-                      label="Amount"
-                      disabled={!form.sellerFreeDeliveryEnabled}
-                      value={form.sellerFreeDeliveryLimit || 500}
-                      onChange={(e) =>
-                        handleFormChange(
-                          "sellerFreeDeliveryLimit",
-                          e.target.value,
-                        )
-                      }
-                      sx={{
-                        width: 130,
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <Typography
-                            sx={{
-                              mr: 1,
-                              fontWeight: 600,
-                              color: "text.secondary",
-                            }}
-                          >
-                            ₹
-                          </Typography>
-                        ),
-                      }}
-                    />
-                  </Box>
-                </Box>
               </Grid>
               <Grid item xs={12}>
                 <Box display="flex" alignItems="center" gap={2}>

@@ -29,6 +29,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PreviewIcon from "@mui/icons-material/Preview";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DataTable from "react-data-table-component";
@@ -59,6 +60,7 @@ const GUIDE_COPY = {
       "Offers are applied automatically at checkout after approval. Customers do not need to enter a coupon code.",
     points: [
       "Free Product Offer: set a minimum order amount and choose the product customers will receive free.",
+      "Free Delivery Offer: set a minimum cart amount for delivery charge waiver.",
       "Cart Discount Offer: set a discount percentage for the full cart or only for selected products.",
       "Selected Products: choose the exact catalog products that should receive the discount.",
       "Each new or edited offer is sent for approval before it becomes visible to customers.",
@@ -69,6 +71,7 @@ const GUIDE_COPY = {
       "मंजूरी के बाद ऑफर checkout पर अपने आप लग जाएगा। ग्राहक को coupon code डालने की जरूरत नहीं है।",
     points: [
       "Free Product Offer: minimum order amount डालें और free मिलने वाला product चुनें।",
+      "Free Delivery Offer: minimum cart amount डालें, उसके बाद delivery charge free होगा।",
       "Entire cart discount: पूरे cart पर discount देने के लिए minimum amount जरूरी है।",
       "Selected products discount: सिर्फ चुने हुए products पर discount लगेगा, minimum amount नहीं पूछेगा।",
       "नया या edit किया हुआ offer पहले approval के लिए जाएगा।",
@@ -202,6 +205,10 @@ const buildOfferPreviewText = (entry) => {
     )} free`;
   }
 
+  if (entry.offerType === "free_delivery") {
+    return `Get free delivery above ₹${minimum}`;
+  }
+
   const scopeLabel =
     entry.discountScope === "selected_products"
       ? selectedNames.length
@@ -287,6 +294,7 @@ function CouponManagement() {
 
   const shouldAskMinimumAmount =
     form.offerType === "free_product" ||
+    form.offerType === "free_delivery" ||
     (form.offerType === "cart_discount" &&
       form.discountScope === "entire_cart");
 
@@ -403,10 +411,14 @@ function CouponManagement() {
       return false;
     }
 
-    if (form.offerType === "free_product") {
+    if (form.offerType === "free_product" || form.offerType === "free_delivery") {
       if (!form.limit || Number(form.limit) <= 0) {
         Swal.fire("Missing field", "Please enter a valid minimum order amount.", "warning");
         return false;
+      }
+
+      if (form.offerType === "free_delivery") {
+        return true;
       }
 
       if (!form.freeProduct) {
@@ -459,16 +471,17 @@ function CouponManagement() {
       title: form.title.trim() || buildOfferPreviewText(form),
       offerType: form.offerType,
       discountScope:
-        form.offerType === "free_product" ? "entire_cart" : form.discountScope,
-      offer: form.offerType === "free_product" ? 0 : offerValue,
+        form.offerType === "cart_discount" ? form.discountScope : "entire_cart",
+      offer: form.offerType === "cart_discount" ? offerValue : 0,
       limit:
         form.offerType === "free_product" ||
+        form.offerType === "free_delivery" ||
         form.discountScope === "entire_cart"
           ? Number(form.limit) || 0
           : 0,
       tiers: [],
       productId:
-        form.offerType === "free_product" ||
+        form.offerType !== "cart_discount" ||
         form.discountScope !== "selected_products"
           ? []
           : selectedIds,
@@ -604,6 +617,7 @@ function CouponManagement() {
     const selectedProducts = getSelectedProducts(entry);
     const showMinimumChip =
       entry.offerType === "free_product" ||
+      entry.offerType === "free_delivery" ||
       (entry.offerType === "cart_discount" &&
         entry.discountScope === "entire_cart" &&
         Number(entry.limit || 0) > 0);
@@ -646,6 +660,8 @@ function CouponManagement() {
               label={
                 entry.offerType === "free_product"
                   ? `${entry.freeProductQuantity || 1} free`
+                  : entry.offerType === "free_delivery"
+                    ? "Free delivery"
                   : `${tiers[0]?.percent || entry.basePercent || entry.offer || 0}% off`
               }
               variant="outlined"
@@ -657,6 +673,10 @@ function CouponManagement() {
         {entry.offerType === "free_product" ? (
           <Alert severity="success">
             Free item: {entry.freeProductQuantity || 1} x {getProductLabel(freeProduct)}
+          </Alert>
+        ) : entry.offerType === "free_delivery" ? (
+          <Alert severity="success">
+            Delivery charge is waived after the minimum cart amount.
           </Alert>
         ) : (
           <Alert severity="info">
@@ -711,6 +731,7 @@ function CouponManagement() {
       grow: 2.5,
       cell: (row) => {
         const isFreeProduct = row.offerType === "free_product";
+        const isFreeDelivery = row.offerType === "free_delivery";
         const benefit = buildOfferPreviewText(row);
 
         return (
@@ -721,8 +742,14 @@ function CouponManagement() {
               </Typography>
               <Chip
                 size="small"
-                label={isFreeProduct ? "Free Product" : "Cart Discount"}
-                color={isFreeProduct ? "info" : "primary"}
+                label={
+                  isFreeProduct
+                    ? "Free Product"
+                    : isFreeDelivery
+                      ? "Free Delivery"
+                      : "Cart Discount"
+                }
+                color={isFreeProduct ? "info" : isFreeDelivery ? "success" : "primary"}
                 variant="outlined"
               />
             </Stack>
@@ -824,7 +851,7 @@ function CouponManagement() {
               Offers
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Manage automatic free product and cart discount offers.
+              Manage automatic free product, free delivery, and cart discount offers.
             </Typography>
           </Box>
 
@@ -957,7 +984,7 @@ function CouponManagement() {
             <Grid item xs={12} md={8}>
               <Stack spacing={2.25}>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={4}>
                     {renderOfferTypeCard(
                       "free_product",
                       "Free Product Offer",
@@ -965,7 +992,15 @@ function CouponManagement() {
                       <AutoAwesomeIcon />,
                     )}
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={4}>
+                    {renderOfferTypeCard(
+                      "free_delivery",
+                      "Free Delivery Offer",
+                      "Waive delivery above a cart amount.",
+                      <LocalShippingIcon />,
+                    )}
+                  </Grid>
+                  <Grid item xs={12} md={4}>
                     {renderOfferTypeCard(
                       "cart_discount",
                       "Cart Discount Offer",
@@ -1062,6 +1097,11 @@ function CouponManagement() {
                       />
                     </Grid>
                   </Grid>
+                ) : form.offerType === "free_delivery" ? (
+                  <Alert severity="success">
+                    Customers get free delivery automatically when the cart amount
+                    crosses the minimum.
+                  </Alert>
                 ) : (
                   <Stack spacing={2}>
                     <Grid container spacing={2}>

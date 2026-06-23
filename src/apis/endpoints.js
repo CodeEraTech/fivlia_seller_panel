@@ -2,7 +2,7 @@ import db from "./firebaseDb.js";
 import { doc, getDoc } from "firebase/firestore";
 
 // `false` = current REST API flow, `true` = Firebase/Firestore flow.
-export const USE_FIREBASE = false;
+export const USE_FIREBASE = true;
 
 // const DEFAULT_API_BASE_URL = "https://api.fivlia.in";
 
