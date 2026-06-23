@@ -73,13 +73,13 @@ function StockManagement() {
   const fetchProducts = async (
     page = 1,
     limit = perPage,
-    searchText = search
+    searchText = search,
   ) => {
     if (!storeId) return;
     setLoading(true);
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/getSellerProducts?sellerId=${storeId}&page=${page}&limit=${limit}&search=${searchText}`
+        `${process.env.REACT_APP_API_URL}/getSellerProducts?sellerId=${storeId}&page=${page}&limit=${limit}&search=${searchText}`,
       );
       if (!res.ok) throw new Error("Fetch failed");
       const result = await res.json();
@@ -89,7 +89,7 @@ function StockManagement() {
         _id: p.sellerProductId,
         totalStock: (p.variants || []).reduce(
           (sum, v) => sum + (v.stock || 0),
-          0
+          0,
         ),
         commission: p.commission || 0,
       }));
@@ -99,7 +99,7 @@ function StockManagement() {
 
       setOutOfStockCount(products.filter((p) => p.totalStock === 0).length);
       setLowStockCount(
-        products.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length
+        products.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length,
       );
     } catch (err) {
       console.error(err);
@@ -134,25 +134,25 @@ function StockManagement() {
       [productId]: { ...(prev[productId] || {}), [variantId]: Number(value) },
     }));
   };
- const handlePriceChange = (productId, variantId, value, mrp) => {
-  let newValue = Number(value);
+  const handlePriceChange = (productId, variantId, value, mrp) => {
+    let newValue = Number(value);
 
-  // prevent selling price > mrp
-  if (newValue > mrp) {
-    Swal.fire({
-      icon: "warning",
-      title: "Invalid Price",
-      text: "Selling Price cannot be greater than MRP!",
-      confirmButtonColor: "#1976d2",
-    });
-    newValue = mrp;
-  }
+    // prevent selling price > mrp
+    if (newValue > mrp) {
+      Swal.fire({
+        icon: "warning",
+        title: "Invalid Price",
+        text: "Selling Price cannot be greater than MRP!",
+        confirmButtonColor: "#1976d2",
+      });
+      newValue = mrp;
+    }
 
-  setPriceUpdates((prev) => ({
-    ...prev,
-    [productId]: { ...(prev[productId] || {}), [variantId]: newValue },
-  }));
-};
+    setPriceUpdates((prev) => ({
+      ...prev,
+      [productId]: { ...(prev[productId] || {}), [variantId]: newValue },
+    }));
+  };
 
   const handleMrpChange = (productId, variantId, value) => {
     setMrpUpdates((prev) => ({
@@ -184,11 +184,14 @@ function StockManagement() {
         .filter(Boolean);
 
       try {
-        await fetch(`${process.env.REACT_APP_API_URL}/updateStock/${productId}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ storeId, stock: stockPayload }),
-        });
+        await fetch(
+          `${process.env.REACT_APP_API_URL}/updateStock/${productId}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ storeId, stock: stockPayload }),
+          },
+        );
 
         updated = updated.map((p) =>
           p._id === productId
@@ -203,10 +206,10 @@ function StockManagement() {
                 totalStock: p.variants.reduce(
                   (sum, v) =>
                     sum + (stockUpdates[productId]?.[v._id] ?? v.stock ?? 0),
-                  0
+                  0,
                 ),
               }
-            : p
+            : p,
         );
       } catch (err) {
         console.error("Update failed:", err);
@@ -215,24 +218,29 @@ function StockManagement() {
     setProducts(updated);
     setOutOfStockCount(updated.filter((p) => p.totalStock === 0).length);
     setLowStockCount(
-      updated.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length
+      updated.filter((p) => p.totalStock > 0 && p.totalStock <= 10).length,
     );
     handlePopoverClose();
   };
 
-  const calculateNetAmount = (price, commission) => {
+  const calculateNetAmount = (price, commission = 0, foodTax = 0) => {
     if (!price || isNaN(price)) return 0;
-    return price - price * (commission / 100);
+
+    const commissionAmount = price * (commission / 100);
+
+    const foodTaxAmount = price * (foodTax / 100);
+
+    return price - commissionAmount - foodTaxAmount;
   };
 
   const popoverProducts =
     popoverType === "outOfStock"
       ? products.filter((p) => p.totalStock === 0)
       : popoverType === "lowStock"
-      ? products.filter((p) => p.totalStock > 0 && p.totalStock <= 10)
-      : popoverType === "editStock"
-      ? products.filter((p) => p._id === popoverProductId)
-      : [];
+        ? products.filter((p) => p.totalStock > 0 && p.totalStock <= 10)
+        : popoverType === "editStock"
+          ? products.filter((p) => p._id === popoverProductId)
+          : [];
 
   const columns = [
     {
@@ -284,14 +292,14 @@ function StockManagement() {
                   v.stock === 0
                     ? "#ffebee"
                     : v.stock <= 10
-                    ? "#fff3e0"
-                    : "#e8f5e9",
+                      ? "#fff3e0"
+                      : "#e8f5e9",
                 color:
                   v.stock === 0
                     ? "#d32f2f"
                     : v.stock <= 10
-                    ? "#f57c00"
-                    : "#388e3c",
+                      ? "#f57c00"
+                      : "#388e3c",
               }}
             />
           ))}
@@ -364,7 +372,7 @@ function StockManagement() {
               textAlign: "center",
               cursor: "pointer",
             }}
-           // onClick={(e) => handlePopoverOpen(e, "outOfStock")}
+            // onClick={(e) => handlePopoverOpen(e, "outOfStock")}
           >
             <strong>Total Products</strong>
             <br />
@@ -499,7 +507,7 @@ function StockManagement() {
           style={{
             padding: "15px",
             backgroundColor: "white",
-            maxWidth: 500,
+            maxWidth: 850,
             maxHeight: 400,
             overflowY: "auto",
           }}
@@ -543,7 +551,12 @@ function StockManagement() {
                       type="number"
                       value={priceUpdates[p._id]?.[v._id] ?? v.sell_price}
                       onChange={(e) =>
-                        handlePriceChange(p._id, v._id, e.target.value, mrpUpdates[p._id]?.[v._id] ?? v.mrp)
+                        handlePriceChange(
+                          p._id,
+                          v._id,
+                          e.target.value,
+                          mrpUpdates[p._id]?.[v._id] ?? v.mrp,
+                        )
                       }
                     />
                   </div>
@@ -556,12 +569,103 @@ function StockManagement() {
                       marginLeft: "80px",
                     }}
                   >
-                    You will get ₹
-                    {calculateNetAmount(
-                      priceUpdates[p._id]?.[v._id] ?? v.sell_price,
-                      p.commission
-                    ).toFixed(2)}{" "}
-                    after {p.commission}% commission
+                    {(() => {
+                      const sellingPrice =
+                        priceUpdates[p._id]?.[v._id] ?? v.sell_price;
+
+                      const commissionAmount =
+                        sellingPrice * (p.commission / 100);
+
+                      const foodTaxAmount =
+                        sellingPrice * ((p.foodTax || 0) / 100);
+
+                      const netAmount = calculateNetAmount(
+                        sellingPrice,
+                        p.commission,
+                        p.foodTax,
+                      );
+
+                      return (
+                        <div
+                          style={{
+                            marginTop: "10px",
+                            background: "#f8fafc",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: "8px",
+                            padding: "10px 12px",
+                            width: "280px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              marginBottom: "4px",
+                            }}
+                          >
+                            <span>Selling Price</span>
+                            <strong>₹{sellingPrice}</strong>
+                          </div>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              color: "#d32f2f",
+                            }}
+                          >
+                            <span>Commission ({p.commission}%)</span>
+                            <span>- ₹{commissionAmount.toFixed(2)}</span>
+                          </div>
+
+                          {p.isFoodProduct && (
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                color: "#f57c00",
+                              }}
+                            >
+                              <span>Food Tax ({p.foodTax}%)</span>
+                              <span>- ₹{foodTaxAmount.toFixed(2)}</span>
+                            </div>
+                          )}
+
+                          <hr
+                            style={{
+                              margin: "8px 0",
+                              border: "none",
+                              borderTop: "1px solid #ddd",
+                            }}
+                          />
+
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              fontSize: "15px",
+                              fontWeight: "bold",
+                              color: "#2e7d32",
+                            }}
+                          >
+                            <span>You Receive</span>
+                            <span>₹{netAmount.toFixed(2)}</span>
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "#64748b",
+                              marginTop: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {p.isFoodProduct
+                              ? `After ${p.commission}% commission + ${p.foodTax}% food tax`
+                              : `After ${p.commission}% commission`}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
