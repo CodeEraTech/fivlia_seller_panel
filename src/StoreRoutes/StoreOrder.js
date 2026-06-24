@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Button, Typography, CircularProgress, Modal, Box, FormControl, Select, MenuItem } from "@mui/material";
+import {
+  Button,
+  Typography,
+  CircularProgress,
+  Modal,
+  Box,
+  FormControl,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import io from "socket.io-client";
 import DataTable from "react-data-table-component";
 import MDBox from "../components/MDBox";
@@ -31,7 +40,7 @@ const updateBtnStyle = {
 
 const invoiceButton = {
   padding: "6px 12px", // smaller padding to prevent cut
-  minWidth: "80px",    // ensures text fits
+  minWidth: "80px", // ensures text fits
   borderRadius: "6px",
   border: "none",
   backgroundColor: "#007bff",
@@ -101,102 +110,104 @@ function StoreOrder({ isDashboard = false }) {
     Accepted: ["Going to Pickup", "Cancelled"],
     "Going to Pickup": ["Delivered", "Cancelled"],
     Delivered: [],
-    Cancelled: []
+    Cancelled: [],
   };
 
   const getAllowedStatuses = (currentStatus) => {
     if (!currentStatus) return [];
     const statusTitle =
       deliveryStatuses.find(
-        (s) => s.statusCode === currentStatus || s.statusTitle === currentStatus
+        (s) =>
+          s.statusCode === currentStatus || s.statusTitle === currentStatus,
       )?.statusTitle || currentStatus;
 
     return STATUS_FLOW[statusTitle] || [];
   };
 
-useEffect(() => {
-  const storeId = localStorage.getItem("sellerId");
-  if (!storeId) return;
-
-  const newSocket = io(process.env.REACT_APP_API_URL, {
-    transports: ["websocket"],
-  });
-
-  // ✅ Join seller room
-  newSocket.emit("joinSeller", { storeId: storeId });
-
-  // ✅ Listen for confirmation
-  newSocket.on("joinedSellerRoom", (data) => {
-    console.log("✅ Joined seller socket:", data);
-  });
-
-  // ✅ Listen for new orders
-  newSocket.on("storeOrder", (data) => {
-    console.log("🟢 New order received via socket:", data);
-    // Re-fetch orders
-    fetchOrders(); // 👇 we'll define this function
-  });
-
-  // ✅ Handle disconnect
-  newSocket.on("disconnect", () => {
-    console.log("⚪ Seller socket disconnected");
-  });
-
-  setSocket(newSocket);
-
-  return () => {
-    newSocket.disconnect();
-  };
-}, []);
-
-const fetchOrders = async () => {
-  setLoading(true);
-  try {
+  useEffect(() => {
     const storeId = localStorage.getItem("sellerId");
-    if (!storeId) throw new Error("Store ID missing");
+    if (!storeId) return;
 
-    const params = `?storeId=${storeId}&page=${page}&limit=${perPage}&search=${searchTerm}`;
-    const [ordersRes, statusesRes] = await Promise.all([
-      fetch(`${process.env.REACT_APP_API_URL}/orders${params}`),
-      fetch(`${process.env.REACT_APP_API_URL}/getdeliveryStatus`),
-    ]);
+    const newSocket = io(process.env.REACT_APP_API_URL, {
+      transports: ["websocket"],
+    });
 
-    const ordersData = await ordersRes.json();
-    const statusesData = await statusesRes.json();
+    // ✅ Join seller room
+    newSocket.emit("joinSeller", { storeId: storeId });
 
-    if (!Array.isArray(ordersData.orders)) throw new Error("Invalid orders data");
-    if (!Array.isArray(statusesData.Status)) throw new Error("Invalid statuses data");
+    // ✅ Listen for confirmation
+    newSocket.on("joinedSellerRoom", (data) => {
+      console.log("✅ Joined seller socket:", data);
+    });
 
-    const filteredStatuses = statusesData.Status.filter((s) =>
-      ["accepted", "cancelled"].includes(s.statusTitle.toLowerCase())
-    );
+    // ✅ Listen for new orders
+    newSocket.on("storeOrder", (data) => {
+      console.log("🟢 New order received via socket:", data);
+      // Re-fetch orders
+      fetchOrders(); // 👇 we'll define this function
+    });
 
-    setOrders(ordersData.orders);
-    setTotalRows(ordersData.count || ordersData.orders.length);
-    setDeliveryStatuses(filteredStatuses);
-    setError("");
-  } catch (err) {
-    console.error(err);
-    setError(err.message || "Error loading data");
-  } finally {
-    setLoading(false);
-  }
-};
+    // ✅ Handle disconnect
+    newSocket.on("disconnect", () => {
+      console.log("⚪ Seller socket disconnected");
+    });
 
-useEffect(() => {
-  fetchOrders();
-}, [page, perPage, searchTerm]);
+    setSocket(newSocket);
 
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const storeId = localStorage.getItem("sellerId");
+      if (!storeId) throw new Error("Store ID missing");
+
+      const params = `?storeId=${storeId}&page=${page}&limit=${perPage}&search=${searchTerm}`;
+      const [ordersRes, statusesRes] = await Promise.all([
+        fetch(`${process.env.REACT_APP_API_URL}/orders${params}`),
+        fetch(`${process.env.REACT_APP_API_URL}/getdeliveryStatus`),
+      ]);
+
+      const ordersData = await ordersRes.json();
+      const statusesData = await statusesRes.json();
+
+      if (!Array.isArray(ordersData.orders))
+        throw new Error("Invalid orders data");
+      if (!Array.isArray(statusesData.Status))
+        throw new Error("Invalid statuses data");
+
+      const filteredStatuses = statusesData.Status.filter((s) =>
+        ["accepted", "cancelled"].includes(s.statusTitle.toLowerCase()),
+      );
+
+      setOrders(ordersData.orders);
+      setTotalRows(ordersData.count || ordersData.orders.length);
+      setDeliveryStatuses(filteredStatuses);
+      setError("");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error loading data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [page, perPage, searchTerm]);
 
   const statusColor = (status) => {
     const map = {
-      "100": "#ff9800",
-      "101": "#2196f3",
-      "102": "#9c27b0",
-      "103": "#ff5722",
-      "104": "#f44336",
-      "105": "#4caf50",
-      "106": "#4caf50",
+      100: "#ff9800",
+      101: "#2196f3",
+      102: "#9c27b0",
+      103: "#ff5722",
+      104: "#f44336",
+      105: "#4caf50",
+      106: "#4caf50",
     };
     return map[status] || "#666";
   };
@@ -206,31 +217,30 @@ useEffect(() => {
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    width: "95%",           // slightly wider for small screens
-    maxWidth: 700,          // keeps large screen layout
+    width: "95%", // slightly wider for small screens
+    maxWidth: 700, // keeps large screen layout
     bgcolor: "background.paper",
     boxShadow: 24,
     borderRadius: 4,
     p: 3,
     maxHeight: "80vh",
-    overflowY: "auto",       // vertical scroll
-    overflowX: "hidden",     // prevents horizontal scroll
+    overflowY: "auto", // vertical scroll
+    overflowX: "hidden", // prevents horizontal scroll
   };
 
   const tableWrapperStyle = {
-    overflowX: "auto",      // scroll horizontally if needed
+    overflowX: "auto", // scroll horizontally if needed
     marginTop: 8,
   };
 
-
- const getStatusInfo = (status) => {
-  const info = deliveryStatuses.find(
-    (s) => s.statusCode === status || s.statusTitle === status
-  );
-  return info ? { title: info.statusTitle, image: info.image } : { title: status || "-", image: null };
-};
-
-
+  const getStatusInfo = (status) => {
+    const info = deliveryStatuses.find(
+      (s) => s.statusCode === status || s.statusTitle === status,
+    );
+    return info
+      ? { title: info.statusTitle, image: info.image }
+      : { title: status || "-", image: null };
+  };
 
   const truncateText = (text, max = 30) =>
     !text ? "-" : text.length > max ? `${text.slice(0, max)}...` : text;
@@ -246,7 +256,7 @@ useEffect(() => {
   const openEditModal = (o) => {
     setSelectedOrder(o);
     const info = deliveryStatuses.find(
-      (s) => s.statusCode === o.orderStatus || s.statusTitle === o.orderStatus
+      (s) => s.statusCode === o.orderStatus || s.statusTitle === o.orderStatus,
     );
     setNewStatus(info ? info.statusCode : o.orderStatus || "");
     setEditModalOpen(true);
@@ -260,22 +270,30 @@ useEffect(() => {
   };
 
   const handleSave = async () => {
-    if (!selectedOrder || !newStatus || newStatus === selectedOrder.orderStatus) return;
+    if (!selectedOrder || !newStatus || newStatus === selectedOrder.orderStatus)
+      return;
     try {
-      const statusInfo = deliveryStatuses.find((s) => s.statusCode === newStatus);
+      const statusInfo = deliveryStatuses.find(
+        (s) => s.statusCode === newStatus,
+      );
       const statusTitle = statusInfo?.statusTitle || newStatus;
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/orderStatus/${selectedOrder._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: statusTitle }),
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/orderStatus/${selectedOrder._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: statusTitle }),
+        },
+      );
       if (!res.ok) throw new Error("Failed to update status");
       const { update } = await res.json();
 
       setOrders((prev) =>
         prev.map((o) =>
-          o._id === selectedOrder._id ? { ...o, orderStatus: update.orderStatus } : o
-        )
+          o._id === selectedOrder._id
+            ? { ...o, orderStatus: update.orderStatus }
+            : o,
+        ),
       );
       closeModal();
     } catch (err) {
@@ -286,9 +304,12 @@ useEffect(() => {
 
   const handleDownloadInvoice = async (orderId) => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/thermal-invoice/${orderId}`, {
-        method: "GET",
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/thermal-invoice/${orderId}`,
+        {
+          method: "GET",
+        },
+      );
 
       if (!res.ok) throw new Error("Failed to fetch PDF");
 
@@ -326,7 +347,13 @@ useEffect(() => {
             <img
               src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
               alt={item.name}
-              style={{ width: 40, height: 40, marginRight: 6, objectFit: "cover", borderRadius: 4 }}
+              style={{
+                width: 40,
+                height: 40,
+                marginRight: 6,
+                objectFit: "cover",
+                borderRadius: 4,
+              }}
             />
             {truncateText(item.name)}
           </div>
@@ -334,12 +361,15 @@ useEffect(() => {
           "-"
         );
       },
-      grow: 4
+      grow: 4,
     },
     {
       name: "Address",
       cell: (row) => (
-        <span style={{ cursor: "pointer" }} onClick={() => openAddressModal(row)}>
+        <span
+          style={{ cursor: "pointer" }}
+          onClick={() => openAddressModal(row)}
+        >
           {truncateText(row.addressId?.fullAddress)}
         </span>
       ),
@@ -348,7 +378,9 @@ useEffect(() => {
       name: "Payment",
       selector: (row) => row.paymentStatus || "-",
       cell: (row) => (
-        <span style={{ color: statusColor(row.paymentStatus) }}>{row.paymentStatus || "-"}</span>
+        <span style={{ color: statusColor(row.paymentStatus) }}>
+          {row.paymentStatus || "-"}
+        </span>
       ),
     },
 
@@ -356,7 +388,8 @@ useEffect(() => {
       name: "Invoice",
       cell: (row) => (
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {row.orderStatus?.toLowerCase() === "delivered" || row.orderStatus === "106" ? (
+          {row.orderStatus?.toLowerCase() === "delivered" ||
+          row.orderStatus === "106" ? (
             <Button
               variant="contained"
               style={invoiceButton}
@@ -376,18 +409,29 @@ useEffect(() => {
       ),
     },
 
-
     {
       name: "Status",
       cell: (row) => {
         const info = getStatusInfo(row.orderStatus);
         return (
-          <div style={{ display: "flex", alignItems: "center", color: statusColor(row.orderStatus) }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              color: statusColor(row.orderStatus),
+            }}
+          >
             {info.image && (
               <img
                 src={`${process.env.REACT_APP_IMAGE_LINK}${info.image}`}
                 alt={info.title}
-                style={{ width: 20, height: 20, marginRight: 6, objectFit: "contain", borderRadius: 2 }}
+                style={{
+                  width: 20,
+                  height: 20,
+                  marginRight: 6,
+                  objectFit: "contain",
+                  borderRadius: 2,
+                }}
               />
             )}
             {info.title}
@@ -399,7 +443,11 @@ useEffect(() => {
       name: "Action",
       cell: (row) => (
         <div style={{ display: "flex", gap: 8 }}>
-          <Button variant="contained" style={updateBtnStyle} onClick={() => openEditModal(row)}>
+          <Button
+            variant="contained"
+            style={updateBtnStyle}
+            onClick={() => openEditModal(row)}
+          >
             Edit
           </Button>
         </div>
@@ -468,7 +516,9 @@ useEffect(() => {
             <CircularProgress />
           </Box>
         )}
-        <div style={{ background: "white", borderRadius: "10px", padding: "10px" }}>
+        <div
+          style={{ background: "white", borderRadius: "10px", padding: "10px" }}
+        >
           <DataTable
             columns={columns}
             data={orders}
@@ -518,7 +568,8 @@ useEffect(() => {
               </Typography>
 
               <Typography fontSize={14} mb={2}>
-                <strong>Status:</strong> {getStatusInfo(selectedOrder.orderStatus).title || "-"}
+                <strong>Status:</strong>{" "}
+                {getStatusInfo(selectedOrder.orderStatus).title || "-"}
               </Typography>
 
               <Box sx={{ overflowX: "auto" }}>
@@ -530,14 +581,75 @@ useEffect(() => {
                   }}
                 >
                   <thead>
-                    <tr style={{ borderBottom: "2px solid #ddd", background: "#f4f4f4" }}>
-                      <th style={{ textAlign: "left", padding: "10px", width: "10%" }}>SKU</th>
-                      <th style={{ textAlign: "right", padding: "10px", width: "10%" }}>Price</th>
-                      <th style={{ textAlign: "right", padding: "10px", width: "8%" }}>Qty</th>
-                      <th style={{ textAlign: "left", padding: "10px", width: "40%" }}>Product</th>
-                      <th style={{ textAlign: "left", padding: "10px", width: "12%" }}>Variant</th>
-                      <th style={{ textAlign: "right", padding: "10px", width: "10%" }}>Price (Incl. GST)</th>
-                      <th style={{ textAlign: "right", padding: "10px", width: "10%" }}>Subtotal</th>
+                    <tr
+                      style={{
+                        borderBottom: "2px solid #ddd",
+                        background: "#f4f4f4",
+                      }}
+                    >
+                      <th
+                        style={{
+                          textAlign: "left",
+                          padding: "10px",
+                          width: "10%",
+                        }}
+                      >
+                        SKU
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "right",
+                          padding: "10px",
+                          width: "10%",
+                        }}
+                      >
+                        Price
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "right",
+                          padding: "10px",
+                          width: "8%",
+                        }}
+                      >
+                        Qty
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          padding: "10px",
+                          width: "40%",
+                        }}
+                      >
+                        Product
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          padding: "10px",
+                          width: "12%",
+                        }}
+                      >
+                        Variant
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "right",
+                          padding: "10px",
+                          width: "10%",
+                        }}
+                      >
+                        Price (Incl. GST)
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "right",
+                          padding: "10px",
+                          width: "10%",
+                        }}
+                      >
+                        Subtotal
+                      </th>
                     </tr>
                   </thead>
 
@@ -546,13 +658,38 @@ useEffect(() => {
                       const price = item.price || 0;
                       const subtotal = price * (item.quantity || 0);
                       return (
-                        <tr key={item._id || index} style={{ borderBottom: "1px solid #eee" }}>
-                          <td style={{ padding: "10px", verticalAlign: "middle" }}>{item.sku}</td>
-                          <td style={{ padding: "10px", textAlign: "right", verticalAlign: "middle" }}>₹{price}</td>
-                          <td style={{ padding: "10px", textAlign: "right", verticalAlign: "middle" }}>{item.quantity}</td>
+                        <tr
+                          key={item._id || index}
+                          style={{ borderBottom: "1px solid #eee" }}
+                        >
+                          <td
+                            style={{ padding: "10px", verticalAlign: "middle" }}
+                          >
+                            {item.sku}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px",
+                              textAlign: "right",
+                              verticalAlign: "middle",
+                            }}
+                          >
+                            ₹{price}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px",
+                              textAlign: "right",
+                              verticalAlign: "middle",
+                            }}
+                          >
+                            {item.quantity}
+                          </td>
 
                           {/* Product Column using CSS Grid */}
-                          <td style={{ padding: "10px", verticalAlign: "middle" }}>
+                          <td
+                            style={{ padding: "10px", verticalAlign: "middle" }}
+                          >
                             <div
                               style={{
                                 display: "grid",
@@ -564,15 +701,79 @@ useEffect(() => {
                               <img
                                 src={`${process.env.REACT_APP_IMAGE_LINK}${item.image}`}
                                 alt={item.name}
-                                style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6 }}
+                                style={{
+                                  width: 60,
+                                  height: 60,
+                                  objectFit: "cover",
+                                  borderRadius: 6,
+                                }}
                               />
-                              <div style={{ wordBreak: "break-word" }}>{item.name}</div>
+                              <div>
+                                <div
+                                  style={{
+                                    wordBreak: "break-word",
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {item.name}
+                                </div>
+
+                                {item.isOfferItem && (
+                                  <div
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                      marginTop: 6,
+                                      padding: "4px 8px",
+                                      background: "#e8f5e9",
+                                      color: "#2e7d32",
+                                      borderRadius: 20,
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    🎁 FREE GIFT • {item.offerTitle}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
 
-                          <td style={{ padding: "10px", verticalAlign: "middle" }}>{item.variantName || "-"}</td>
-                          <td style={{ padding: "10px", textAlign: "right", verticalAlign: "middle" }}>₹{price}</td>
-                          <td style={{ padding: "10px", textAlign: "right", verticalAlign: "middle" }}>₹{subtotal}</td>
+                          <td
+                            style={{ padding: "10px", verticalAlign: "middle" }}
+                          >
+                            {item.variantName || "-"}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px",
+                              textAlign: "right",
+                              verticalAlign: "middle",
+                            }}
+                          >
+                            {item.isOfferItem ? (
+                              <span
+                                style={{
+                                  color: "#2e7d32",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                FREE
+                              </span>
+                            ) : (
+                              `₹${price}`
+                            )}
+                          </td>
+                          <td
+                            style={{
+                              padding: "10px",
+                              textAlign: "right",
+                              verticalAlign: "middle",
+                            }}
+                          >
+                            ₹{subtotal}
+                          </td>
                         </tr>
                       );
                     })}
@@ -581,7 +782,11 @@ useEffect(() => {
               </Box>
 
               <Box mt={3} display="flex" justifyContent="flex-end">
-                <Button variant="contained" style={{ color: "#f9f9f9ff" }} onClick={closeModal}>
+                <Button
+                  variant="contained"
+                  style={{ color: "#f9f9f9ff" }}
+                  onClick={closeModal}
+                >
                   Close
                 </Button>
               </Box>
@@ -589,7 +794,6 @@ useEffect(() => {
           )}
         </Box>
       </Modal>
-
 
       <Modal open={addressModalOpen} onClose={closeModal}>
         <Box sx={{ ...modalBoxStyle, maxWidth: 400 }}>
@@ -600,7 +804,12 @@ useEffect(() => {
             {selectedOrder?.addressId?.fullAddress || "No address available"}
           </Typography>
           <Box mt={2}>
-            <Button variant="contained" style={{ color: "#ffffffff" }} fullWidth onClick={closeModal}>
+            <Button
+              variant="contained"
+              style={{ color: "#ffffffff" }}
+              fullWidth
+              onClick={closeModal}
+            >
               Close
             </Button>
           </Box>
@@ -618,7 +827,8 @@ useEffect(() => {
               onChange={(e) => setNewStatus(e.target.value)}
               displayEmpty
               renderValue={(selected) => {
-                if (!selected) return <em style={{ color: "#999" }}>Select Status</em>;
+                if (!selected)
+                  return <em style={{ color: "#999" }}>Select Status</em>;
                 const statusInfo = getStatusInfo(selected);
                 return (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -638,14 +848,22 @@ useEffect(() => {
                 <em>Select Status</em>
               </MenuItem>
               {deliveryStatuses.map((status) => {
-                const isAllowed = getAllowedStatuses(selectedOrder?.orderStatus).includes(status.statusTitle);
+                const isAllowed = getAllowedStatuses(
+                  selectedOrder?.orderStatus,
+                ).includes(status.statusTitle);
 
                 let displayTitle = status.statusTitle;
-                if (displayTitle.toLowerCase() === "accepted") displayTitle = "Accept";
-                if (displayTitle.toLowerCase() === "cancelled") displayTitle = "Cancel";
+                if (displayTitle.toLowerCase() === "accepted")
+                  displayTitle = "Accept";
+                if (displayTitle.toLowerCase() === "cancelled")
+                  displayTitle = "Cancel";
 
                 return (
-                  <MenuItem key={status._id} value={status.statusCode} disabled={!isAllowed}>
+                  <MenuItem
+                    key={status._id}
+                    value={status.statusCode}
+                    disabled={!isAllowed}
+                  >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       {status.image && (
                         <img
@@ -662,13 +880,18 @@ useEffect(() => {
             </Select>
           </FormControl>
           <Box display="flex" gap={2}>
-            <Button variant="outlined" style={{color:"#636363ff"}} fullWidth onClick={closeModal}>
+            <Button
+              variant="outlined"
+              style={{ color: "#636363ff" }}
+              fullWidth
+              onClick={closeModal}
+            >
               Cancel
             </Button>
             <Button
               variant="contained"
               fullWidth
-              style={{color:"white"}}
+              style={{ color: "white" }}
               disabled={!newStatus || newStatus === selectedOrder?.orderStatus}
               onClick={handleSave}
             >
@@ -677,7 +900,6 @@ useEffect(() => {
           </Box>
         </Box>
       </Modal>
-
     </>
   );
 }
