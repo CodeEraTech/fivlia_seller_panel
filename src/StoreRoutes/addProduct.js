@@ -17,7 +17,11 @@ function AddSellerProduct() {
   const [colorError, setColorError] = useState("");
   const [activeVariant, setActiveVariant] = useState("");
   const [filterdropdown, setFilterDropdown] = useState(false);
-  const [returnProduct, setReturnProduct] = useState({ title: "", image: null });
+  const [returnProduct, setReturnProduct] = useState({
+    title: "",
+    image: null,
+  });
+  const [errors, setErrors] = useState({});
   const returnImageInputRef = useRef(null);
   const [allFilters, setAllFilters] = useState([]);
 
@@ -103,6 +107,22 @@ function AddSellerProduct() {
 
   const maxSize = 500 * 1024; // 500KB
 
+  const FOOD_CATEGORY_ID = "683eec5ff6f5264ba0295763";
+
+  useEffect(() => {
+    if (!isFood || categories.length === 0) return;
+
+    setCategory([FOOD_CATEGORY_ID]);
+
+    const foodCategory = categories.find((cat) => cat._id === FOOD_CATEGORY_ID);
+
+    if (!foodCategory) return;
+
+    setSubCategories(foodCategory.subcat || []);
+    setFilteredAttributes(foodCategory.attribute || []);
+    setNewfilterType(foodCategory.filter || []);
+  }, [isFood, categories]);
+
   useEffect(() => {
     const fetchFilters = async () => {
       try {
@@ -117,7 +137,9 @@ function AddSellerProduct() {
 
     const getCategory = async () => {
       try {
-        const result = await fetch(`${process.env.REACT_APP_API_URL}/getMainCategory`);
+        const result = await fetch(
+          `${process.env.REACT_APP_API_URL}/getMainCategory`,
+        );
         if (result.status === 200) {
           const res = await result.json();
           setCategories(res.result);
@@ -147,10 +169,10 @@ function AddSellerProduct() {
         const seller = sellerData.store || sellerData.seller || sellerData;
         const sellerFoodIds =
           seller?.foodTypes?.map((item) =>
-            typeof item === "object" ? item._id : item
+            typeof item === "object" ? item._id : item,
           ) || [];
-        const allowedFoods = (Array.isArray(foodsData) ? foodsData : []).filter((food) =>
-          sellerFoodIds.includes(food._id)
+        const allowedFoods = (Array.isArray(foodsData) ? foodsData : []).filter(
+          (food) => sellerFoodIds.includes(food._id),
         );
 
         setFoodTypes(allowedFoods);
@@ -187,7 +209,9 @@ function AddSellerProduct() {
 
     const fetchAttribute = async () => {
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/getAttributes`);
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/getAttributes`,
+        );
         const data = await res.json();
         setAttribute(data);
       } catch (err) {
@@ -223,7 +247,11 @@ function AddSellerProduct() {
           const sectionHeight = rect.height;
 
           // Consider a section active if its top is near the viewport top and it's at least partially visible
-          if (top <= 150 && top > -sectionHeight && Math.abs(top) < Math.abs(closestTop)) {
+          if (
+            top <= 150 &&
+            top > -sectionHeight &&
+            Math.abs(top) < Math.abs(closestTop)
+          ) {
             current = id;
             closestTop = top;
           }
@@ -246,6 +274,8 @@ function AddSellerProduct() {
   const handleVariantImageChange = (variantName, e) => {
     const file = e.target.files[0];
     if (file && file.size <= maxSize) {
+      setError("");
+
       setVariantImages((prev) => ({
         ...prev,
         [variantName]: { file, preview: URL.createObjectURL(file) },
@@ -277,9 +307,14 @@ function AddSellerProduct() {
         alert("Filter Value Added Successfully");
         setShowFilterDropdown(false);
         setAddFilterValue("");
-        const selectedFilterObj = filtertype.find((filter) => filter._id === selectedFilter);
+        const selectedFilterObj = filtertype.find(
+          (filter) => filter._id === selectedFilter,
+        );
         if (selectedFilterObj) {
-          setFilterValues([...selectedFilterObj.Filter, { name: addFilterValue, _id: "new_id" }]);
+          setFilterValues([
+            ...selectedFilterObj.Filter,
+            { name: addFilterValue, _id: "new_id" },
+          ]);
         }
       } else {
         alert("Something Wrong");
@@ -354,7 +389,7 @@ function AddSellerProduct() {
 
   const handleImageRemove = (indexToRemove) => {
     setSelectedImages((prevImages) =>
-      prevImages.filter((_, index) => index !== indexToRemove)
+      prevImages.filter((_, index) => index !== indexToRemove),
     );
     // If removing the first image (thumbnail), clear thumbnail
     if (indexToRemove === 0 && selectedImages.length > 0) {
@@ -384,7 +419,7 @@ function AddSellerProduct() {
       const isDuplicate = attributeValue.some(
         (item) =>
           item.variantName === variantName &&
-          item.attributeName === selectedAttr.Attribute_name
+          item.attributeName === selectedAttr.Attribute_name,
       );
       if (!isDuplicate) {
         const newAttributeValue = [
@@ -404,32 +439,42 @@ function AddSellerProduct() {
   };
 
   const handleDeleteVariant = async (id, variantName) => {
-    if (!window.confirm(`Are you sure you want to delete the variant "${variantName}"?`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete the variant "${variantName}"?`,
+      )
+    ) {
       return;
     }
 
     try {
-      const result = await fetch(`https://node-m8jb.onrender.com/deleteVarient/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
+      const result = await fetch(
+        `https://node-m8jb.onrender.com/deleteVarient/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       const responseBody = await result.json();
 
       if (result.status === 200) {
         alert("Variant Deleted Successfully");
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/getAttributes`);
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/getAttributes`,
+        );
         const data = await res.json();
         setAttribute(data);
         setAttributeValue((prev) =>
-          prev.filter((item) => item.variantName !== variantName)
+          prev.filter((item) => item.variantName !== variantName),
         );
         setShowVariantDropdown(false);
       } else {
         const errorMessage =
-          responseBody.message || `Failed to delete variant (Status: ${result.status})`;
+          responseBody.message ||
+          `Failed to delete variant (Status: ${result.status})`;
         alert(errorMessage);
       }
     } catch (err) {
@@ -453,10 +498,14 @@ function AddSellerProduct() {
     setAttributeData("");
 
     if (updatedCategories.length > 0) {
-      const selectedCats = categories.filter((cat) => updatedCategories.includes(cat._id));
+      const selectedCats = categories.filter((cat) =>
+        updatedCategories.includes(cat._id),
+      );
       const allSubCats = [
         ...new Set(
-          selectedCats.flatMap((cat) => cat.subcat || []).map((sub) => JSON.stringify(sub))
+          selectedCats
+            .flatMap((cat) => cat.subcat || [])
+            .map((sub) => JSON.stringify(sub)),
         ),
       ].map((sub) => JSON.parse(sub));
       setSubCategories(allSubCats);
@@ -489,18 +538,21 @@ function AddSellerProduct() {
     setCategory(updatedCategories);
 
     if (updatedCategories.length > 0) {
-      const selectedCats = categories.filter((cat) => updatedCategories.includes(cat._id));
+      const selectedCats = categories.filter((cat) =>
+        updatedCategories.includes(cat._id),
+      );
       const allSubCats = selectedCats
         .flatMap((cat) => cat.subcat || [])
-        .filter((sub, index, self) =>
-          index === self.findIndex((s) => s._id === sub._id)
+        .filter(
+          (sub, index, self) =>
+            index === self.findIndex((s) => s._id === sub._id),
         );
       setSubCategories(allSubCats);
 
       const allAttributes = selectedCats
         .flatMap((cat) => cat.attribute || [])
-        .filter((attr, index, self) =>
-          index === self.findIndex((a) => a === attr)
+        .filter(
+          (attr, index, self) => index === self.findIndex((a) => a === attr),
         );
       setFilteredAttributes(allAttributes);
     } else {
@@ -525,15 +577,25 @@ function AddSellerProduct() {
     const selectedSub = subCategories.find((sub) => sub._id === selectedId);
     if (selectedSub) {
       setSubsubCategories(selectedSub.subsubcat || []);
-      const selectedCats = categories.filter((cat) => category.includes(cat._id));
-      const combinedAttributes = selectedCats.flatMap((cat) => cat.attribute || []);
+      const selectedCats = categories.filter((cat) =>
+        category.includes(cat._id),
+      );
+      const combinedAttributes = selectedCats.flatMap(
+        (cat) => cat.attribute || [],
+      );
       setFilteredAttributes(
-        selectedSub.attribute?.length > 0 ? selectedSub.attribute : combinedAttributes
+        selectedSub.attribute?.length > 0
+          ? selectedSub.attribute
+          : combinedAttributes,
       );
     } else {
       setSubsubCategories([]);
-      const selectedCats = categories.filter((cat) => category.includes(cat._id));
-      const combinedAttributes = selectedCats.flatMap((cat) => cat.attribute || []);
+      const selectedCats = categories.filter((cat) =>
+        category.includes(cat._id),
+      );
+      const combinedAttributes = selectedCats.flatMap(
+        (cat) => cat.attribute || [],
+      );
       setFilteredAttributes(combinedAttributes);
     }
   };
@@ -544,24 +606,36 @@ function AddSellerProduct() {
     setAttributeValue([]);
     setAttributeData("");
 
-    const selectedSubSub = subsubCategories.find((subsub) => subsub._id === selectedId);
+    const selectedSubSub = subsubCategories.find(
+      (subsub) => subsub._id === selectedId,
+    );
     if (selectedSubSub) {
       const selectedSub = subCategories.find((sub) => sub._id === subCategory);
-      const selectedCats = categories.filter((cat) => category.includes(cat._id));
-      const combinedAttributes = selectedCats.flatMap((cat) => cat.attribute || []);
+      const selectedCats = categories.filter((cat) =>
+        category.includes(cat._id),
+      );
+      const combinedAttributes = selectedCats.flatMap(
+        (cat) => cat.attribute || [],
+      );
       setFilteredAttributes(
         selectedSubSub.attribute?.length > 0
           ? selectedSubSub.attribute
           : selectedSub?.attribute?.length > 0
             ? selectedSub.attribute
-            : combinedAttributes
+            : combinedAttributes,
       );
     } else {
       const selectedSub = subCategories.find((sub) => sub._id === subCategory);
-      const selectedCats = categories.filter((cat) => category.includes(cat._id));
-      const combinedAttributes = selectedCats.flatMap((cat) => cat.attribute || []);
+      const selectedCats = categories.filter((cat) =>
+        category.includes(cat._id),
+      );
+      const combinedAttributes = selectedCats.flatMap(
+        (cat) => cat.attribute || [],
+      );
       setFilteredAttributes(
-        selectedSub?.attribute?.length > 0 ? selectedSub.attribute : combinedAttributes
+        selectedSub?.attribute?.length > 0
+          ? selectedSub.attribute
+          : combinedAttributes,
       );
     }
   };
@@ -570,7 +644,8 @@ function AddSellerProduct() {
     const section = document.getElementById(id);
     if (section) {
       const offset = 80;
-      const topPos = section.getBoundingClientRect().top + window.pageYOffset - offset;
+      const topPos =
+        section.getBoundingClientRect().top + window.pageYOffset - offset;
       window.scrollTo({ top: topPos, behavior: "smooth" });
       setActiveSection(id); // Manually set the active section
     }
@@ -591,10 +666,14 @@ function AddSellerProduct() {
         alert("Filter Added Successfully");
         setFilterPopup(false);
         setFilterName("");
-        const selectedCats = categories.filter((cat) => category.includes(cat._id));
+        const selectedCats = categories.filter((cat) =>
+          category.includes(cat._id),
+        );
         const allFilterType = selectedCats
           .flatMap((cat) => cat.filter || [])
-          .filter((fil, index, self) => index === self.findIndex((a) => a === fil));
+          .filter(
+            (fil, index, self) => index === self.findIndex((a) => a === fil),
+          );
         setFilterTypes(allFilterType);
       } else {
         alert("Something Wrong");
@@ -612,15 +691,18 @@ function AddSellerProduct() {
 
     const selectedCategoryId = category[0];
     try {
-      const result = await fetch(`${process.env.REACT_APP_API_URL}/updateAt/${selectedCategoryId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          attribute: addAttribute,
-        }),
-        headers: {
-          "Content-Type": "application/json",
+      const result = await fetch(
+        `${process.env.REACT_APP_API_URL}/updateAt/${selectedCategoryId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            attribute: addAttribute,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       const responseBody = await result.json();
 
@@ -628,12 +710,15 @@ function AddSellerProduct() {
         alert("Attribute Added Successfully");
         setShowPopup(false);
         setAddattribute("");
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/getAttributes`);
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/getAttributes`,
+        );
         const data = await res.json();
         setAttribute(data);
       } else {
         const errorMessage =
-          responseBody.message || `Failed to add attribute (Status: ${result.status})`;
+          responseBody.message ||
+          `Failed to add attribute (Status: ${result.status})`;
         alert(errorMessage);
       }
     } catch (err) {
@@ -654,15 +739,18 @@ function AddSellerProduct() {
     }
 
     try {
-      const result = await fetch(`https://node-m8jb.onrender.com/addvarient/${attributedata}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          name: addVarient,
-        }),
-        headers: {
-          "Content-Type": "application/json",
+      const result = await fetch(
+        `https://node-m8jb.onrender.com/addvarient/${attributedata}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            name: addVarient,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       const responseBody = await result.json();
 
@@ -670,12 +758,15 @@ function AddSellerProduct() {
         alert("Variant Added Successfully");
         setShowVariantPopup(false);
         setAddVarient("");
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/getAttributes`);
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/getAttributes`,
+        );
         const data = await res.json();
         setAttribute(data);
       } else {
         const errorMessage =
-          responseBody.message || `Failed to add variant (Status: ${result.status})`;
+          responseBody.message ||
+          `Failed to add variant (Status: ${result.status})`;
         alert(errorMessage);
       }
     } catch (err) {
@@ -776,7 +867,7 @@ function AddSellerProduct() {
 
   const addColor = () => {
     const hasColorVariant = attributeValue.some(
-      (item) => item.attributeName.toLowerCase() === "color"
+      (item) => item.attributeName.toLowerCase() === "color",
     );
     if (!hasColorVariant) {
       setColorError("Please select a color variant first.");
@@ -796,7 +887,7 @@ function AddSellerProduct() {
         }));
       } else {
         const colorVariants = attributeValue.filter(
-          (item) => item.attributeName.toLowerCase() === "color"
+          (item) => item.attributeName.toLowerCase() === "color",
         );
         if (colorVariants.length > 0) {
           const latestColorVariant = colorVariants[colorVariants.length - 1];
@@ -827,9 +918,11 @@ function AddSellerProduct() {
     setActiveVariant(variantName);
   };
 
-  const selectedAttribute = attribute.find((attr) => attr._id === attributedata);
-  const isColorAttribute = selectedAttribute?.Attribute_name?.toLowerCase() === "color";
-
+  const selectedAttribute = attribute.find(
+    (attr) => attr._id === attributedata,
+  );
+  const isColorAttribute =
+    selectedAttribute?.Attribute_name?.toLowerCase() === "color";
 
   const handleFilterChange = (e) => {
     const filterId = e.target.value;
@@ -854,7 +947,7 @@ function AddSellerProduct() {
           : [...existingFilter.selected, valueId];
 
         return prev.map((f) =>
-          f._id === selectedFilter ? { ...f, selected: updatedSelected } : f
+          f._id === selectedFilter ? { ...f, selected: updatedSelected } : f,
         );
       } else {
         return [...prev, { _id: selectedFilter, selected: [valueId] }];
@@ -862,28 +955,83 @@ function AddSellerProduct() {
     });
   };
 
-  const handelProduct = async () => {
-    const hasVariantImage = attributeValue.some(
-      (item) => variantImages[item.variantName]?.file
-    );
-    if (attributeValue.length > 0 && !hasVariantImage) {
-      alert("At least one variant must have an image.");
-      return;
+  // ---------------------------------------------------------------------
+  // Validation — the only thing added in this pass. Checks the fields
+  // that are already in the form and already marked required (*), plus
+  // the two checks that previously lived as bare alert() calls at the
+  // top of handelProduct (variant image, food type/veg-nonveg). Returns
+  // a { fieldKey: "message" } object that the JSX below reads from
+  // `errors` to show inline messages and red borders.
+  // ---------------------------------------------------------------------
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!name.trim()) newErrors.name = "Product name is required.";
+    if (!description.trim()) newErrors.description = "Description is required.";
+
+    if (selectedImages.length === 0) {
+      newErrors.images = "Please upload at least one product image.";
     }
-    const sellerid = localStorage.getItem("sellerId");
-    if (!sellerid) return navigate("/seller-login");
+
+    if (!isFood && category.length === 0) {
+      newErrors.category = "Please select at least one category.";
+    }
+
+    if (!unitname) newErrors.unitname = "Please select a unit.";
+    if (!cgst) newErrors.cgst = "Please select a GST/tax percentage.";
+    if (!returnProduct.title) {
+      newErrors.returnPolicy = "Please select a return policy.";
+    }
 
     if (isFood) {
-      if (!foodTypeId) {
-        alert("Please select a food category.");
-        return;
+      if (isFoodSeller && !foodTypeId) {
+        newErrors.foodTypeId = "Please select a food category.";
       }
-
       if (!isVeg && !isNonVeg) {
-        alert("Please select Veg or Non-Veg.");
-        return;
+        newErrors.foodVegType = "Please select Veg or Non-Veg.";
       }
     }
+
+    if (attributeValue.length > 0) {
+      const hasVariantImage = attributeValue.some(
+        (item) => variantImages[item.variantName]?.file,
+      );
+      if (!hasVariantImage && !error) {
+        newErrors.variantImage = "At least one variant must have an image.";
+      }
+
+      attributeValue.forEach((item) => {
+        const vMrp = variantMrps[item.variantName];
+        const vPrice = variantPrices[item.variantName];
+
+        if (!vMrp) {
+          newErrors[`variantMrp_${item.variantName}`] =
+            `MRP is required for "${item.variantName}".`;
+        }
+        if (!vPrice) {
+          newErrors[`variantPrice_${item.variantName}`] =
+            `Selling price is required for "${item.variantName}".`;
+        }
+        if (vMrp && vPrice && Number(vPrice) > Number(vMrp)) {
+          newErrors[`variantPrice_${item.variantName}`] =
+            `Selling price cannot be greater than MRP for "${item.variantName}".`;
+        }
+      });
+    }
+
+    return newErrors;
+  };
+
+  const handelProduct = async () => {
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
+
+    const sellerid = localStorage.getItem("sellerId");
+    if (!sellerid) return navigate("/seller-login");
 
     const formData = new FormData();
     formData.append("productName", name);
@@ -904,7 +1052,10 @@ function AddSellerProduct() {
     }
 
     if (returnProduct.title) {
-      formData.append("returnProduct", JSON.stringify({ title: returnProduct.title }));
+      formData.append(
+        "returnProduct",
+        JSON.stringify({ title: returnProduct.title }),
+      );
     }
 
     if (returnProduct.image) {
@@ -944,13 +1095,16 @@ function AddSellerProduct() {
           variantValue: item.variantName + unitname,
           attributeName: item.attributeName,
           imageKey: `var${index + 1}`,
-          ...(item.attributeName.toLowerCase() === "color" && colorHexCodes[item.variantName]
+          ...(item.attributeName.toLowerCase() === "color" &&
+          colorHexCodes[item.variantName]
             ? { hexCode: colorHexCodes[item.variantName] }
             : {}),
         }));
       for (const variant of variants) {
         if (variant.sell_price > variant.mrp) {
-          alert(`Selling Price for variant "${variant.variantValue}" cannot be greater than MRP.`);
+          alert(
+            `Selling Price for variant "${variant.variantValue}" cannot be greater than MRP.`,
+          );
           return null;
         }
       }
@@ -960,7 +1114,10 @@ function AddSellerProduct() {
         .filter((item) => variantPrices[item.variantName])
         .forEach((item, index) => {
           if (variantImages[item.variantName]?.file) {
-            formData.append(`var${index + 1}`, variantImages[item.variantName].file);
+            formData.append(
+              `var${index + 1}`,
+              variantImages[item.variantName].file,
+            );
           }
         });
     }
@@ -1001,13 +1158,23 @@ function AddSellerProduct() {
 
           {/* Basic Information */}
           <div className="background" id="basicinfo">
-            <span style={{ marginLeft: "20px", fontWeight: "bold", marginBottom: "20px" }}>
+            <span
+              style={{
+                marginLeft: "20px",
+                fontWeight: "bold",
+                marginBottom: "20px",
+              }}
+            >
               Basic Information
             </span>
             <div className="row-section">
               <div className="input-container">
                 <label>
-                  Product Name <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                  Product Name{" "}
+                  <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                    {" "}
+                    *
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -1015,20 +1182,54 @@ function AddSellerProduct() {
                   className="input-field"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  style={{ backgroundColor: "white" }}
+                  style={{
+                    backgroundColor: "white",
+                    ...(errors.name ? { border: "1px solid #d32f2f" } : {}),
+                  }}
                 />
+                {errors.name && (
+                  <p
+                    style={{
+                      color: "#d32f2f",
+                      fontSize: "12px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {errors.name}
+                  </p>
+                )}
               </div>
               <div className="input-container">
                 <label>
-                  Description <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                  Description{" "}
+                  <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                    {" "}
+                    *
+                  </span>
                 </label>
                 <textarea
                   placeholder="Enter Product Description"
                   className="input-field"
                   value={description}
-                  style={{ backgroundColor: "white" }}
+                  style={{
+                    backgroundColor: "white",
+                    ...(errors.description
+                      ? { border: "1px solid #d32f2f" }
+                      : {}),
+                  }}
                   onChange={(e) => setDescription(e.target.value)}
                 />
+                {errors.description && (
+                  <p
+                    style={{
+                      color: "#d32f2f",
+                      fontSize: "12px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {errors.description}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -1036,11 +1237,11 @@ function AddSellerProduct() {
           <div className="row-section">
             <div className="input-container">
               <label>
-                Is this a food product? <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                Is this a food product?{" "}
+                <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
               </label>
               <Switch
                 checked={isFood}
-                disabled
                 onChange={() => setIsFood(!isFood)}
                 color="primary"
               />
@@ -1052,12 +1253,23 @@ function AddSellerProduct() {
                     {isFoodSeller && (
                       <div className="input-container">
                         <label>
-                          Food Category <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                          Food Category{" "}
+                          <span
+                            style={{ marginLeft: "5px", marginTop: "10px" }}
+                          >
+                            {" "}
+                            *
+                          </span>
                         </label>
                         <select
                           className="input-field"
                           value={foodTypeId}
                           onChange={(e) => setFoodTypeId(e.target.value)}
+                          style={
+                            errors.foodTypeId
+                              ? { border: "1px solid #d32f2f" }
+                              : {}
+                          }
                         >
                           <option value="">--Select Food Category--</option>
                           {foodTypes.map((food) => (
@@ -1066,11 +1278,26 @@ function AddSellerProduct() {
                             </option>
                           ))}
                         </select>
+                        {errors.foodTypeId && (
+                          <p
+                            style={{
+                              color: "#d32f2f",
+                              fontSize: "12px",
+                              marginTop: "4px",
+                            }}
+                          >
+                            {errors.foodTypeId}
+                          </p>
+                        )}
                       </div>
                     )}
                     <div className="input-container">
                       <label>
-                        Select Type <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                        Select Type{" "}
+                        <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                          {" "}
+                          *
+                        </span>
                       </label>
                       <label>
                         <input
@@ -1094,16 +1321,43 @@ function AddSellerProduct() {
                         />
                         Non-Veg
                       </label>
+                      {errors.foodVegType && (
+                        <p
+                          style={{
+                            color: "#d32f2f",
+                            fontSize: "12px",
+                            marginTop: "4px",
+                          }}
+                        >
+                          {errors.foodVegType}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
               <div className="input-container">
                 <label>
-                  Return Policy <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                  Return Policy{" "}
+                  <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                    {" "}
+                    *
+                  </span>
                 </label>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={returnProduct.title === "No Return"}
@@ -1112,7 +1366,13 @@ function AddSellerProduct() {
                     />
                     No Return
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={returnProduct.title === "No Exchange"}
@@ -1121,7 +1381,13 @@ function AddSellerProduct() {
                     />
                     No Exchange
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={returnProduct.title === "3 Day Return"}
@@ -1130,20 +1396,41 @@ function AddSellerProduct() {
                     />
                     3 Day Return
                   </label>
+                  {errors.returnPolicy && (
+                    <p
+                      style={{
+                        color: "#d32f2f",
+                        fontSize: "12px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {errors.returnPolicy}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           </div>
           {/* Image Upload */}
           <div className="background" id="imagesection">
-            <span style={{ marginLeft: "20px", fontWeight: "bold", marginBottom: "10px" }}>
+            <span
+              style={{
+                marginLeft: "20px",
+                fontWeight: "bold",
+                marginBottom: "10px",
+              }}
+            >
               Images
             </span>
             <div className="row-section">
               <div style={{ display: "flex", flexDirection: "row" }}>
                 <div>
                   <label>
-                    Product Images <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                    Product Images{" "}
+                    <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                      {" "}
+                      *
+                    </span>
                   </label>
                   <input
                     type="file"
@@ -1151,10 +1438,26 @@ function AddSellerProduct() {
                     accept="image/*"
                     onChange={handleImageChange}
                     className="input-field"
-                    style={{ backgroundColor: "white" }}
+                    style={{
+                      backgroundColor: "white",
+                      ...(errors.images ? { border: "1px solid #d32f2f" } : {}),
+                    }}
                     disabled={selectedImages.length >= 4}
                   />
-                  {error && <p style={{ color: "red", fontSize: "12px" }}>{error}</p>}
+                  {error && (
+                    <p style={{ color: "red", fontSize: "12px" }}>{error}</p>
+                  )}
+                  {errors.images && (
+                    <p
+                      style={{
+                        color: "#d32f2f",
+                        fontSize: "12px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {errors.images}
+                    </p>
+                  )}
                 </div>
                 <div
                   style={{
@@ -1194,155 +1497,204 @@ function AddSellerProduct() {
           </div>
 
           {/* Category Selection */}
-          <div className="background" id="category-section">
-            <span style={{ marginLeft: "20px", fontWeight: "bold", marginBottom: "10px" }}>
-              Category Selection
-            </span>
-            <div className="row-section" style={{ flexDirection: "column" }}>
-              <label>
-                Select Category <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
-              </label>
-              <div style={{ position: "relative" }}>
-                <button
-                  className="input-field"
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    backgroundColor: "white",
-                    padding: "8px",
-                    border: "1px solid #ccc",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                >
-                  {category.length > 0
-                    ? categories
-                      .filter((cat) => category.includes(cat._id))
-                      .map((cat) => cat.name)
-                      .join(", ") || "--Select Category--"
-                    : "--Select Category--"}
-                </button>
-                {showCategoryDropdown && (
-                  <div
+          {!isFood && (
+            <div className="background" id="category-section">
+              <span
+                style={{
+                  marginLeft: "20px",
+                  fontWeight: "bold",
+                  marginBottom: "10px",
+                }}
+              >
+                Category Selection
+              </span>
+              <div className="row-section" style={{ flexDirection: "column" }}>
+                <label>
+                  Select Category{" "}
+                  <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                    {" "}
+                    *
+                  </span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <button
+                    className="input-field"
                     style={{
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      right: 0,
+                      width: "100%",
+                      textAlign: "left",
                       backgroundColor: "white",
-                      border: "1px solid #ccc",
+                      padding: "8px",
+                      border: errors.category
+                        ? "1px solid #d32f2f"
+                        : "1px solid #ccc",
                       borderRadius: "4px",
-                      maxHeight: "200px",
-                      overflowY: "auto",
-                      zIndex: 1000,
+                      cursor: "pointer",
                     }}
+                    onClick={() =>
+                      setShowCategoryDropdown(!showCategoryDropdown)
+                    }
                   >
-                    {categories.map((item) => (
-                      <div
-                        key={item._id}
-                        style={{
-                          padding: "8px",
-                          borderBottom: "1px solid #eee",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={category.includes(item._id)}
-                          onChange={() => handleCategoryChange(item._id)}
-                          style={{ marginRight: "8px" }}
-                        />
-                        <span>{item.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {category.length > 0 && (
-                <div style={{ marginTop: "10px" }}>
-                  <label>Selected Categories</label>
-                  <div
-                    style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}
-                  >
-                    {category.map((catId) => {
-                      const cat = categories.find((c) => c._id === catId);
-                      return cat ? (
+                    {category.length > 0
+                      ? categories
+                          .filter((cat) => category.includes(cat._id))
+                          .map((cat) => cat.name)
+                          .join(", ") || "--Select Category--"
+                      : "--Select Category--"}
+                  </button>
+                  {showCategoryDropdown && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        backgroundColor: "white",
+                        border: "1px solid #ccc",
+                        borderRadius: "4px",
+                        maxHeight: "200px",
+                        overflowY: "auto",
+                        zIndex: 1000,
+                      }}
+                    >
+                      {categories.map((item) => (
                         <div
-                          key={catId}
+                          key={item._id}
                           style={{
-                            backgroundColor: "#f0f0f0",
-                            padding: "6px 10px",
-                            borderRadius: "20px",
+                            padding: "8px",
+                            borderBottom: "1px solid #eee",
                             cursor: "pointer",
-                            fontSize: "14px",
-                            display: "inline-flex",
+                            display: "flex",
                             alignItems: "center",
                           }}
-                          onClick={() => handleRemoveCategory(catId)}
-                          title={`Click to remove ${cat.name}`}
                         >
-                          {cat.name}
-                          <span style={{ marginLeft: "5px", cursor: "pointer" }}>×</span>
+                          <input
+                            type="checkbox"
+                            checked={category.includes(item._id)}
+                            onChange={() => handleCategoryChange(item._id)}
+                            style={{ marginRight: "8px" }}
+                          />
+                          <span>{item.name}</span>
                         </div>
-                      ) : null;
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {subCategories.length > 0 && (
-                <>
-                  <label>Select Sub-Category</label>
-                  <select
-                    className="input-field"
-                    value={subCategory}
-                    onChange={handleSubCategoryChange}
+                {errors.category && (
+                  <p
+                    style={{
+                      color: "#d32f2f",
+                      fontSize: "12px",
+                      marginTop: "4px",
+                    }}
                   >
-                    <option value="">--Select Sub-Category--</option>
-                    {subCategories.map((item) => (
-                      <option key={item._id} value={item._id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
+                    {errors.category}
+                  </p>
+                )}
 
-              {subCategory && subsubCategories.length > 0 && (
-                <>
-                  <label>Select Sub-Sub-Category</label>
-                  <select
-                    className="input-field"
-                    value={subSubCategory}
-                    onChange={handleSubSubCategoryChange}
-                  >
-                    <option value="">--Select Sub Sub-Category--</option>
-                    {subsubCategories.map((item) => (
-                      <option key={item._id} value={item._id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
+                {category.length > 0 && (
+                  <div style={{ marginTop: "10px" }}>
+                    <label>Selected Categories</label>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "8px",
+                        marginTop: "10px",
+                      }}
+                    >
+                      {category.map((catId) => {
+                        const cat = categories.find((c) => c._id === catId);
+                        return cat ? (
+                          <div
+                            key={catId}
+                            style={{
+                              backgroundColor: "#f0f0f0",
+                              padding: "6px 10px",
+                              borderRadius: "20px",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                            }}
+                            onClick={() => handleRemoveCategory(catId)}
+                            title={`Click to remove ${cat.name}`}
+                          >
+                            {cat.name}
+                            <span
+                              style={{ marginLeft: "5px", cursor: "pointer" }}
+                            >
+                              ×
+                            </span>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {subCategories.length > 0 && (
+                  <>
+                    <label>Select Sub-Category</label>
+                    <select
+                      className="input-field"
+                      value={subCategory}
+                      onChange={handleSubCategoryChange}
+                    >
+                      <option value="">--Select Sub-Category--</option>
+                      {subCategories.map((item) => (
+                        <option key={item._id} value={item._id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
+
+                {subCategory && subsubCategories.length > 0 && (
+                  <>
+                    <label>Select Sub-Sub-Category</label>
+                    <select
+                      className="input-field"
+                      value={subSubCategory}
+                      onChange={handleSubSubCategoryChange}
+                    >
+                      <option value="">--Select Sub Sub-Category--</option>
+                      {subsubCategories.map((item) => (
+                        <option key={item._id} value={item._id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-
+          )}
           {/* Unit Section */}
           <div className="background" id="unit-section">
-            <span style={{ marginLeft: "20px", fontWeight: "bold", marginBottom: "10px" }}>
+            <span
+              style={{
+                marginLeft: "20px",
+                fontWeight: "bold",
+                marginBottom: "10px",
+              }}
+            >
               Units & Brands
             </span>
             <div className="row-section">
               <div className="input-container">
                 <label>
-                  Select Units <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                  Select Units{" "}
+                  <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                    {" "}
+                    *
+                  </span>
                 </label>
-                <select className="input-field" onChange={(e) => setUnitName(e.target.value)}>
+                <select
+                  className="input-field"
+                  onChange={(e) => setUnitName(e.target.value)}
+                  style={errors.unitname ? { border: "1px solid #d32f2f" } : {}}
+                >
                   <option value="">--Select Units--</option>
                   {unitsData.map((item) => (
                     <option key={item._id} value={item.unitname}>
@@ -1350,6 +1702,17 @@ function AddSellerProduct() {
                     </option>
                   ))}
                 </select>
+                {errors.unitname && (
+                  <p
+                    style={{
+                      color: "#d32f2f",
+                      fontSize: "12px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {errors.unitname}
+                  </p>
+                )}
 
                 {/* <h3
                   style={{
@@ -1392,11 +1755,23 @@ function AddSellerProduct() {
                         placeholder="Enter Unit Name"
                         value={addUnit}
                         onChange={(e) => setAddUnit(e.target.value)}
-                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          marginBottom: "10px",
+                        }}
                       />
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: "10px",
+                        }}
+                      >
                         <Button onClick={handleUnitData}>Save</Button>
-                        <Button onClick={() => setShowUnitPopup(false)}>Cancel</Button>
+                        <Button onClick={() => setShowUnitPopup(false)}>
+                          Cancel
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -1408,7 +1783,9 @@ function AddSellerProduct() {
                 <select
                   className="input-field"
                   onChange={(e) => {
-                    const selected = brands.find((item) => item._id === e.target.value);
+                    const selected = brands.find(
+                      (item) => item._id === e.target.value,
+                    );
                     setSelectedBrand(selected);
                   }}
                 >
@@ -1466,7 +1843,11 @@ function AddSellerProduct() {
                         type="text"
                         placeholder="Enter Brand Name"
                         value={addBrand}
-                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          marginBottom: "10px",
+                        }}
                         onChange={(e) => setBrand(e.target.value)}
                       />
 
@@ -1475,7 +1856,11 @@ function AddSellerProduct() {
                         accept="image/jpeg,image/png,image/jpg"
                         ref={brandImageInputRef}
                         onChange={handleBrandImage}
-                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          marginBottom: "10px",
+                        }}
                       />
                       {brandImage && (
                         <p style={{ fontSize: "12px", marginBottom: "10px" }}>
@@ -1483,7 +1868,13 @@ function AddSellerProduct() {
                         </p>
                       )}
                       {brandImageError && (
-                        <p style={{ color: "red", fontSize: "12px", marginBottom: "10px" }}>
+                        <p
+                          style={{
+                            color: "red",
+                            fontSize: "12px",
+                            marginBottom: "10px",
+                          }}
+                        >
                           {brandImageError}
                         </p>
                       )}
@@ -1499,7 +1890,13 @@ function AddSellerProduct() {
                           borderRadius: "10px",
                         }}
                       />
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: "10px",
+                        }}
+                      >
                         <Button onClick={handleBrand}>Save</Button>
                         <Button
                           onClick={() => {
@@ -1524,14 +1921,23 @@ function AddSellerProduct() {
 
           {/* Attributes */}
           <div className="background" id="attributes">
-            <span style={{ marginLeft: "20px", fontWeight: "bold", marginBottom: "10px" }}>
+            <span
+              style={{
+                marginLeft: "20px",
+                fontWeight: "bold",
+                marginBottom: "10px",
+              }}
+            >
               Attributes & Variants
             </span>
             <div className="row-section">
               <div className="input-container">
                 <label>
                   Select Attribute (Filter){" "}
-                  <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                  <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                    {" "}
+                    *
+                  </span>
                 </label>
                 <select
                   className="input-field"
@@ -1540,7 +1946,9 @@ function AddSellerProduct() {
                 >
                   <option value="">--Select Attribute--</option>
                   {filteredAttributes.map((attr) => {
-                    const attributeObj = attribute.find((a) => a.Attribute_name === attr);
+                    const attributeObj = attribute.find((a) =>
+                      [a._id, a.Attribute_name].includes(attr),
+                    );
                     return attributeObj ? (
                       <option key={attributeObj._id} value={attributeObj._id}>
                         {attributeObj.Attribute_name}
@@ -1590,11 +1998,23 @@ function AddSellerProduct() {
                         placeholder="Enter attribute"
                         value={addAttribute}
                         onChange={(e) => setAddattribute(e.target.value)}
-                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          marginBottom: "10px",
+                        }}
                       />
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: "10px",
+                        }}
+                      >
                         <Button onClick={handleAttribute}>Save</Button>
-                        <Button onClick={() => setShowPopup(false)}>Cancel</Button>
+                        <Button onClick={() => setShowPopup(false)}>
+                          Cancel
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -1604,7 +2024,10 @@ function AddSellerProduct() {
               <div className="input-container">
                 <label>
                   Select Variant (Filter Variant){" "}
-                  <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                  <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                    {" "}
+                    *
+                  </span>
                 </label>
                 <div style={{ position: "relative" }}>
                   <button
@@ -1622,11 +2045,13 @@ function AddSellerProduct() {
                   >
                     {attributeValue.length > 0 && attributedata
                       ? attributeValue
-                        .filter(
-                          (item) => item.attributeName === selectedAttribute?.Attribute_name
-                        )
-                        .map((item) => item.variantName)
-                        .join(", ") || "--Select Attribute Value--"
+                          .filter(
+                            (item) =>
+                              item.attributeName ===
+                              selectedAttribute?.Attribute_name,
+                          )
+                          .map((item) => item.variantName)
+                          .join(", ") || "--Select Attribute Value--"
                       : "--Select Attribute Value--"}
                   </button>
                   {showVariantDropdown && attributedata && (
@@ -1659,7 +2084,9 @@ function AddSellerProduct() {
                             }}
                           >
                             <span
-                              onClick={() => handleAttributeValueChange(variant.name)}
+                              onClick={() =>
+                                handleAttributeValueChange(variant.name)
+                              }
                               style={{ flex: 1 }}
                             >
                               {variant.name + unitname}
@@ -1724,11 +2151,23 @@ function AddSellerProduct() {
                         placeholder="Enter variant value"
                         value={addVarient}
                         onChange={(e) => setAddVarient(e.target.value)}
-                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          marginBottom: "10px",
+                        }}
                       />
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: "10px",
+                        }}
+                      >
                         <Button onClick={handleVarient}>Save</Button>
-                        <Button onClick={() => setShowVariantPopup(false)}>Cancel</Button>
+                        <Button onClick={() => setShowVariantPopup(false)}>
+                          Cancel
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -1753,34 +2192,87 @@ function AddSellerProduct() {
                     placeholder="Enter Variant MRP"
                     className="input-field"
                     value={variantMrps[item.variantName] || ""}
-                    style={{ backgroundColor: "white", marginBottom: "10px" }}
-                    onChange={(e) => handleMrpChange(item.variantName, e.target.value)}
+                    style={{
+                      backgroundColor: "white",
+                      marginBottom: "10px",
+                      ...(errors[`variantMrp_${item.variantName}`]
+                        ? { border: "1px solid #d32f2f" }
+                        : {}),
+                    }}
+                    onChange={(e) =>
+                      handleMrpChange(item.variantName, e.target.value)
+                    }
                   />
+                  {errors[`variantMrp_${item.variantName}`] && (
+                    <p
+                      style={{
+                        color: "#d32f2f",
+                        fontSize: "12px",
+                        marginTop: "-6px",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      {errors[`variantMrp_${item.variantName}`]}
+                    </p>
+                  )}
                   <input
                     type="text"
                     placeholder="Enter Variant Selling Price"
                     className="input-field"
                     value={variantPrices[item.variantName] || ""}
-                    style={{ backgroundColor: "white", marginBottom: "10px" }}
-                    onChange={(e) => handlePriceChange(item.variantName, e.target.value)}
+                    style={{
+                      backgroundColor: "white",
+                      marginBottom: "10px",
+                      ...(errors[`variantPrice_${item.variantName}`]
+                        ? { border: "1px solid #d32f2f" }
+                        : {}),
+                    }}
+                    onChange={(e) =>
+                      handlePriceChange(item.variantName, e.target.value)
+                    }
                   />
+                  {errors[`variantPrice_${item.variantName}`] && (
+                    <p
+                      style={{
+                        color: "#d32f2f",
+                        fontSize: "12px",
+                        marginTop: "-6px",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      {errors[`variantPrice_${item.variantName}`]}
+                    </p>
+                  )}
                   {item.attributeName.toLowerCase() === "color" && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                      }}
+                    >
                       <input
                         type="text"
                         placeholder="Hex Code"
                         className="input-field"
                         value={colorHexCodes[item.variantName] || ""}
-                        style={{ backgroundColor: "white", marginBottom: "10px" }}
+                        style={{
+                          backgroundColor: "white",
+                          marginBottom: "10px",
+                        }}
                         onClick={() => handleHexCodeClick(item.variantName)}
-                        onChange={(e) => handleHexCodeChange(item.variantName, e.target.value)}
+                        onChange={(e) =>
+                          handleHexCodeChange(item.variantName, e.target.value)
+                        }
                       />
                     </div>
                   )}
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => handleVariantImageChange(item.variantName, e)}
+                    onChange={(e) =>
+                      handleVariantImageChange(item.variantName, e)
+                    }
                     style={{ marginBottom: "10px" }}
                   />
                   {variantImages[item.variantName]?.preview && (
@@ -1799,18 +2291,42 @@ function AddSellerProduct() {
                 </div>
               ))}
             </div>
+            {attributeValue.length > 0 && (error || errors.variantImage) && (
+              <p
+                style={{
+                  color: "#d32f2f",
+                  fontSize: "12px",
+                  marginLeft: "20px",
+                }}
+              >
+                {error || errors.variantImage}
+              </p>
+            )}
 
             {isColorAttribute && (
-              <div className="input-container" style={{ width: "100%", padding: "20px" }}>
+              <div
+                className="input-container"
+                style={{ width: "100%", padding: "20px" }}
+              >
                 <label>Select Colors (Global)</label>
                 <div
-                  style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginBottom: "10px",
+                  }}
                 >
                   <input
                     type="color"
                     value={currentColor}
                     onChange={(e) => setCurrentColor(e.target.value)}
-                    style={{ width: "100%", height: "40px", border: "none", cursor: "pointer" }}
+                    style={{
+                      width: "100%",
+                      height: "40px",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
                   />
                   <button
                     onClick={addColor}
@@ -1827,7 +2343,13 @@ function AddSellerProduct() {
                   </button>
                 </div>
                 {colorError && (
-                  <p style={{ color: "red", fontSize: "12px", marginBottom: "10px" }}>
+                  <p
+                    style={{
+                      color: "red",
+                      fontSize: "12px",
+                      marginBottom: "10px",
+                    }}
+                  >
                     {colorError}
                   </p>
                 )}
@@ -1885,14 +2407,23 @@ function AddSellerProduct() {
 
           {/* Filter & Types */}
           <div className="background" id="filter-type">
-            <span style={{ marginLeft: "20px", fontWeight: "bold", marginBottom: "10px" }}>
+            <span
+              style={{
+                marginLeft: "20px",
+                fontWeight: "bold",
+                marginBottom: "10px",
+              }}
+            >
               Filters & Types
             </span>
             <div className="row-section">
               <div className="input-container">
                 <label>
                   Select Filter (Type){" "}
-                  <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                  <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                    {" "}
+                    *
+                  </span>
                 </label>
                 <select
                   className="input-field"
@@ -1948,18 +2479,39 @@ function AddSellerProduct() {
                         placeholder="Enter Filter Name"
                         value={filterName}
                         onChange={(e) => setFilterName(e.target.value)}
-                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          marginBottom: "10px",
+                        }}
                       />
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: "10px",
+                        }}
+                      >
                         <Button onClick={handleFilter}>Save</Button>
-                        <Button onClick={() => setFilterPopup(false)}>Cancel</Button>
+                        <Button onClick={() => setFilterPopup(false)}>
+                          Cancel
+                        </Button>
                       </div>
                     </div>
                   </div>
                 )}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "10px",
+                    marginTop: "10px",
+                  }}
+                >
                   {allFilters.map((filter) => {
-                    const filterName = filtertype.find((f) => f._id === filter._id)?.Filter_name || "Unnamed";
+                    const filterName =
+                      filtertype.find((f) => f._id === filter._id)
+                        ?.Filter_name || "Unnamed";
                     return (
                       <div
                         key={filter._id}
@@ -1995,7 +2547,10 @@ function AddSellerProduct() {
               <div className="input-container">
                 <label>
                   Select Filter Value{" "}
-                  <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                  <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                    {" "}
+                    *
+                  </span>
                 </label>
                 <div style={{ position: "relative" }}>
                   <button
@@ -2098,11 +2653,23 @@ function AddSellerProduct() {
                         placeholder="Enter filter value"
                         value={addFilterValue}
                         onChange={(e) => setAddFilterValue(e.target.value)}
-                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          marginBottom: "10px",
+                        }}
                       />
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: "10px",
+                        }}
+                      >
                         <Button onClick={handleFilterType}>Save</Button>
-                        <Button onClick={() => setShowFilterDropdown(false)}>Cancel</Button>
+                        <Button onClick={() => setShowFilterDropdown(false)}>
+                          Cancel
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -2149,18 +2716,29 @@ function AddSellerProduct() {
 
           {/* Tax Section */}
           <div className="background" id="taxsection">
-            <span style={{ marginLeft: "20px", fontWeight: "bold", marginBottom: "10px" }}>
+            <span
+              style={{
+                marginLeft: "20px",
+                fontWeight: "bold",
+                marginBottom: "10px",
+              }}
+            >
               Product Taxes
             </span>
             <div className="row-section">
               <div className="input-container">
                 <label>
-                  GST <span style={{ marginLeft: "5px", marginTop: "10px" }}> *</span>
+                  GST{" "}
+                  <span style={{ marginLeft: "5px", marginTop: "10px" }}>
+                    {" "}
+                    *
+                  </span>
                 </label>
                 <select
                   className="input-field"
                   value={cgst}
                   onChange={(e) => setCgst(e.target.value)}
+                  style={errors.cgst ? { border: "1px solid #d32f2f" } : {}}
                 >
                   <option value="">--Select Tax Percentage--</option>
                   {taxdata.map((item) => (
@@ -2169,14 +2747,36 @@ function AddSellerProduct() {
                     </option>
                   ))}
                 </select>
+                {errors.cgst && (
+                  <p
+                    style={{
+                      color: "#d32f2f",
+                      fontSize: "12px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {errors.cgst}
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "30px", alignItems: "center", justifyContent: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "30px",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Button
               variant="contained"
-              style={{ backgroundColor: "#00c853", color: "white", fontSize: "15px" }}
+              style={{
+                backgroundColor: "#00c853",
+                color: "white",
+                fontSize: "15px",
+              }}
               onClick={handelProduct}
             >
               SAVE
@@ -2184,7 +2784,11 @@ function AddSellerProduct() {
 
             <Button
               variant="contained"
-              style={{ backgroundColor: "#00c853", color: "white", fontSize: "15px" }}
+              style={{
+                backgroundColor: "#00c853",
+                color: "white",
+                fontSize: "15px",
+              }}
               onClick={() => navigate(-1)}
             >
               BACK
@@ -2206,8 +2810,12 @@ function AddSellerProduct() {
             <div key={item.id} style={{ position: "relative" }}>
               {index < array.length - 1 && (
                 <div
-                  className={`dashed-line ${activeSection === item.id || array[index + 1].id === activeSection ? "active" : ""
-                    }`}
+                  className={`dashed-line ${
+                    activeSection === item.id ||
+                    array[index + 1].id === activeSection
+                      ? "active"
+                      : ""
+                  }`}
                 ></div>
               )}
               <a
@@ -2219,8 +2827,12 @@ function AddSellerProduct() {
                   handleSidenavClick(item.id);
                 }}
               >
-                <span className={`dot ${activeSection === item.id ? "active" : ""}`}></span>
-                <h5 className={`label-text ${activeSection === item.id ? "active" : ""}`}>
+                <span
+                  className={`dot ${activeSection === item.id ? "active" : ""}`}
+                ></span>
+                <h5
+                  className={`label-text ${activeSection === item.id ? "active" : ""}`}
+                >
                   {item.label}
                 </h5>
               </a>
