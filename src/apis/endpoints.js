@@ -4,9 +4,9 @@ import { doc, getDoc } from "firebase/firestore";
 // `false` = current REST API flow, `true` = Firebase/Firestore flow.
 export const USE_FIREBASE = true;
 
-// const DEFAULT_API_BASE_URL = "https://api.fivlia.in";
+const DEFAULT_API_BASE_URL = "https://api.fivlia.in";
 
-const DEFAULT_API_BASE_URL = "https://api.fivlia.com";
+// const DEFAULT_API_BASE_URL = "https://api.fivlia.com";
 // const DEFAULT_API_BASE_URL = "https://api.fivlia.co.in";
 // const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080";
 // const DEFAULT_API_BASE_URL = "http://localhost:8080";
@@ -67,6 +67,10 @@ export const ENDPOINTS = {
   GET_OFFERS: "/seller/get-coupons",
   EDIT_OFFER: "/seller/edit-seller-coupon",
   DELETE_OFFER: "/seller/delete-coupons",
+  UPSERT_MENU_CARD: "/seller/menu-card",
+  GET_MENU_CARD: "/seller/menu-card",
+  EDIT_MENU_CARD: "/seller/menu-card",
+  DELETE_MENU_CARD: "/seller/menu-card",
 
   EDIT_SELLER_PROFILE:"/editSellerProfile",
 

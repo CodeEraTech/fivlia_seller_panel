@@ -6,11 +6,13 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
 import Wallet from "./StoreRoutes/SellerWallet";
 import DashBoard from "./StoreRoutes/DashBoard";
 import StoreCategories from "./StoreRoutes/Categories";
 import FoodCategory from "./StoreRoutes/FoodCategory/FoodCategory";
 import SellerProduct from "./StoreRoutes/SellerProduct";
+import MenuCards from "./StoreRoutes/MenuCards";
 import Stock from "./StoreRoutes/Stock";
 import Profile from "./StoreRoutes/Profile";
 import CouponManagement from "./StoreRoutes/coupon";
@@ -67,6 +69,14 @@ const StoreRoutes = (isFoodSeller = isFoodSellerFromStorage()) => [
     icon: <InventoryIcon />,
     route: "/sellerProduct",
     component: <SellerProduct />,
+  },
+  {
+    type: "collapse",
+    name: "Menu Cards",
+    key: "menu-cards",
+    icon: <MenuBookIcon />,
+    route: "/menu-cards",
+    component: <MenuCards />,
   },
   {
     type: "collapse",

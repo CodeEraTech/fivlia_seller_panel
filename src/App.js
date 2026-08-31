@@ -16,6 +16,7 @@ import AddSellerProduct from "./StoreRoutes/addProduct";
 import SearchProduct from "./StoreRoutes/SearchProduct";
 import Profile from "./StoreRoutes/Profile";
 import CouponManagement from "./StoreRoutes/coupon";
+import MenuCards from "./StoreRoutes/MenuCards";
 import UnapprovedProducts from "StoreRoutes/UnapprovedProducts";
 import { getMessaging, onMessage } from "firebase/messaging";
 import firebaseApp from "./firebaseConfig";
@@ -130,6 +131,10 @@ function App() {
         <Route
           path="/offers"
           element={<PrivateRoute element={<CouponManagement />} />}
+        />
+        <Route
+          path="/menu-cards"
+          element={<PrivateRoute element={<MenuCards />} />}
         />
         <Route
           path="/coupons"
