@@ -134,7 +134,7 @@ function App() {
         />
         <Route
           path="/menu-cards"
-          element={<PrivateRoute element={<MenuCards />} />}
+          element={<SellerTypeRoute foodOnly element={<MenuCards />} />}
         />
         <Route
           path="/coupons"

@@ -70,14 +70,18 @@ const StoreRoutes = (isFoodSeller = isFoodSellerFromStorage()) => [
     route: "/sellerProduct",
     component: <SellerProduct />,
   },
-  {
-    type: "collapse",
-    name: "Menu Cards",
-    key: "menu-cards",
-    icon: <MenuBookIcon />,
-    route: "/menu-cards",
-    component: <MenuCards />,
-  },
+  ...(isFoodSeller
+    ? [
+        {
+          type: "collapse",
+          name: "Menu Cards",
+          key: "menu-cards",
+          icon: <MenuBookIcon />,
+          route: "/menu-cards",
+          component: <MenuCards />,
+        },
+      ]
+    : []),
   {
     type: "collapse",
     name: "Stock",
